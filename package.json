@@ -1,0 +1,24 @@
+{
+  "name": "sebastian",
+  "version": "0.1.0",
+  "description": "Automates the KoL underwater quests (a grimoire port of TheSea.ash)",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "build": "node build.mjs",
+    "check": "tsc --noEmit",
+    "lint": "eslint src && prettier --check src",
+    "format": "prettier --write src"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "esbuild": "^0.28.2",
+    "eslint": "^10.12.0",
+    "grimoire-kolmafia": "^0.3.35",
+    "kolmafia": "^5.29371.0",
+    "libram": "^0.11.38",
+    "prettier": "^3.9.10",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.71.2"
+  }
+}
