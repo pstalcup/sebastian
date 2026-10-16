@@ -1,5 +1,4 @@
 import {
-  abort,
   availableAmount,
   buy,
   cliExecute,
@@ -520,7 +519,7 @@ const dreadscrollTasks: SebTask[] = [
     completed: hintsDone,
     ...action(() => {
       const missed = [1, 3, 4, 6, 8].find((n) => scroll(n) === 0);
-      if (missed) abort(`Missed dreadscroll ${missed} hint`);
+      if (missed) throw new Error(`Missed dreadscroll ${missed} hint`);
     }),
     limit: { tries: 1 },
   },
@@ -567,7 +566,7 @@ const priestTasks: SebTask[] = [
     completed: () => scroll(7) !== 0,
     ...action(() => {
       if (itemAmount($item`Mer-kin worktea`) === 0) {
-        abort("On track for a god run, eat a sushi for the dreadscroll clue");
+        throw new Error("On track for a god run, eat a sushi for the dreadscroll clue");
       }
       retrieveItem($item`white rice`);
       eatSushi();
@@ -610,9 +609,9 @@ const priestTasks: SebTask[] = [
     name: "Tainted: nowhere to go",
     ready: () => priestReady() && tainted(),
     completed: () => !tainted(),
-    ...action(() =>
-      abort("Hit a 1-in-40 situation; spend 1 non-free turn somewhere and rerun script"),
-    ),
+    ...action(() => {
+      throw new Error("Hit a 1-in-40 situation; spend 1 non-free turn somewhere and rerun script");
+    }),
   },
   {
     name: "Read the dreadscroll",
@@ -856,7 +855,7 @@ function championCheck(): void {
     return;
   }
   print(why, "red");
-  abort(why);
+  throw new Error(why);
 }
 
 const gladiatorGear = () =>
@@ -981,7 +980,10 @@ export const ShubQuest: SebQuest = {
         ) {
           if (itemAmount($item`null-day exploit`) > 0) use($item`null-day exploit`);
           else if (highShiny()) mood("shub");
-          else abort("Hit Shub without adequate delevers, this means something went wrong, sorry!");
+          else
+            throw new Error(
+              "Hit Shub without adequate delevers, this means something went wrong, sorry!",
+            );
         }
         for (const effect of $effects`Scarysauce`) {
           if (haveEffect(effect) > 0 && !uneffect(effect)) {

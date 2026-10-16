@@ -1,5 +1,4 @@
 import {
-  abort,
   adv1,
   autosell,
   buy,
@@ -102,7 +101,7 @@ function affordableMP(goal: number): number {
   if (afford < fight && myMp() < fight && (!restoreMp(fight) || myMp() < fight)) {
     const why = `SEB: ${myMp()} MP and ${myMeat()} meat can't cover the ${fight} MP of the next fight. Get MP or meat, then rerun.`;
     print(why, "red");
-    abort(why);
+    throw new Error(why);
   }
   return Math.min(goal, Math.max(fight, Math.floor(myMeat() / price) * 9));
 }
@@ -255,35 +254,43 @@ function seaPathFishy(): void {
   }
 }
 
+/** Fuel one drive costs. */
+const DRIVE_FUEL = 37;
+
 function seaPathUpkeep(): void {
   if (myAdventures() === 0) {
     if (itemAmount($item`astral six-pack`) > 0) use($item`astral six-pack`);
-    if (itemAmount($item`astral pilsner`) === 0) abort("no more easy diet");
+    if (itemAmount($item`astral pilsner`) === 0) throw new Error("no more easy diet");
     uneffect($effect`Donho's Bubbly Ballad`);
     if (haveSkill($skill`The Ode to Booze`)) useSkill($skill`The Ode to Booze`);
     drink($item`astral pilsner`);
   }
   if (haveEffect($effect`Driving Waterproofly`) === 0 && AsdonMartin.installed()) {
-    if (getFuel() === 0 && !pulledToday($item`pie man was not meant to eat`)) {
-      pullSequence($item`pie man was not meant to eat`);
-      AsdonMartin.insertFuel($item`pie man was not meant to eat`);
+    const pie = $item`pie man was not meant to eat`;
+    if (getFuel() === 0 && !pulledToday(pie) && pullSequence(pie)) AsdonMartin.insertFuel(pie);
+    if (getFuel() < DRIVE_FUEL) {
+      // Soda bread in ronin, the cheapest mall fuel out of it. Not worth stopping the run over.
+      try {
+        AsdonMartin.fillTo(DRIVE_FUEL);
+      } catch (e) {
+        print(`SEB: couldn't buy Asdon fuel: ${e}`, "red");
+      }
     }
-    if (getFuel() < 37) {
-      abort(
-        "Asdon Martin owners, fuel car manually until I can get some guidance on which foods are best",
-      );
+    if (getFuel() >= DRIVE_FUEL) {
+      AsdonMartin.drive($effect`Driving Waterproofly`, 1, true);
+    } else {
+      print(`SEB: Asdon has ${getFuel()} fuel, skipping Driving Waterproofly.`, "red");
     }
-    AsdonMartin.drive($effect`Driving Waterproofly`, 1, true);
   }
   if (haveEffect($effect`Fishy`) === 0) {
     seaPathFishy();
-    if (haveEffect($effect`Fishy`) === 0) abort("acquire fishy failed");
+    if (haveEffect($effect`Fishy`) === 0) throw new Error("acquire fishy failed");
   }
 }
 
 function aftercoreUpkeep(): void {
   if (itemAmount($item`sea lasso`) === 0) retrieveItem($item`sea lasso`);
-  if (myAdventures() === 0) abort("Out of adventures, run consume");
+  if (myAdventures() === 0) throw new Error("Out of adventures, run consume");
   if (haveEffect($effect`Fishy`) > 0) return;
   if (haveItem($item`fishy pipe`) && !get("_fishyPipeUsed")) {
     use($item`fishy pipe`);
@@ -291,7 +298,7 @@ function aftercoreUpkeep(): void {
     retrieveItem($item`fish sauce`);
     chew($item`fish sauce`);
   } else {
-    abort("get fishy");
+    throw new Error("get fishy");
   }
 }
 
@@ -366,7 +373,7 @@ export function postAdventure(): void {
       else cliExecute("campground rest");
     }
     set("_lastCombatLost", false);
-    abort("It appears you lost the last combat, look into that");
+    throw new Error("It appears you lost the last combat, look into that");
   }
   if (have($effect`Really Quite Poisoned`)) uneffect($effect`Really Quite Poisoned`);
   if (have($effect`Marked by the Don`) && haveSkill($skill`Disco Nap`)) {
