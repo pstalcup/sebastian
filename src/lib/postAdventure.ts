@@ -6,6 +6,7 @@ import {
   cliExecute,
   drink,
   eat,
+  getCampground,
   getFuel,
   haveEffect,
   haveSkill,
@@ -25,6 +26,7 @@ import {
   mySpleenUse,
   npcPrice,
   print,
+  pullsRemaining,
   restoreMp,
   retrieveItem,
   reverseNumberology,
@@ -240,7 +242,11 @@ function seaPathFishy(): void {
     const pasta = PASTAS.reduce((a, b) => (mallPrice(b) < mallPrice(a) ? b : a));
     if (pullSequence(pasta)) eat(pasta);
     if (pullSequence($item`Aldebaran sardines`)) eat($item`Aldebaran sardines`);
-  } else if (!pulledToday($item`fish sauce`) && !pulledToday($item`cuppa Gill tea`)) {
+  } else if (
+    pullsRemaining() !== 0 &&
+    !pulledToday($item`fish sauce`) &&
+    !pulledToday($item`cuppa Gill tea`)
+  ) {
     if (mallPrice($item`fish sauce`) + valueOfSpleen() <= mallPrice($item`cuppa Gill tea`)) {
       pullSequence($item`fish sauce`);
       chew($item`fish sauce`);
@@ -248,6 +254,9 @@ function seaPathFishy(): void {
       pullSequence($item`cuppa Gill tea`);
       use($item`cuppa Gill tea`);
     }
+  } else if (getCampground()[$item`potted tea tree`.name] && !get("_pottedTeaTreeUsed")) {
+    cliExecute("teatree cuppa Gill tea");
+    use($item`cuppa Gill tea`);
   } else {
     retrieveItem($item`white rice`);
     eatSushi();
