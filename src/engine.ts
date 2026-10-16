@@ -18,11 +18,20 @@ export type UtsTask = Task & {
 
 export type UtsQuest = Quest<UtsTask>;
 
-/** The CCS the run fights with. It consults the original ASH combat script. */
+/** The CCS the run fights with. It consults the combat script. */
 export const UTS_CCS = "uts_grimoire";
+/** The bundled combat consult script, built from src/combat.ts. */
+export const COMBAT_SCRIPT = "sebastian_combat.js";
+/** The bundled choice adventure script, built from src/choice.ts. */
+export const CHOICE_SCRIPT = "sebastian_choice.js";
 
 export class UtsEngine extends Engine<never, UtsTask> {
   private adventured = false;
+
+  /** Public so postloop mode can set its own properties for the engine to restore. */
+  get properties(): PropertiesManager {
+    return this.propertyManager;
+  }
 
   createOutfit(task: UtsTask): Outfit {
     task.before?.();
@@ -49,8 +58,7 @@ export class UtsEngine extends Engine<never, UtsTask> {
   initPropertiesManager(manager: PropertiesManager): void {
     super.initPropertiesManager(manager);
     manager.set({
-      // Choices are still answered by the original ASH choice handler.
-      choiceAdventureScript: "UnderTheSea_Choice.ash",
+      choiceAdventureScript: CHOICE_SCRIPT,
       mpAutoRecoveryItems: `${get("mpAutoRecoveryItems")};magical mystery juice;doc galaktik's invigorating tonic`,
     });
     // The Force's follow-up choice must be answerable from the property

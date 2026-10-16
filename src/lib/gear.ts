@@ -17,9 +17,18 @@ import {
 } from "kolmafia";
 import { Modes, Outfit } from "grimoire-kolmafia";
 import { $effect, $familiar, $item, $items, $location, have } from "libram";
-import { ashHelpers } from "./ash";
+import {
+  champagneZone,
+  cloakeReady,
+  cloakeZone,
+  codpiece,
+  gloveReady,
+  macroReady,
+  saberReady,
+  saberZone,
+} from "./iotm";
 import { FamiliarRole, mummery, pickFamiliar } from "./familiar";
-import { forcesAfterDiver, prayerbeadsShort } from "./progress";
+import { diverForceReady, forcesAfterDiver, prayerbeadsShort } from "./progress";
 import { baseballPlayers, bczSweatReady, sheriffOutfit } from "./resources";
 import { haveItem, highShiny } from "./state";
 
@@ -91,7 +100,7 @@ export class Gear {
   ifEquip(...items: Item[]): this {
     for (const item of items) {
       if (CODPIECE_GEMS.has(item) && haveItem($item`The Eternity Codpiece`)) {
-        ashHelpers.clearCodpiece();
+        codpiece("none");
       }
       if (item !== $item.none && availableAmount(item) > 0) this.items.push(item);
     }
@@ -125,7 +134,7 @@ export class Gear {
     }
     if (
       highShiny() &&
-      this.familiar !== $familiar`Sword of S Words` &&
+      (this.familiar ?? myFamiliar()) !== $familiar`Sword of S Words` &&
       haveEffect($effect`Everything Looks Yellow`) === 0
     ) {
       this.modes = { ...this.modes, parka: "dilophosaur" };
@@ -202,6 +211,53 @@ export class Gear {
       this.ifEquip($item`Kramco Sausage-o-Matic™`);
     }
     return this.freeRun();
+  }
+
+  /** The saber, where a turn-free exit buys something. */
+  saber(): this {
+    if (saberReady() && saberZone(this.location)) this.ifEquip($item`Fourth of May Cosplay Saber`);
+    return this;
+  }
+
+  /** The saber for the summoned diver fights, so the Force is castable. */
+  diverSaber(): this {
+    if (diverForceReady()) this.need($item`Fourth of May Cosplay Saber`);
+    return this;
+  }
+
+  /** The vampyric cloake, in the zones ground purely for a drop. */
+  cloake(): this {
+    if (cloakeReady() && cloakeZone(this.location)) this.need($item`vampyric cloake`);
+    return this;
+  }
+
+  /** The broken champagne bottle, where a fat table is being rolled. */
+  champagne(): this {
+    if (champagneZone(this.location)) this.ifEquip($item`broken champagne bottle`);
+    return this;
+  }
+
+  /** The Powerful Glove's re-roll at the wreck, while Macrometeorite is spent. */
+  glove(): this {
+    if (
+      !macroReady() &&
+      gloveReady() &&
+      this.location === $location`The Wreck of the Edgar Fitzsimmons`
+    ) {
+      this.ifEquip($item`Powerful Glove`);
+    }
+    return this;
+  }
+
+  /** Set an item mode, like the original's `modes` CLI string. */
+  mode(modes: Modes): this {
+    this.modes = { ...this.modes, ...modes };
+    return this;
+  }
+
+  /** Put the gear on now, as tempEquipment() did. */
+  dress(): void {
+    this.outfit().dress();
   }
 
   /** The grimoire outfit for this gear. */

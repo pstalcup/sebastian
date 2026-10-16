@@ -27,7 +27,7 @@ import {
   have,
 } from "libram";
 import { UtsQuest } from "../engine";
-import { ashHelpers } from "../lib/ash";
+import { baseballD } from "../lib/iotm";
 import { doSWord, pickFamiliar } from "../lib/familiar";
 import { Gear } from "../lib/gear";
 import { mood } from "../lib/mood";
@@ -43,6 +43,7 @@ import {
   summon,
 } from "../lib/resources";
 import { haveItem, highShiny, inAftercore, inSeaPath, lowShiny } from "../lib/state";
+import { abyssRecallGear, prayerbeadGear } from "../phases/shared";
 import { monkeesStep } from "./monkees";
 
 // From the golem recall through the Old Guy. Ported from golemRecall(),
@@ -178,19 +179,7 @@ export const OutpostQuest: UtsQuest = {
         if (!have($item`Elf Guard SCUBA tank`)) pullSequence($item`Elf Guard SCUBA tank`);
         if (!have($item`black glass`)) buy($coinmaster`Big Brother`, 1, $item`black glass`);
       },
-      outfit: () =>
-        new Gear("item drop,sea", abyss)
-          .forRole("-combat")
-          .need(
-            $item`shark jumper`,
-            $item`scale-mail underwear`,
-            $item`black glass`,
-            $item`Monodent of the Sea`,
-          )
-          .ifEquip($item`Peridot of Peril`)
-          .bathysphere()
-          .freeKill()
-          .outfit(),
+      outfit: () => abyssRecallGear().outfit(),
       prepare: () => {
         if (!have($effect`Jelly Combed`) && pullSequence($item`comb jelly`)) use($item`comb jelly`);
       },
@@ -213,7 +202,7 @@ export const OutpostQuest: UtsQuest = {
           getProperty("baseballTeam").includes("773") &&
           baseballPlayers() === 9
         ) {
-          ashHelpers.baseballD();
+          baseballD();
         }
         if (outpost.turnsSpent < 5) setProperty("stashboxChecked", "0");
         const checked = getProperty("stashboxChecked");
@@ -285,13 +274,7 @@ export const OutpostQuest: UtsQuest = {
         ncForceEstimate() < 4 &&
         !(haveItem($item`cursed monkey's paw`) && get("_monkeyPawWishesUsed") < 5),
       completed: () => availableAmount($item`Mer-kin prayerbeads`) >= 2,
-      outfit: () => {
-        const gear = new Gear("-combat,sea", outpost)
-          .forRole("-combat")
-          .bathysphere($item`toy Cupid bow`);
-        if (lowShiny()) gear.ifEquip($item`Congressional Medal of Insanity`);
-        return gear.healerSaber().outfit();
-      },
+      outfit: () => prayerbeadGear().outfit(),
       prepare: () => mood("-combat"),
       do: outpost,
     },

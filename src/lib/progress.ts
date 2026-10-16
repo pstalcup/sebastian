@@ -1,4 +1,4 @@
-import { getProperty, Item, itemAmount, toInt, toSlot } from "kolmafia";
+import { availableAmount, getProperty, Item, itemAmount, toInt, toSlot } from "kolmafia";
 import { $item, $items, $slot, have } from "libram";
 import { haveItem } from "./state";
 
@@ -57,3 +57,55 @@ export function saberChargesLeft(): number {
 export function forcesAfterDiver(): number {
   return saberChargesLeft() - (diverHuntActive() ? 2 : 0);
 }
+
+export function diverForceReady(): boolean {
+  return diverHuntActive() && saberChargesLeft() > 0;
+}
+
+/** Charges left after the diver's two and the healer's one. */
+export function forcesAfterHealer(): number {
+  return forcesAfterDiver() - (prayerbeadsShort() ? 1 : 0);
+}
+
+/** Charges no planned Force has claimed. */
+export function saberForcesFree(): number {
+  return forcesAfterHealer() - (seaCowNeeded() ? 1 : 0);
+}
+
+/** Enough lassos thrown or in hand for the twenty training throws plus taming. */
+export function doneWithCowboy(): boolean {
+  return toInt(getProperty("lassoTrainingCount")) + 3 * itemAmount($item`sea lasso`) >= 23;
+}
+
+export function doneWithSeaCow(): boolean {
+  const leather =
+    itemAmount($item`sea leather`) +
+    availableAmount($item`sea chaps`) +
+    availableAmount($item`sea cowboy hat`);
+  return leather >= 2 && itemAmount($item`sea cowbell`) >= 3;
+}
+
+export function cheatsheetsNeeded(): boolean {
+  return (
+    itemAmount($item`Mer-kin cheatsheet`) < 9 && getProperty("merkinVocabularyMastery") === "0"
+  );
+}
+
+/** Library-ready: the scholar outfit (or its lounge pieces) and the vocabulary done. */
+export function libraryReady(): boolean {
+  return (
+    (haveItem($item`Mer-kin scholar mask`) || haveItem($item`Mer-kin facecowl`)) &&
+    (haveItem($item`Mer-kin scholar tailpiece`) || haveItem($item`Mer-kin waistrope`)) &&
+    itemAmount($item`Mer-kin wordquiz`) * 10 + toInt(getProperty("merkinVocabularyMastery")) >= 90
+  );
+}
+
+/** Items that lower Yog-Urt's and Shub's stats, one kind each. */
+export function delevelers(): number {
+  return $items`Mer-kin mouthsoap, crayon shavings, table tennis ball, sea lasso, sea cowbell`.filter(
+    (item) => itemAmount(item) > 0,
+  ).length;
+}
+
+/** Healings Yog-Urt's fight needs, by prayerbeads worn (0 to 3). */
+export const YOG_HEALINGS_NEEDED = [21, 5, 3, 1];

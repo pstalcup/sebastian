@@ -1,11 +1,13 @@
-import { cliExecute, getClanId, maximize, print, visitUrl, writeCcs } from "kolmafia";
+import { getClanId, maximize, print, visitUrl, writeCcs } from "kolmafia";
 import { Args, getTasks } from "grimoire-kolmafia";
 import { args } from "./args";
-import { UTS_CCS, UtsEngine } from "./engine";
+import { COMBAT_SCRIPT, UTS_CCS, UtsEngine } from "./engine";
 import { initialization } from "./initialization";
 import { iotmChecklist, pullChecklist, skillChecklist } from "./lib/checklists";
 import { setDropsItems } from "./lib/gear";
 import { postAdventure } from "./lib/postAdventure";
+import { postloopSteps } from "./phases/postloop";
+import { EndgameQuest } from "./tasks/endgame";
 import { GuildQuest } from "./tasks/guild";
 import { LassoQuest, MonkeesQuest } from "./tasks/monkees";
 import { OutpostQuest } from "./tasks/outpost";
@@ -25,21 +27,34 @@ export function main(command?: string): void {
     return;
   }
 
+  setDropsItems(maximize("Drops Items", false) ? "Drops Items, sea" : "item drop, sea");
+  // Every fight goes through the ported combat script.
+  writeCcs(`[ default ]\nconsult ${COMBAT_SCRIPT}\nabort`, UTS_CCS);
+
   if (args.postloop) {
-    print("The postloop steps are not ported yet; running UnderTheSea.ash postloop.", "blue");
-    cliExecute("UnderTheSea postloop");
+    // The finishing steps the run would have reached on its own, without
+    // initialization() or any of the run itself. Each self-gates on its own
+    // uts_postLoop* pref, so with none set this only sets up and tears down.
+    const engine = new UtsEngine([], { ccs: UTS_CCS });
+    print("Starting UnderTheSea (postloop only)");
+    try {
+      // A run killed mid-walk can leave these set.
+      engine.properties.set({ _utsPearlFarm: false, _utsScreechReaim: false });
+      postloopSteps();
+    } finally {
+      engine.destruct();
+      print("Ending UnderTheSea");
+    }
     return;
   }
 
-  setDropsItems(maximize("Drops Items", false) ? "Drops Items, sea" : "item drop, sea");
-  // Fights still go through the original ASH combat script.
-  writeCcs("[ default ]\nconsult UnderTheSeaCCS.ash\nabort", UTS_CCS);
-
   const clan = getClanId();
-  // In seaMonkees() order: the early lasso, the guild, the quest, then the outpost.
-  const engine = new UtsEngine(getTasks([LassoQuest, GuildQuest, MonkeesQuest, OutpostQuest]), {
-    ccs: UTS_CCS,
-  });
+  // In seaMonkees() order: the early lasso, the guild, the quest, the outpost,
+  // then the seahorse through the prism.
+  const engine = new UtsEngine(
+    getTasks([LassoQuest, GuildQuest, MonkeesQuest, OutpostQuest, EndgameQuest]),
+    { ccs: UTS_CCS },
+  );
 
   print("Starting UnderTheSea");
   try {
@@ -54,12 +69,5 @@ export function main(command?: string): void {
       visitUrl(`showclan.php?whichclan=${clan}&action=joinclan&confirm=on`);
     }
     print("Ending UnderTheSea");
-  }
-
-  if (args.handoff) {
-    print("The ported phases are done; UnderTheSea.ash takes it from here.", "blue");
-    cliExecute("UnderTheSea");
-  } else {
-    print("The ported phases are done. Run UnderTheSea to finish the run.", "blue");
   }
 }

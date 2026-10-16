@@ -7,7 +7,7 @@ import { blackGlass } from "./resources";
 // An Old Guy and the Ocean: fifty sand dollars for the damp old boot. Ported
 // from getSandDollar() and oldGuy() in UnderTheSea.ash.
 
-function getSandDollar(): void {
+export function getSandDollar(): void {
   if (itemAmount($item`Mer-kin thingpouch`) > 0) {
     use(itemAmount($item`Mer-kin thingpouch`), $item`Mer-kin thingpouch`);
   } else if (itemAmount($item`sand penny`) >= 100) {

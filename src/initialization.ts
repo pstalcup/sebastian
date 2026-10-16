@@ -33,7 +33,7 @@ import {
   visitUrl,
 } from "kolmafia";
 import { $class, $familiar, $item, $items, $skill, $skills, get, have } from "libram";
-import { ashHelpers } from "./lib/ash";
+import { leprecondo, sourceEducate } from "./lib/iotm";
 import { iotmChecklist, pullChecklist, skillChecklist } from "./lib/checklists";
 import { chosenFamiliar, pickFamiliar } from "./lib/familiar";
 import { pulledToday } from "./lib/pulls";
@@ -129,7 +129,7 @@ function dailies(): void {
 
   sourceEnhance();
   // duplicate.edu now, so it is in hand for the first fat table the route kills.
-  ashHelpers.sourceEducate();
+  sourceEducate();
   cargoPocket();
   garbageTote();
   censer();
@@ -169,7 +169,7 @@ function dailies(): void {
     );
   }
   if (getProperty("leprecondoInstalled") === "0,0,0,0" && itemAmount($item`Leprecondo`) > 0) {
-    ashHelpers.leprecondo(highShiny() ? "10,11,12,24,4,5,6" : "22,24,12,11,10,4,5,6");
+    leprecondo(highShiny() ? "10,11,12,24,4,5,6" : "22,24,12,11,10,4,5,6");
   }
   visitUrl("campground.php?preaction=leaves");
   if (itemAmount($item`S.I.T. Course Completion Certificate`) > 0 && !get("_sitCourseCompleted")) {

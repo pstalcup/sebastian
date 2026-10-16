@@ -6,6 +6,7 @@ import {
   itemAmount,
   myFamiliar,
   print,
+  useFamiliar,
 } from "kolmafia";
 import { $effect, $familiar, $item, get, have } from "libram";
 import { haveItem, highShiny } from "./state";
@@ -78,4 +79,17 @@ export function doSWord(): boolean {
   const lassos = itemAmount($item`sea lasso`);
   if (highShiny() && lassos < 7) return true;
   return !haveItem($item`closed-circuit pay phone`) && lassos < 4;
+}
+
+/** use_familiar(string) from the original: switch now, Prince George on item setups. */
+export function useRole(role: FamiliarRole): void {
+  const familiar = pickFamiliar(role);
+  if (familiar) useFamiliar(familiar);
+  if (role === "itdrop") mummery();
+}
+
+/** use_familiar(familiar): switch if owned, and say whether it worked. */
+export function useFam(familiar: Familiar): boolean {
+  if (!haveFamiliar(familiar)) return false;
+  return useFamiliar(familiar);
 }

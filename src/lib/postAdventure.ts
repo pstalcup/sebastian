@@ -52,7 +52,8 @@ import {
   get,
   have,
 } from "libram";
-import { ashHelpers } from "./ash";
+import { eatSushi, trainset, useAutumnaton } from "./iotm";
+import { dreadSeedCheck } from "./seedfinder";
 import { doSWord } from "./familiar";
 import { Gear } from "./gear";
 import { diverHuntActive, seaCowNeeded, tailpiece } from "./progress";
@@ -248,7 +249,7 @@ function seaPathFishy(): void {
     }
   } else {
     retrieveItem($item`white rice`);
-    ashHelpers.eatSushi();
+    eatSushi();
   }
 }
 
@@ -375,10 +376,10 @@ export function postAdventure(): void {
   if (getProperty("NCtoC") === "true") setProperty("NCtoC", "false");
 
   if (!get("isMerkinHighPriest") && getProperty("seahorseName") !== "") {
-    ashHelpers.dreadSeedCheck();
+    dreadSeedCheck();
   }
   if (getProperty("autumnatonQuestLocation") === "" && itemAmount($item`autumn-aton`) > 0) {
-    ashHelpers.useAutumnaton();
+    useAutumnaton();
   }
   if (
     get("_universeCalculated") < Math.min(2, get("skillLevel144")) &&
@@ -389,7 +390,7 @@ export function postAdventure(): void {
   if (get("trainsetPosition") >= get("lastTrainsetConfiguration") + 42) {
     // Visit the workshed first so mafia re-reads the train.
     visitUrl("campground.php?action=workshed");
-    ashHelpers.trainset();
+    trainset();
   }
   if (haveEffect($effect`Resined`) === 0 && itemAmount($item`inflammable leaf`) > 50) {
     use($item`distilled resin`);

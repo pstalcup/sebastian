@@ -15,7 +15,7 @@ import {
 } from "kolmafia";
 import { $effect, $familiar, $item, $location, $monster, $stat, get, have } from "libram";
 import { UtsQuest } from "../engine";
-import { ashHelpers } from "../lib/ash";
+import { baseballD, timeSpinnerRefight } from "../lib/iotm";
 import { doSWord } from "../lib/familiar";
 import { dropsItems, Gear } from "../lib/gear";
 import { mood, resMood } from "../lib/mood";
@@ -174,7 +174,7 @@ export const MonkeesQuest: UtsQuest = {
         }
       },
       do: garden,
-      post: () => ashHelpers.timeSpinnerRefight("An Octopus's Garden"),
+      post: () => timeSpinnerRefight($location`An Octopus's Garden`),
     },
     {
       name: "Flytrap: use pellet",
@@ -241,7 +241,7 @@ export const MonkeesQuest: UtsQuest = {
           pullSequence($item`Mer-kin hidepaint`);
           if (itemAmount($item`Mer-kin hidepaint`) > 0) use($item`Mer-kin hidepaint`);
         }
-        if (baseballPlayers() >= 9 && get("_baseballInnings") <= 2) ashHelpers.baseballD();
+        if (baseballPlayers() >= 9 && get("_baseballInnings") <= 2) baseballD();
       },
       outfit: () => {
         const gear = new Gear("item drop, sea, -100 combat", pearlLoc());

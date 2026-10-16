@@ -14,13 +14,9 @@ export const args = Args.create(
       default: false,
     }),
     postloop: Args.flag({
-      help: "Run only the postloop steps. Not ported yet; this hands off to UnderTheSea.ash.",
+      help: "Run only the postloop steps (pilsners, pearls, the eagle re-aim, the codpiece).",
       setting: "",
       default: false,
-    }),
-    handoff: Args.boolean({
-      help: "When the ported phases are done, run UnderTheSea.ash for the rest of the run.",
-      default: true,
     }),
   },
 );
