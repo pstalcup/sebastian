@@ -2,7 +2,6 @@ import {
   abort,
   availableChoiceOptions,
   autosell,
-  buy,
   buyUsingStorage,
   cliExecute,
   council,
@@ -33,12 +32,19 @@ import {
   useSkill,
   visitUrl,
 } from "kolmafia";
-import { $class, $coinmaster, $familiar, $item, $items, $skill, $skills, get, have } from "libram";
+import { $class, $familiar, $item, $items, $skill, $skills, get, have } from "libram";
 import { ashHelpers } from "./lib/ash";
 import { iotmChecklist, pullChecklist, skillChecklist } from "./lib/checklists";
 import { chosenFamiliar, pickFamiliar } from "./lib/familiar";
 import { pulledToday } from "./lib/pulls";
-import { cargoPocket, censer, garbageTote, sheriffOutfit, sourceEnhance } from "./lib/resources";
+import {
+  blackGlass,
+  cargoPocket,
+  censer,
+  garbageTote,
+  sheriffOutfit,
+  sourceEnhance,
+} from "./lib/resources";
 import {
   countSummons,
   haveItem,
@@ -50,20 +56,13 @@ import {
 } from "./lib/state";
 
 // Once-a-run setup before the first quest step. Ported from initialization()
-// and blackGlass() in UnderTheSea.ash.
+// in UnderTheSea.ash.
 
 /** The photo booth lives in this clan; the run leaves it again at the end. */
 const PHOTO_BOOTH_CLAN = 90485;
 
 function switchFamiliar(familiar: Familiar | undefined): void {
   if (familiar) useFamiliar(familiar);
-}
-
-function blackGlass(): void {
-  switchFamiliar(pickFamiliar("itdrop"));
-  equip($item`really, really nice swimming trunks`);
-  visitUrl("monkeycastle.php?who=1");
-  if (!have($item`black glass`)) buy($coinmaster`Big Brother`, 1, $item`black glass`);
 }
 
 function checkChosenFamiliar(): void {

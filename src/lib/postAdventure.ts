@@ -15,6 +15,7 @@ import {
   inebrietyLimit,
   Item,
   itemAmount,
+  Location,
   mallPrice,
   myAdventures,
   myInebriety,
@@ -34,7 +35,6 @@ import {
   spleenLimit,
   toInt,
   toItem,
-  toSlot,
   totalTurnsPlayed,
   use,
   useSkill,
@@ -49,13 +49,13 @@ import {
   $items,
   $location,
   $skill,
-  $slot,
   get,
   have,
 } from "libram";
 import { ashHelpers } from "./ash";
 import { doSWord } from "./familiar";
 import { Gear } from "./gear";
+import { diverHuntActive, seaCowNeeded, tailpiece } from "./progress";
 import { pulledToday, pullSequence } from "./pulls";
 import {
   haveItem,
@@ -129,44 +129,6 @@ export function refreshMPRecovery(): void {
 const WHISTLE_WORTHY = new Set(
   $items`Mer-kin prayerbeads, Mer-kin healscroll, Mer-kin lockkey, Mer-kin hallpass, Mer-kin cheatsheet, Mer-kin bunwig, rusty rivet, rusty porthole, rusty broken diving helmet, sea leather, sea cowbell, sea lasso`,
 );
-
-export function divingHelmet(): Item {
-  return (
-    $items`Mer-kin gladiator mask, Mer-kin scholar mask, crappy Mer-kin mask, aerated diving helmet, Elf Guard SCUBA tank`.find(
-      (item) => have(item),
-    ) ?? $item.none
-  );
-}
-
-export function tailpiece(): Item {
-  return (
-    $items`Mer-kin gladiator tailpiece, Mer-kin scholar tailpiece, crappy Mer-kin tailpiece, teflon swim fins`.find(
-      (item) => have(item),
-    ) ?? $item.none
-  );
-}
-
-export function diverPartsComplete(): boolean {
-  // The craft consumes all three, so an assembled helmet is the done state.
-  if (have($item`rusty diving helmet`)) return true;
-  return (
-    itemAmount($item`rusty rivet`) >= 8 &&
-    itemAmount($item`rusty porthole`) > 0 &&
-    have($item`rusty broken diving helmet`)
-  );
-}
-
-export function diverHuntActive(): boolean {
-  return !diverPartsComplete() && toSlot(divingHelmet()) !== $slot`hat`;
-}
-
-export function seaCowNeeded(): boolean {
-  const leather =
-    itemAmount($item`sea leather`) +
-    (have($item`sea chaps`) ? 1 : 0) +
-    (have($item`sea cowboy hat`) ? 1 : 0);
-  return leather < 2 || itemAmount($item`sea cowbell`) < 3;
-}
 
 function stillWanted(item: Item): boolean {
   switch (item) {
@@ -465,4 +427,11 @@ export function postAdventure(): void {
   setProperty("hpAutoRecovery", round4(hpTarget * 0.75));
   setProperty("hpAutoRecoveryTarget", round4(hpTarget));
   setMPRecovery();
+}
+
+/** One turn in a zone with the original's adv(): MP re-cap, adv1, then post_adv(). */
+export function adv(location: Location): void {
+  refreshMPRecovery();
+  adv1(location, -1, "");
+  postAdventure();
 }

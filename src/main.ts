@@ -8,6 +8,7 @@ import { setDropsItems } from "./lib/gear";
 import { postAdventure } from "./lib/postAdventure";
 import { GuildQuest } from "./tasks/guild";
 import { LassoQuest, MonkeesQuest } from "./tasks/monkees";
+import { OutpostQuest } from "./tasks/outpost";
 
 export function main(command?: string): void {
   Args.fill(args, command);
@@ -35,8 +36,8 @@ export function main(command?: string): void {
   writeCcs("[ default ]\nconsult UnderTheSeaCCS.ash\nabort", UTS_CCS);
 
   const clan = getClanId();
-  // In seaMonkees() order: the early lasso, the guild, then the quest itself.
-  const engine = new UtsEngine(getTasks([LassoQuest, GuildQuest, MonkeesQuest]), {
+  // In seaMonkees() order: the early lasso, the guild, the quest, then the outpost.
+  const engine = new UtsEngine(getTasks([LassoQuest, GuildQuest, MonkeesQuest, OutpostQuest]), {
     ccs: UTS_CCS,
   });
 

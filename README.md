@@ -40,6 +40,8 @@ Ported to TypeScript:
 - Sea Monkees from the start through asking Grandpa about Grandma: the early S Word lasso, the guild
   unlock, the flytrap pellet, Little Brother, the Wreck of the Edgar Fitzsimmons, Big Brother and
   Grandpa
+- The golem recall, the Mer-kin Outpost (stashbox, lockkey and the abyss recall), the stashbox and
+  currents, prayerbeads, and An Old Guy and the Ocean
 
 Still run by the original ASH:
 
@@ -48,7 +50,7 @@ Still run by the original ASH:
 - A few helpers called through `ash import <UnderTheSeaGlobals.ash>`: the model train set, baseball
   diamond, Leprecondo, autumn-aton, sushi, Source Terminal duplicate, Time-Spinner, the codpiece and
   the dreadscroll seed check
-- Everything from the golem recall and the outpost on, and the postloop steps
+- Everything from the seahorse on, and the postloop steps
 
 ## Development
 

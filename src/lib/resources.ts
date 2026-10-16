@@ -25,6 +25,7 @@ import {
   toInt,
   totalFreeRests,
   use,
+  useFamiliar,
   useSkill,
   visitUrl,
 } from "kolmafia";
@@ -38,7 +39,9 @@ import {
   $stat,
   ChestMimic,
   get,
+  have,
 } from "libram";
+import { pickFamiliar } from "./familiar";
 import { gotPeriled, haveItem, inAftercore, inSeaPath, step } from "./state";
 import { pulledToday, pullSequence } from "./pulls";
 
@@ -270,4 +273,13 @@ export function summon(monster: Monster, wishGear?: () => void): boolean {
     return false;
   }
   return true;
+}
+
+/** Big Brother's black glass, which the Caliginous Abyss needs. */
+export function blackGlass(): void {
+  const familiar = pickFamiliar("itdrop");
+  if (familiar) useFamiliar(familiar);
+  equip($item`really, really nice swimming trunks`);
+  visitUrl("monkeycastle.php?who=1");
+  if (!have($item`black glass`)) buy($coinmaster`Big Brother`, 1, $item`black glass`);
 }

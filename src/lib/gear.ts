@@ -19,6 +19,7 @@ import { Modes, Outfit } from "grimoire-kolmafia";
 import { $effect, $familiar, $item, $items, $location, have } from "libram";
 import { ashHelpers } from "./ash";
 import { FamiliarRole, mummery, pickFamiliar } from "./familiar";
+import { forcesAfterDiver, prayerbeadsShort } from "./progress";
 import { baseballPlayers, bczSweatReady, sheriffOutfit } from "./resources";
 import { haveItem, highShiny } from "./state";
 
@@ -182,6 +183,17 @@ export class Gear {
       return this.fam(boots);
     }
     return this.freeKill();
+  }
+
+  /**
+   * The saber, so a healer that slips through gets Forced for a guaranteed
+   * prayerbead, while there is a charge to spare after the diver's two.
+   */
+  healerSaber(): this {
+    if (prayerbeadsShort() && forcesAfterDiver() > 0) {
+      this.ifEquip($item`Fourth of May Cosplay Saber`);
+    }
+    return this;
   }
 
   /** Delay burning: the Kramco, then a free run. */
