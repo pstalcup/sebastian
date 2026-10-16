@@ -3432,11 +3432,11 @@ function screechReaim(page, plan) {
 function plan(page) {
   foe = kolmafia.lastMonster();
   var plan = new Plan();
-  if (get("_sebScreechReaim") === "true") {
+  if (get("_sebScreechReaim", false)) {
     screechReaim(page, plan);
     return plan;
   }
-  if (get("_sebPearlFarm") === "true") {
+  if (get("_sebPearlFarm", false)) {
     noteScreechReady(page);
     return plan.step(freeKill(false)).step(cleanUp());
   }

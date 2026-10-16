@@ -2278,6 +2278,21 @@ function getAverageAdventures(item) {
 function uneffect(effect) {
   return kolmafia.cliExecute("uneffect ".concat(effect.name));
 }
+/**
+ * Determine the step as a number for a given quest property.
+ *
+ * @param questName Name of quest property to check.
+ * @returns Quest step
+ */
+function questStep(questName) {
+  var stringStep = get$1(questName);
+  if (stringStep === "unstarted") return -1;else if (stringStep === "started") return 0;else if (stringStep === "finished" || stringStep === "") return 999;else {
+    if (stringStep.substring(0, 4) !== "step") {
+      throw new Error("Quest state parsing error.");
+    }
+    return parseInt(stringStep.substring(4), 10);
+  }
+}
 var EnsureError = /*#__PURE__*/function (_Error) {
   function EnsureError(cause, reason) {
     var _this;
@@ -12977,7 +12992,7 @@ function borrowSheriffProps() {
   }
 }
 function dailies() {
-  if (get$1("questM05Toot") === "started") {
+  if (questStep("questM05Toot") === 0) {
     kolmafia.council();
     kolmafia.visitUrl("tutorial.php?action=toot");
     kolmafia.council();
@@ -13147,8 +13162,8 @@ function initialization() {
   if (kolmafia.getRevision() < 29057) kolmafia.abort("Please update mafia to newer than 29057");
   // A pearl farm or screech re-aim that aborted mid-loop leaves these set,
   // and the CCS reads them.
-  kolmafia.setProperty("_sebPearlFarm", "false");
-  kolmafia.setProperty("_sebScreechReaim", "false");
+  _set("_sebPearlFarm", false);
+  _set("_sebScreechReaim", false);
   checkChosenFamiliar();
   if (!get$1("autoSatisfyWithNPCs")) {
     kolmafia.abort("set autoSatisfyWithNPCs = true, the script isn't going to work if it's false");
@@ -13156,7 +13171,7 @@ function initialization() {
   iotmChecklist();
   skillChecklist();
   if (inSeaPath()) pullChecklist();
-  if (get$1("questS01OldGuy") === "unstarted") {
+  if (questStep("questS01OldGuy") === -1) {
     kolmafia.visitUrl("place.php?whichplace=sea_oldman&action=oldman_oldman");
   }
   if (!have$g($item(_templateObject50$5 || (_templateObject50$5 = _taggedTemplateLiteral(["black glass"])))) && kolmafia.itemAmount($item(_templateObject51$5 || (_templateObject51$5 = _taggedTemplateLiteral(["sand dollar"])))) > 13) blackGlass();
@@ -13164,7 +13179,7 @@ function initialization() {
   if (inSeaPath()) dailies();
 
   // Refuel the Asdon Martin with soda bread, only after the prism breaks.
-  if (inAftercore() && installed$2() && !highShiny() && !get$1("_missileLauncherUsed") && get$1("_sebMissileFailed") !== "true" && kolmafia.getFuel() < 100 && kolmafia.retrieveItem(17, $item(_templateObject52$5 || (_templateObject52$5 = _taggedTemplateLiteral(["loaf of soda bread"]))))) {
+  if (inAftercore() && installed$2() && !highShiny() && !get$1("_missileLauncherUsed") && !get$1("_sebMissileFailed", false) && kolmafia.getFuel() < 100 && kolmafia.retrieveItem(17, $item(_templateObject52$5 || (_templateObject52$5 = _taggedTemplateLiteral(["loaf of soda bread"]))))) {
     insertFuel($item(_templateObject53$5 || (_templateObject53$5 = _taggedTemplateLiteral(["loaf of soda bread"]))), 17);
   }
 }
@@ -13359,9 +13374,9 @@ var _templateObject$7, _templateObject2$7, _templateObject3$7, _templateObject4$
 // Ported from unlockGuild() in UnderTheSea.ash.
 
 function guildWanted() {
-  return get$1("questG03Ego") === "unstarted" && kolmafia.itemAmount($item(_templateObject$7 || (_templateObject$7 = _taggedTemplateLiteral(["closed-circuit pay phone"])))) > 0 && inSeaPath() && !highShiny();
+  return questStep("questG03Ego") === -1 && kolmafia.itemAmount($item(_templateObject$7 || (_templateObject$7 = _taggedTemplateLiteral(["closed-circuit pay phone"])))) > 0 && inSeaPath() && !highShiny();
 }
-var testState = () => get$1(questProp());
+var testStep = () => questStep(questProp());
 var tearawayShortcut = () => kolmafia.myPrimestat() === $stat(_templateObject2$7 || (_templateObject2$7 = _taggedTemplateLiteral(["Moxie"]))) && haveItem($item(_templateObject3$7 || (_templateObject3$7 = _taggedTemplateLiteral(["tearaway pants"]))));
 function testGear() {
   var gear = new Gear("item drop", questLoc());
@@ -13380,8 +13395,8 @@ var GuildQuest = {
   name: "Guild",
   tasks: [{
     name: "Challenge",
-    ready: () => guildWanted() && testState() !== "started",
-    completed: () => testState() === "finished",
+    ready: () => guildWanted() && testStep() !== 0,
+    completed: () => testStep() === 999,
     do: () => {
       // Moxie can skip the grind in tearaway pants.
       if (tearawayShortcut()) kolmafia.equip($item(_templateObject14$6 || (_templateObject14$6 = _taggedTemplateLiteral(["tearaway pants"]))));
@@ -13392,8 +13407,8 @@ var GuildQuest = {
     }
   }, {
     name: "Test",
-    ready: () => guildWanted() && testState() === "started" && !tearawayShortcut(),
-    completed: () => testState() !== "started",
+    ready: () => guildWanted() && testStep() === 0 && !tearawayShortcut(),
+    completed: () => testStep() !== 0,
     before: () => {
       if (haveItem($item(_templateObject15$6 || (_templateObject15$6 = _taggedTemplateLiteral(["Greatest American Pants"])))) && kolmafia.itemAmount($item(_templateObject16$6 || (_templateObject16$6 = _taggedTemplateLiteral(["Greatest American Pants"])))) === 0) {
         pullSequence($item(_templateObject17$6 || (_templateObject17$6 = _taggedTemplateLiteral(["Greatest American Pants"]))));
@@ -13409,8 +13424,8 @@ var GuildQuest = {
     postAdventure: false
   }, {
     name: "Open the Ego quest",
-    ready: () => guildWanted() && testState() === "finished",
-    completed: () => get$1("questG03Ego") !== "unstarted",
+    ready: () => guildWanted() && testStep() === 999,
+    completed: () => questStep("questG03Ego") >= 0,
     do: () => {
       kolmafia.visitUrl("guild.php?place=ocg");
       kolmafia.visitUrl("guild.php?place=ocg");
@@ -13427,21 +13442,11 @@ var _templateObject$6, _templateObject2$6, _templateObject3$6, _templateObject4$
 // SWordLasso(), flytrap(), fitzsimmons(), grandpa() and the steps between them
 // in seaMonkees() in UnderTheSea.ash.
 
-var MONKEES_STEPS = ["unstarted", "started"];
-
-/** questS02Monkees as a number: -1 unstarted, 0 started, N for stepN, 999 finished. */
-function monkeesStep() {
-  var value = get$1("questS02Monkees");
-  if (value === "finished") return 999;
-  var index = MONKEES_STEPS.indexOf(value);
-  if (index >= 0) return index - 1;
-  return kolmafia.toInt(value.replace("step", ""));
-}
 var garden = $location(_templateObject$6 || (_templateObject$6 = _taggedTemplateLiteral(["An Octopus's Garden"])));
 var pellet = $item(_templateObject2$6 || (_templateObject2$6 = _taggedTemplateLiteral(["wriggling flytrap pellet"])));
 var sword$2 = swordOfSWords;
 var havePellet = () => kolmafia.itemAmount(pellet) > 0;
-var flytrapPending = () => monkeesStep() === -1 && !havePellet();
+var flytrapPending = () => questStep("questS02Monkees") === -1 && !havePellet();
 
 /** The sword and spade route to the skeleton store, for saberless kits. */
 var skeletonRoute = () => flytrapPending() && !highShiny() && have$g(sword$2) && kolmafia.availableAmount($item(_templateObject3$6 || (_templateObject3$6 = _taggedTemplateLiteral(["Archaeologist's Spade"])))) > 0;
@@ -13530,16 +13535,16 @@ var MonkeesQuest = {
     post: () => timeSpinnerRefight($location(_templateObject24$5 || (_templateObject24$5 = _taggedTemplateLiteral(["An Octopus's Garden"]))))
   }, {
     name: "Flytrap: use pellet",
-    ready: () => monkeesStep() === -1 && havePellet(),
-    completed: () => monkeesStep() >= 0,
+    ready: () => questStep("questS02Monkees") === -1 && havePellet(),
+    completed: () => questStep("questS02Monkees") >= 0,
     do: () => kolmafia.use(pellet),
     limit: {
       tries: 1
     }
   }, {
     name: "Little Brother",
-    ready: () => monkeesStep() === 0,
-    completed: () => monkeesStep() >= 1,
+    ready: () => questStep("questS02Monkees") === 0,
+    completed: () => questStep("questS02Monkees") >= 1,
     do: () => {
       equipSwimTrunks();
       kolmafia.visitUrl("monkeycastle.php?who=1");
@@ -13549,8 +13554,8 @@ var MonkeesQuest = {
     }
   }, {
     name: "Wreck of the Edgar Fitzsimmons",
-    ready: () => monkeesStep() === 1,
-    completed: () => monkeesStep() >= 2,
+    ready: () => questStep("questS02Monkees") === 1,
+    completed: () => questStep("questS02Monkees") >= 2,
     before: () => {
       forcingFitzsimmons = ncForceEstimate() >= 4;
       if (forcingFitzsimmons) ncForce();
@@ -13568,8 +13573,8 @@ var MonkeesQuest = {
     do: $location(_templateObject30$5 || (_templateObject30$5 = _taggedTemplateLiteral(["The Wreck of the Edgar Fitzsimmons"])))
   }, {
     name: "Big Brother",
-    ready: () => monkeesStep() === 2,
-    completed: () => monkeesStep() >= 3,
+    ready: () => questStep("questS02Monkees") === 2,
+    completed: () => questStep("questS02Monkees") >= 3,
     do: () => {
       equipSwimTrunks();
       kolmafia.visitUrl("monkeycastle.php?who=2");
@@ -13580,8 +13585,8 @@ var MonkeesQuest = {
     }
   }, {
     name: "Grandpa",
-    ready: () => monkeesStep() === 4,
-    completed: () => monkeesStep() >= 5,
+    ready: () => questStep("questS02Monkees") === 4,
+    completed: () => questStep("questS02Monkees") >= 5,
     before: () => {
       if (!have$g($effect(_templateObject31$5 || (_templateObject31$5 = _taggedTemplateLiteral(["Colorfully Concealed"])))) && !lowShiny()) {
         pullSequence($item(_templateObject32$5 || (_templateObject32$5 = _taggedTemplateLiteral(["Mer-kin hidepaint"]))));
@@ -13611,8 +13616,8 @@ var MonkeesQuest = {
     do: () => pearlLoc()
   }, {
     name: "Ask Grandpa about Grandma",
-    ready: () => monkeesStep() === 5,
-    completed: () => monkeesStep() >= 6,
+    ready: () => questStep("questS02Monkees") === 5,
+    completed: () => questStep("questS02Monkees") >= 6,
     do: () => kolmafia.cliExecute("grandpa grandma"),
     limit: {
       tries: 1
@@ -13640,7 +13645,7 @@ function getSandDollar() {
 function oldGuy() {
   while (kolmafia.itemAmount($item(_templateObject1$5 || (_templateObject1$5 = _taggedTemplateLiteral(["sand dollar"])))) < 50) getSandDollar();
   blackGlass();
-  if (!have$g($item(_templateObject10$5 || (_templateObject10$5 = _taggedTemplateLiteral(["damp old boot"])))) && get$1("questS01OldGuy") === "started") {
+  if (!have$g($item(_templateObject10$5 || (_templateObject10$5 = _taggedTemplateLiteral(["damp old boot"])))) && questStep("questS01OldGuy") === 0) {
     kolmafia.buy($coinmaster(_templateObject11$5 || (_templateObject11$5 = _taggedTemplateLiteral(["Big Brother"]))), 1, $item(_templateObject12$5 || (_templateObject12$5 = _taggedTemplateLiteral(["damp old boot"]))));
   }
   kolmafia.visitUrl("place.php?whichplace=sea_oldman&action=oldman_oldman&preaction=pickreward&whichreward=6313");
@@ -13792,15 +13797,15 @@ function shadowRiftGear() {
   if (get$1("lassoTrainingCount") < 20) gear.ifEquip($item(_templateObject40$4 || (_templateObject40$4 = _taggedTemplateLiteral(["sea cowboy hat"]))), $item(_templateObject41$4 || (_templateObject41$4 = _taggedTemplateLiteral(["sea chaps"]))));
   return gear.ifEquip($item(_templateObject42$4 || (_templateObject42$4 = _taggedTemplateLiteral(["bat wings"]))), $item(_templateObject43$4 || (_templateObject43$4 = _taggedTemplateLiteral(["Everfull Dart Holster"]))), $item(_templateObject44$4 || (_templateObject44$4 = _taggedTemplateLiteral(["toy Cupid bow"])))).baseball();
 }
-var riftQuest = () => get$1("questRufus");
+var riftQuest = () => questStep("questRufus");
 
 /** Shadow Waters: the pay phone, the quest's noncombat, then one rift fight. */
 function shadowWaters() {
   return {
     outfit: () => shadowRiftGear().outfit(),
     do: () => {
-      if (riftQuest() === "unstarted") kolmafia.use($item(_templateObject45$4 || (_templateObject45$4 = _taggedTemplateLiteral(["closed-circuit pay phone"]))));
-      if (riftQuest() === "started") {
+      if (riftQuest() === -1) kolmafia.use($item(_templateObject45$4 || (_templateObject45$4 = _taggedTemplateLiteral(["closed-circuit pay phone"]))));
+      if (riftQuest() === 0) {
         ncForce();
         adv1Rift();
       }
@@ -13817,11 +13822,11 @@ function shadowWaters() {
 function shadowAffinity() {
   return {
     before: () => {
-      if (get$1("encountersUntilSRChoice") > 9 && riftQuest() === "unstarted" && kolmafia.itemAmount($item(_templateObject48$4 || (_templateObject48$4 = _taggedTemplateLiteral(["closed-circuit pay phone"])))) > 0) {
+      if (get$1("encountersUntilSRChoice") > 9 && riftQuest() === -1 && kolmafia.itemAmount($item(_templateObject48$4 || (_templateObject48$4 = _taggedTemplateLiteral(["closed-circuit pay phone"])))) > 0) {
         new Gear("item drop", rift$1).need($item(_templateObject49$4 || (_templateObject49$4 = _taggedTemplateLiteral(["Flash Liquidizer Ultra Dousing Accessory"]))), $item(_templateObject50$4 || (_templateObject50$4 = _taggedTemplateLiteral(["Monodent of the Sea"])))).ifEquip($item(_templateObject51$4 || (_templateObject51$4 = _taggedTemplateLiteral(["bat wings"])))).baseball().ifEquip($item(_templateObject52$4 || (_templateObject52$4 = _taggedTemplateLiteral(["Everfull Dart Holster"])))).dress();
         kolmafia.use($item(_templateObject53$4 || (_templateObject53$4 = _taggedTemplateLiteral(["closed-circuit pay phone"]))));
       }
-      if (riftQuest() === "unstarted") kolmafia.use($item(_templateObject54$4 || (_templateObject54$4 = _taggedTemplateLiteral(["closed-circuit pay phone"]))));
+      if (riftQuest() === -1) kolmafia.use($item(_templateObject54$4 || (_templateObject54$4 = _taggedTemplateLiteral(["closed-circuit pay phone"]))));
     },
     outfit: () => {
       var gear = shadowRiftGear();
@@ -14091,13 +14096,13 @@ var scaleHunt = () => (highShiny() || lowShiny() || !haveItem($item(_templateObj
 
 /** The outpost loop runs until the stashbox turns up or the corral opens, and through steps 6 to 8. */
 function outpostActive() {
-  var step = monkeesStep();
+  var step = questStep("questS02Monkees");
   return kolmafia.itemAmount($item(_templateObject5$3 || (_templateObject5$3 = _taggedTemplateLiteral(["Mer-kin stashbox"])))) === 0 && !get$1("corralUnlocked") || step >= 6 && step <= 8;
 }
 
 /** Kits without the CyberRealm route Back-to-the-Future the abyss from the outpost. */
 function bofaCaliginous() {
-  var step = monkeesStep();
+  var step = questStep("questS02Monkees");
   return outpostActive() && inSeaPath() && !momNCyber() && lassoShadow() && habitatsRecalled() === 2 && habitatFightsLeft() === 0 && kolmafia.toInt(get$1("momSeaMonkeeProgress")) < 40 && step >= 9 && step <= 12;
 }
 function outpostGear() {
@@ -14139,8 +14144,8 @@ var OutpostQuest = {
   name: "Outpost",
   tasks: [{
     name: "Golem recall",
-    ready: () => monkeesStep() === 6 && inSeaPath() && !highShiny() && kolmafia.haveSkill($skill(_templateObject23$3 || (_templateObject23$3 = _taggedTemplateLiteral(["Just the Facts"])))),
-    completed: () => get$1("_monsterHabitatsMonster") !== null || monkeesStep() > 6,
+    ready: () => questStep("questS02Monkees") === 6 && inSeaPath() && !highShiny() && kolmafia.haveSkill($skill(_templateObject23$3 || (_templateObject23$3 = _taggedTemplateLiteral(["Just the Facts"])))),
+    completed: () => get$1("_monsterHabitatsMonster") !== null || questStep("questS02Monkees") > 6,
     outfit: () => new Gear("item drop").forRole(have$g($familiar(_templateObject24$3 || (_templateObject24$3 = _taggedTemplateLiteral(["Red-Nosed Snapper"])))) ? "itdrop" : "-combat").ifEquip($item(_templateObject25$3 || (_templateObject25$3 = _taggedTemplateLiteral(["legendary seal-clubbing club"]))), $item(_templateObject26$3 || (_templateObject26$3 = _taggedTemplateLiteral(["McHugeLarge left pole"])))).bathysphere($item(_templateObject27$3 || (_templateObject27$3 = _taggedTemplateLiteral(["toy Cupid bow"])))).outfit(),
     prepare: () => {
       if (kolmafia.myFamiliar() === $familiar(_templateObject28$3 || (_templateObject28$3 = _taggedTemplateLiteral(["Red-Nosed Snapper"])))) trackPhylum($phylum(_templateObject29$3 || (_templateObject29$3 = _taggedTemplateLiteral(["construct"]))));
@@ -14241,8 +14246,8 @@ var OutpostQuest = {
     do: outpost
   }, {
     name: "Old Guy",
-    ready: () => get$1("questS01OldGuy") === "started",
-    completed: () => get$1("questS01OldGuy") !== "started",
+    ready: () => questStep("questS01OldGuy") === 0,
+    completed: () => questStep("questS01OldGuy") !== 0,
     do: () => oldGuy(),
     limit: {
       tries: 1
@@ -14507,7 +14512,7 @@ function prepCodpiece() {
 /** After the prism: spend the sand pennies and see the council. */
 var PathCleanupQuest = {
   name: "Path cleanup",
-  ready: () => inSeaPath() && get$1("questL13Final") === "finished",
+  ready: () => inSeaPath() && questStep("questL13Final") === 999,
   tasks: [_objectSpread2(_objectSpread2({
     name: "Sand pennies",
     completed: () => kolmafia.itemAmount($item(_templateObject37$2 || (_templateObject37$2 = _taggedTemplateLiteral(["sand penny"])))) <= 10
@@ -14525,11 +14530,11 @@ var PathCleanupQuest = {
   }), _objectSpread2(_objectSpread2({
     // The storage pull pilsners may need is refused before the prism breaks.
     name: "Council",
-    completed: () => get$1("_sebCouncilVisited") === "true"
+    completed: () => get$1("_sebCouncilVisited", false)
   }, action(() => {
     kolmafia.council();
     kolmafia.council();
-    kolmafia.setProperty("_sebCouncilVisited", "true");
+    _set("_sebCouncilVisited", true);
   })), {}, {
     limit: {
       tries: 1
@@ -14590,12 +14595,12 @@ var PostloopQuest = {
     },
     prepare: () => {
       kolmafia.setProperty("_sebScreechFired", "");
-      kolmafia.setProperty("_sebScreechReaim", "true");
+      _set("_sebScreechReaim", true);
     },
     do: $location(_templateObject47$2 || (_templateObject47$2 = _taggedTemplateLiteral(["The Smut Orc Logging Camp"]))),
     postAdventure: false,
     post: () => {
-      kolmafia.setProperty("_sebScreechReaim", "false");
+      _set("_sebScreechReaim", false);
       setCounter("_sebPearlSpent", spent() + 1);
       readScreech();
     }
@@ -14671,21 +14676,21 @@ var PostloopQuest = {
         kolmafia.abort("postloop pearls: 90 turns spent without finishing; something is wrong, bailing out.");
       }
       pearlResCheck(currentZone() ?? $location.none);
-      kolmafia.setProperty("_sebPearlFarm", "true");
+      _set("_sebPearlFarm", true);
     },
     do: () => currentZone() ?? $location.none,
     postAdventure: false,
     post: () => {
-      kolmafia.setProperty("_sebPearlFarm", "false");
+      _set("_sebPearlFarm", false);
       setCounter("_sebPearlSpent", spent() + 1);
     }
   }, _objectSpread2(_objectSpread2({
     name: "Load the codpiece",
     ready: () => flag("seb_postLoopPrepCodpiece") && !walking(),
-    completed: () => get$1("_sebCodpieceLoaded") === "true"
+    completed: () => get$1("_sebCodpieceLoaded", false)
   }, action(() => {
     prepCodpiece();
-    kolmafia.setProperty("_sebCodpieceLoaded", "true");
+    _set("_sebCodpieceLoaded", true);
   })), {}, {
     limit: {
       tries: 1
@@ -14693,9 +14698,9 @@ var PostloopQuest = {
   }), _objectSpread2(_objectSpread2({
     name: "Postloop command",
     ready: () => get$1("seb_postloopCommand") !== "" && !walking(),
-    completed: () => get$1("_sebPostloopCommandRan") === "true"
+    completed: () => get$1("_sebPostloopCommandRan", false)
   }, action(() => {
-    kolmafia.setProperty("_sebPostloopCommandRan", "true");
+    _set("_sebPostloopCommandRan", true);
     kolmafia.cliExecute(get$1("seb_postloopCommand"));
   })), {}, {
     limit: {
@@ -15102,7 +15107,7 @@ var TeflonQuest = {
   tasks: [{
     name: "Rift: dial in",
     ready: () => inSeaPath() && !highShiny() && get$1("encountersUntilSRChoice") > 9 && kolmafia.itemAmount($item(_templateObject118$1 || (_templateObject118$1 = _taggedTemplateLiteral(["closed-circuit pay phone"])))) > 0,
-    completed: () => get$1("questRufus") !== "unstarted",
+    completed: () => questStep("questRufus") >= 0,
     before: () => {
       kolmafia.retrieveItem($item(_templateObject119$1 || (_templateObject119$1 = _taggedTemplateLiteral(["oversized sparkler"]))));
       if (kolmafia.itemAmount($item(_templateObject120$1 || (_templateObject120$1 = _taggedTemplateLiteral(["lump of loyal latite"])))) > 0) kolmafia.use($item(_templateObject121$1 || (_templateObject121$1 = _taggedTemplateLiteral(["lump of loyal latite"]))));
@@ -15375,7 +15380,7 @@ var PostSeahorseQuest = {
     }
   }, {
     name: "Rufus",
-    completed: () => get$1("questRufus") !== "step1",
+    completed: () => questStep("questRufus") !== 1,
     do: () => {
       kolmafia.use($item(_templateObject184$1 || (_templateObject184$1 = _taggedTemplateLiteral(["closed-circuit pay phone"]))));
       return rift;
@@ -15871,7 +15876,7 @@ _objectSpread2({
   post: skateBuff
 }), _objectSpread2({
   name: "Tainted: abyss",
-  ready: () => priestReady() && tainted() && get$1("questS02Monkees") === "step12",
+  ready: () => priestReady() && tainted() && questStep("questS02Monkees") === 12,
   completed: () => !tainted()
 }, finishCaliginous()), _objectSpread2({
   name: "Tainted: nowhere to go",
@@ -16016,8 +16021,8 @@ var YogUrtQuest = {
 };
 var finishAbyss = _objectSpread2({
   name: "Finish the abyss",
-  ready: () => inSeaPath() && get$1("questS02Monkees") === "step12",
-  completed: () => get$1("questS02Monkees") !== "step12"
+  ready: () => inSeaPath() && questStep("questS02Monkees") === 12,
+  completed: () => questStep("questS02Monkees") !== 12
 }, finishCaliginous());
 var AfterYogUrtQuest = {
   name: "After Yog-Urt",
@@ -16229,7 +16234,7 @@ var FinalBossQuest = {
   tasks: [{
     name: "Naughty Sorceress",
     ready: () => inSeaPath() && get$1("shubJigguwattDefeated"),
-    completed: () => get$1("questL13Final") !== "unstarted",
+    completed: () => questStep("questL13Final") >= 0,
     outfit: () => finalBossGear().outfit(),
     do: () => {
       adv(center);
@@ -16241,12 +16246,12 @@ var FinalBossQuest = {
   }, {
     name: "Dad",
     ready: () => inAftercore() && aftercoreBoss() === "Dad",
-    completed: () => get$1("_sebDadFought") === "true",
+    completed: () => get$1("_sebDadFought", false),
     before: () => kolmafia.cliExecute("acquire 3 warbear whosit; acquire 3 volcanic ash; recover mp; tempura air"),
     outfit: () => new Gear("spell damage percent,sea", center).fam($familiar(_templateObject189 || (_templateObject189 = _taggedTemplateLiteral(["Tiny Plastic Santa Claus Skeleton"])))).need($item(_templateObject190 || (_templateObject190 = _taggedTemplateLiteral(["Goggles of Loathing"]))), $item(_templateObject191 || (_templateObject191 = _taggedTemplateLiteral(["Stick-Knife of Loathing"]))), $item(_templateObject192 || (_templateObject192 = _taggedTemplateLiteral(["Scepter of Loathing"]))), $item(_templateObject193 || (_templateObject193 = _taggedTemplateLiteral(["Jeans of Loathing"]))), $item(_templateObject194 || (_templateObject194 = _taggedTemplateLiteral(["Treads of Loathing"]))), $item(_templateObject195 || (_templateObject195 = _taggedTemplateLiteral(["Belt of Loathing"]))), $item(_templateObject196 || (_templateObject196 = _taggedTemplateLiteral(["little bitty bathysphere"])))).outfit(),
     prepare: () => kolmafia.setProperty("mpAutoRecoveryTarget", "1"),
     do: () => {
-      kolmafia.setProperty("_sebDadFought", "true");
+      _set("_sebDadFought", true);
       return center;
     },
     limit: {
@@ -16298,7 +16303,7 @@ function main(command) {
   // from the game, so a rerun picks up where the last one stopped.
   var engine = new SebEngine(getTasks([LassoQuest, GuildQuest, MonkeesQuest, OutpostQuest, SeahorseRouteQuest, TeflonQuest, BackupLassoQuest, TamingQuest, PostSeahorseQuest, YogUrtQuest, AfterYogUrtQuest, ShubQuest, FinalBossQuest, PathCleanupQuest, // The postloop steps wait for the council visit that closes the path.
   _objectSpread2(_objectSpread2({}, PostloopQuest), {}, {
-    ready: () => get$1("_sebCouncilVisited") === "true"
+    ready: () => get$1("_sebCouncilVisited", false)
   })]), {
     ccs: SEB_CCS
   });
@@ -16308,7 +16313,7 @@ function main(command) {
     // Priming, in case the last run aborted mid-combat.
     postAdventure();
     engine.run();
-    if (inSeaPath() && get$1("questL13Final") !== "finished") {
+    if (inSeaPath() && questStep("questL13Final") < 999) {
       kolmafia.print("SEB: no task is ready to run, but the prism isn't broken yet. Check the log above.", "red");
     }
   } finally {
