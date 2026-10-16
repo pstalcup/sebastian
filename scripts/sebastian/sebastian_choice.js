@@ -700,9 +700,9 @@ createSingleConstant(kolmafia.Stat, kolmafia.toStat);
  */
 createSingleConstant(kolmafia.Thrall, kolmafia.toThrall);
 
-var _templateObject17$1;
+var _templateObject13;
 function cheatsheetsNeeded() {
-  return kolmafia.itemAmount($item(_templateObject17$1 || (_templateObject17$1 = _taggedTemplateLiteral(["Mer-kin cheatsheet"])))) < 9 && get("merkinVocabularyMastery") === 0;
+  return kolmafia.itemAmount($item(_templateObject13 || (_templateObject13 = _taggedTemplateLiteral(["Mer-kin cheatsheet"])))) < 9 && get("merkinVocabularyMastery") === 0;
 }
 
 var _templateObject$1;
@@ -760,8 +760,8 @@ function stashboxCheck(priority) {
   var option = priority.find(opt => !checked.includes("".concat(opt)));
   if (option === undefined) return;
   kolmafia.runChoice(option);
-  kolmafia.setProperty("stashboxChecked", checked === "" ? "".concat(option) : "".concat(checked, ",").concat(option));
-  if (kolmafia.itemAmount($item(_templateObject || (_templateObject = _taggedTemplateLiteral(["Mer-kin stashbox"])))) > 0) kolmafia.setProperty("stashboxFound", "".concat(option));
+  _set("stashboxChecked", checked === "" ? "".concat(option) : "".concat(checked, ",").concat(option));
+  if (kolmafia.itemAmount($item(_templateObject || (_templateObject = _taggedTemplateLiteral(["Mer-kin stashbox"])))) > 0) _set("stashboxFound", option);
 }
 
 /** Pick the first option whose text contains the keyword. */
@@ -781,7 +781,7 @@ function pickChoice(keyword) {
 /** The school noncombats seen, the last five, so the lounge's place in the cycle is known. */
 function queueElementary() {
   var queue = get("elementaryQueue") || "000, 000, 000, 000, 000";
-  kolmafia.setProperty("elementaryQueue", "".concat(queue, ", ").concat(kolmafia.lastChoice()).slice(5));
+  _set("elementaryQueue", "".concat(queue, ", ").concat(kolmafia.lastChoice()).slice(5));
 }
 function dreadScrollPuzzle() {
   var scroll = n => get("dreadScroll".concat(n), 0);
@@ -795,19 +795,19 @@ function dreadScrollPuzzle() {
   var answers = [1, 2, 3, 4, 5, 6, 7, 8].map(n => "pro".concat(n, "=").concat(n === 7 ? scroll7 : scroll(n))).join("&");
   kolmafia.runChoice(1, answers);
   kolmafia.waitq(3);
-  if (kolmafia.haveEffect($effect(_templateObject2 || (_templateObject2 = _taggedTemplateLiteral(["Deep-Tainted Mind"])))) === 0) kolmafia.setProperty("dreadScroll7", "".concat(scroll7));
+  if (kolmafia.haveEffect($effect(_templateObject2 || (_templateObject2 = _taggedTemplateLiteral(["Deep-Tainted Mind"])))) === 0) _set("dreadScroll7", scroll7);
 }
 
 /** The Mer-kin catalog: spade an unknown card, and note which card gave each clue. */
 function dreadCard() {
   var options = kolmafia.availableChoiceOptions();
   if (get("catalogChecked") === "false") {
-    kolmafia.setProperty("catalogChecked", "true");
+    _set("catalogChecked", true);
     for (var _i6 = 0, _Object$entries2 = Object.entries(options); _i6 < _Object$entries2.length; _i6++) {
       var _Object$entries2$_i = _slicedToArray(_Object$entries2[_i6], 2),
         option = _Object$entries2$_i[0],
         text = _Object$entries2$_i[1];
-      kolmafia.setProperty("cardChoice".concat(option), text);
+      _set("cardChoice".concat(option), text);
     }
   }
   var catalog = get("merkinCatalogChoices");
@@ -823,11 +823,11 @@ function dreadCard() {
   kolmafia.runChoice(dread);
   for (var _i7 = 0, _arr5 = [1, 6, 8]; _i7 < _arr5.length; _i7++) {
     var n = _arr5[_i7];
-    if (get("DS".concat(n)) === "true" || kolmafia.toInt(get("dreadScroll".concat(n))) === 0) continue;
-    kolmafia.setProperty("DS".concat(n), "true");
+    if (get("DS".concat(n), false) || kolmafia.toInt(get("dreadScroll".concat(n))) === 0) continue;
+    _set("DS".concat(n), true);
     for (var x = 1; x <= 10; x++) {
       if (get("cardChoice".concat(x)) === choice) {
-        kolmafia.setProperty("cardChoice".concat(x), "".concat(n, ":").concat(get("cardChoice".concat(x))));
+        _set("cardChoice".concat(x), "".concat(n, ":").concat(get("cardChoice".concat(x))));
       }
     }
     break;
@@ -880,7 +880,7 @@ function main(choice, page) {
     case 399:
     case 400:
       queueElementary();
-      kolmafia.setProperty("NCtoC", "true");
+      _set("NCtoC", true);
       kolmafia.runChoice(1);
       break;
     case 401:
@@ -932,7 +932,7 @@ function main(choice, page) {
     // The Peridot of Peril, from the same table as Map the Monsters.
     case 1557:
       {
-        kolmafia.setProperty("NCtoC", "true");
+        _set("NCtoC", true);
         var here = kolmafia.myLocation();
         var _target = zoneTarget(here);
         if (_target > 0) {
@@ -945,7 +945,7 @@ function main(choice, page) {
     // The Möbius strip.
     case 1562:
       {
-        var keyword = MOBIUS_KEYWORDS[kolmafia.toInt(get("_mobiusStripEncounters"))];
+        var keyword = MOBIUS_KEYWORDS[get("_mobiusStripEncounters")];
         if (keyword) pickChoice(keyword);else if (!pickChoice("investment tips")) pickChoice("from your future self");
         break;
       }

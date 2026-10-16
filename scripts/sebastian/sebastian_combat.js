@@ -1025,7 +1025,7 @@ createSingleConstant(kolmafia.Thrall, kolmafia.toThrall);
  */
 createPluralConstant(kolmafia.Thrall);
 
-var _templateObject2$4, _templateObject3$5, _templateObject4$4, _templateObject5$3, _templateObject10$3, _templateObject11$3, _templateObject12$3, _templateObject13$3, _templateObject14$3, _templateObject15$3, _templateObject16$3, _templateObject17$4, _templateObject18$3, _templateObject19$3, _templateObject20$3, _templateObject21$3, _templateObject22$3, _templateObject23$4, _templateObject24$3, _templateObject25$3, _templateObject26$3, _templateObject27$2, _templateObject28$2, _templateObject29$2, _templateObject30$2, _templateObject31$2, _templateObject32$2, _templateObject33$1, _templateObject34$1, _templateObject35$1, _templateObject48$2, _templateObject49$2, _templateObject50$2, _templateObject51$2, _templateObject52$1, _templateObject53$2, _templateObject54$1;
+var _templateObject2$4, _templateObject3$5, _templateObject4$4, _templateObject5$3, _templateObject10$3, _templateObject11$3, _templateObject12$3, _templateObject13$3, _templateObject14$2, _templateObject15$2, _templateObject16$2, _templateObject17$3, _templateObject18$3, _templateObject19$4, _templateObject20$3, _templateObject21$3, _templateObject22$3, _templateObject23$3, _templateObject24$3, _templateObject25$3, _templateObject26$3, _templateObject27$2, _templateObject28$2, _templateObject29$2, _templateObject30$2, _templateObject31$2, _templateObject32$2, _templateObject33$1, _templateObject34$1, _templateObject35$1, _templateObject48$2, _templateObject49$2, _templateObject50$2, _templateObject51$2, _templateObject52$1, _templateObject53$2, _templateObject54$1;
 /**
  * Determine whether the player "has" any entity which one could feasibly "have".
  *
@@ -1122,9 +1122,9 @@ var holidayWanderers = new Map([["El Dia De Los Muertos Borrachos", $monsters(_t
 function getTodaysHolidayWanderers() {
   return kolmafia.holiday().split("/").flatMap(holiday => holidayWanderers.get(holiday) ?? []);
 }
-new Map([["standing around flexing their muscles and using grip exercisers", $stat(_templateObject13$3 || (_templateObject13$3 = _taggedTemplateLiteral(["Muscle"])))], ["sitting around playing chess and solving complicated-looking logic puzzles", $stat(_templateObject14$3 || (_templateObject14$3 = _taggedTemplateLiteral(["Mysticality"])))], ["all wearing sunglasses and dancing", $stat(_templateObject15$3 || (_templateObject15$3 = _taggedTemplateLiteral(["Moxie"])))]]);
-new Map([["people, all of whom appear to be on fire", $element(_templateObject16$3 || (_templateObject16$3 = _taggedTemplateLiteral(["hot"])))], ["people, surrounded by a cloud of eldritch mist", $element(_templateObject17$4 || (_templateObject17$4 = _taggedTemplateLiteral(["spooky"])))], ["greasy-looking people furtively skulking around", $element(_templateObject18$3 || (_templateObject18$3 = _taggedTemplateLiteral(["sleaze"])))], ["people, surrounded by garbage and clouds of flies", $element(_templateObject19$3 || (_templateObject19$3 = _taggedTemplateLiteral(["stench"])))], ["people, clustered around a group of igloos", $element(_templateObject20$3 || (_templateObject20$3 = _taggedTemplateLiteral(["cold"])))]]);
-new Map([["smoldering bushes on the outskirts of a hedge maze", $element(_templateObject21$3 || (_templateObject21$3 = _taggedTemplateLiteral(["hot"])))], ["creepy-looking black bushes on the outskirts of a hedge maze", $element(_templateObject22$3 || (_templateObject22$3 = _taggedTemplateLiteral(["spooky"])))], ["purplish, greasy-looking hedges", $element(_templateObject23$4 || (_templateObject23$4 = _taggedTemplateLiteral(["sleaze"])))], ["nasty-looking, dripping green bushes on the outskirts of a hedge maze", $element(_templateObject24$3 || (_templateObject24$3 = _taggedTemplateLiteral(["stench"])))], ["frost-rimed bushes on the outskirts of a hedge maze", $element(_templateObject25$3 || (_templateObject25$3 = _taggedTemplateLiteral(["cold"])))]]);
+new Map([["standing around flexing their muscles and using grip exercisers", $stat(_templateObject13$3 || (_templateObject13$3 = _taggedTemplateLiteral(["Muscle"])))], ["sitting around playing chess and solving complicated-looking logic puzzles", $stat(_templateObject14$2 || (_templateObject14$2 = _taggedTemplateLiteral(["Mysticality"])))], ["all wearing sunglasses and dancing", $stat(_templateObject15$2 || (_templateObject15$2 = _taggedTemplateLiteral(["Moxie"])))]]);
+new Map([["people, all of whom appear to be on fire", $element(_templateObject16$2 || (_templateObject16$2 = _taggedTemplateLiteral(["hot"])))], ["people, surrounded by a cloud of eldritch mist", $element(_templateObject17$3 || (_templateObject17$3 = _taggedTemplateLiteral(["spooky"])))], ["greasy-looking people furtively skulking around", $element(_templateObject18$3 || (_templateObject18$3 = _taggedTemplateLiteral(["sleaze"])))], ["people, surrounded by garbage and clouds of flies", $element(_templateObject19$4 || (_templateObject19$4 = _taggedTemplateLiteral(["stench"])))], ["people, clustered around a group of igloos", $element(_templateObject20$3 || (_templateObject20$3 = _taggedTemplateLiteral(["cold"])))]]);
+new Map([["smoldering bushes on the outskirts of a hedge maze", $element(_templateObject21$3 || (_templateObject21$3 = _taggedTemplateLiteral(["hot"])))], ["creepy-looking black bushes on the outskirts of a hedge maze", $element(_templateObject22$3 || (_templateObject22$3 = _taggedTemplateLiteral(["spooky"])))], ["purplish, greasy-looking hedges", $element(_templateObject23$3 || (_templateObject23$3 = _taggedTemplateLiteral(["sleaze"])))], ["nasty-looking, dripping green bushes on the outskirts of a hedge maze", $element(_templateObject24$3 || (_templateObject24$3 = _taggedTemplateLiteral(["stench"])))], ["frost-rimed bushes on the outskirts of a hedge maze", $element(_templateObject25$3 || (_templateObject25$3 = _taggedTemplateLiteral(["cold"])))]]);
 new Map([["smoke rising from deeper within the maze", $element(_templateObject26$3 || (_templateObject26$3 = _taggedTemplateLiteral(["hot"])))], ["a miasma of eldritch vapors rising from deeper within the maze", $element(_templateObject27$2 || (_templateObject27$2 = _taggedTemplateLiteral(["spooky"])))], ["a greasy purple cloud hanging over the center of the maze", $element(_templateObject28$2 || (_templateObject28$2 = _taggedTemplateLiteral(["sleaze"])))], ["a cloud of green gas hovering over the maze", $element(_templateObject29$2 || (_templateObject29$2 = _taggedTemplateLiteral(["stench"])))], ["wintry mists rising from deeper within the maze", $element(_templateObject30$2 || (_templateObject30$2 = _taggedTemplateLiteral(["cold"])))]]);
 new Map([["with lava slowly oozing out of it", $element(_templateObject31$2 || (_templateObject31$2 = _taggedTemplateLiteral(["hot"])))], ["surrounded by creepy black mist", $element(_templateObject32$2 || (_templateObject32$2 = _taggedTemplateLiteral(["spooky"])))], ["that occasionally vomits out a greasy ball of hair", $element(_templateObject33$1 || (_templateObject33$1 = _taggedTemplateLiteral(["sleaze"])))], ["disgorging a really surprising amount of sewage", $element(_templateObject34$1 || (_templateObject34$1 = _taggedTemplateLiteral(["stench"])))], ["occasionally disgorging a bunch of ice cubes", $element(_templateObject35$1 || (_templateObject35$1 = _taggedTemplateLiteral(["cold"])))]]);
 /**
@@ -2261,7 +2261,7 @@ makePerkFunction(BULLSEYE_COOLDOWN_PERKS, perks => clamp(50 - 10 * perks, 30, 50
  */
 makePerkFunction("Expand your dart capacity by 1", perks => 1 + perks);
 
-var _templateObject2$2, _templateObject3$3, _templateObject4$3, _templateObject5$2, _templateObject6$2, _templateObject7$2, _templateObject8$2, _templateObject9$2, _templateObject0$2, _templateObject1$2, _templateObject10$2, _templateObject11$2, _templateObject12$2, _templateObject13$2, _templateObject14$2, _templateObject15$2, _templateObject16$2, _templateObject17$3, _templateObject18$2, _templateObject19$2, _templateObject20$2, _templateObject21$2, _templateObject22$2, _templateObject23$3, _templateObject24$2, _templateObject25$2, _templateObject26$2;
+var _templateObject2$2, _templateObject3$3, _templateObject4$3, _templateObject5$2, _templateObject6$2, _templateObject7$2, _templateObject8$2, _templateObject9$2, _templateObject0$2, _templateObject1$2, _templateObject10$2, _templateObject11$2, _templateObject12$2, _templateObject13$2, _templateObject14$1, _templateObject15$1, _templateObject16$1, _templateObject17$2, _templateObject18$2, _templateObject19$3, _templateObject20$2, _templateObject21$2, _templateObject22$2, _templateObject23$2, _templateObject24$2, _templateObject25$2, _templateObject26$2;
 /**
  * @param skill The BCZ skill to check.
  * @param castNumber The number of times you've cast the skill
@@ -2281,8 +2281,8 @@ function skillCost(skill) {
     return [11, 23, 37][_position] * 10 ** (_cycle + 5);
   }
 }
-new Map([[$skill(_templateObject2$2 || (_templateObject2$2 = _taggedTemplateLiteral(["BCZ: Blood Geyser"]))), $stat(_templateObject3$3 || (_templateObject3$3 = _taggedTemplateLiteral(["SubMuscle"])))], [$skill(_templateObject4$3 || (_templateObject4$3 = _taggedTemplateLiteral(["BCZ: Refracted Gaze"]))), $stat(_templateObject5$2 || (_templateObject5$2 = _taggedTemplateLiteral(["SubMysticality"])))], [$skill(_templateObject6$2 || (_templateObject6$2 = _taggedTemplateLiteral(["BCZ: Sweat Bullets"]))), $stat(_templateObject7$2 || (_templateObject7$2 = _taggedTemplateLiteral(["SubMoxie"])))], [$skill(_templateObject8$2 || (_templateObject8$2 = _taggedTemplateLiteral(["BCZ: Blood Bath"]))), $stat(_templateObject9$2 || (_templateObject9$2 = _taggedTemplateLiteral(["SubMuscle"])))], [$skill(_templateObject0$2 || (_templateObject0$2 = _taggedTemplateLiteral(["BCZ: Craft a Pheromone Cocktail"]))), $stat(_templateObject1$2 || (_templateObject1$2 = _taggedTemplateLiteral(["SubMoxie"])))], [$skill(_templateObject10$2 || (_templateObject10$2 = _taggedTemplateLiteral(["BCZ: Create Blood Thinner"]))), $stat(_templateObject11$2 || (_templateObject11$2 = _taggedTemplateLiteral(["SubMuscle"])))], [$skill(_templateObject12$2 || (_templateObject12$2 = _taggedTemplateLiteral(["BCZ: Dial it up to 11"]))), $stat(_templateObject13$2 || (_templateObject13$2 = _taggedTemplateLiteral(["SubMysticality"])))], [$skill(_templateObject14$2 || (_templateObject14$2 = _taggedTemplateLiteral(["BCZ: Prepare Spinal Tapas"]))), $stat(_templateObject15$2 || (_templateObject15$2 = _taggedTemplateLiteral(["SubMysticality"])))], [$skill(_templateObject16$2 || (_templateObject16$2 = _taggedTemplateLiteral(["BCZ: Sweat Equity"]))), $stat(_templateObject17$3 || (_templateObject17$3 = _taggedTemplateLiteral(["SubMoxie"])))]]);
-var PREFS = new Map([[$skill(_templateObject18$2 || (_templateObject18$2 = _taggedTemplateLiteral(["BCZ: Blood Geyser"]))), "_bczBloodGeyserCasts"], [$skill(_templateObject19$2 || (_templateObject19$2 = _taggedTemplateLiteral(["BCZ: Refracted Gaze"]))), "_bczRefractedGazeCasts"], [$skill(_templateObject20$2 || (_templateObject20$2 = _taggedTemplateLiteral(["BCZ: Sweat Bullets"]))), "_bczSweatBulletsCasts"], [$skill(_templateObject21$2 || (_templateObject21$2 = _taggedTemplateLiteral(["BCZ: Blood Bath"]))), "_bczBloodBathCasts"], [$skill(_templateObject22$2 || (_templateObject22$2 = _taggedTemplateLiteral(["BCZ: Dial it up to 11"]))), "_bczDialitupCasts"], [$skill(_templateObject23$3 || (_templateObject23$3 = _taggedTemplateLiteral(["BCZ: Sweat Equity"]))), "_bczSweatEquityCasts"], [$skill(_templateObject24$2 || (_templateObject24$2 = _taggedTemplateLiteral(["BCZ: Create Blood Thinner"]))), "_bczBloodThinnerCasts"], [$skill(_templateObject25$2 || (_templateObject25$2 = _taggedTemplateLiteral(["BCZ: Prepare Spinal Tapas"]))), "_bczSpinalTapasCasts"], [$skill(_templateObject26$2 || (_templateObject26$2 = _taggedTemplateLiteral(["BCZ: Craft a Pheromone Cocktail"]))), "_bczPheromoneCocktailCasts"]]);
+new Map([[$skill(_templateObject2$2 || (_templateObject2$2 = _taggedTemplateLiteral(["BCZ: Blood Geyser"]))), $stat(_templateObject3$3 || (_templateObject3$3 = _taggedTemplateLiteral(["SubMuscle"])))], [$skill(_templateObject4$3 || (_templateObject4$3 = _taggedTemplateLiteral(["BCZ: Refracted Gaze"]))), $stat(_templateObject5$2 || (_templateObject5$2 = _taggedTemplateLiteral(["SubMysticality"])))], [$skill(_templateObject6$2 || (_templateObject6$2 = _taggedTemplateLiteral(["BCZ: Sweat Bullets"]))), $stat(_templateObject7$2 || (_templateObject7$2 = _taggedTemplateLiteral(["SubMoxie"])))], [$skill(_templateObject8$2 || (_templateObject8$2 = _taggedTemplateLiteral(["BCZ: Blood Bath"]))), $stat(_templateObject9$2 || (_templateObject9$2 = _taggedTemplateLiteral(["SubMuscle"])))], [$skill(_templateObject0$2 || (_templateObject0$2 = _taggedTemplateLiteral(["BCZ: Craft a Pheromone Cocktail"]))), $stat(_templateObject1$2 || (_templateObject1$2 = _taggedTemplateLiteral(["SubMoxie"])))], [$skill(_templateObject10$2 || (_templateObject10$2 = _taggedTemplateLiteral(["BCZ: Create Blood Thinner"]))), $stat(_templateObject11$2 || (_templateObject11$2 = _taggedTemplateLiteral(["SubMuscle"])))], [$skill(_templateObject12$2 || (_templateObject12$2 = _taggedTemplateLiteral(["BCZ: Dial it up to 11"]))), $stat(_templateObject13$2 || (_templateObject13$2 = _taggedTemplateLiteral(["SubMysticality"])))], [$skill(_templateObject14$1 || (_templateObject14$1 = _taggedTemplateLiteral(["BCZ: Prepare Spinal Tapas"]))), $stat(_templateObject15$1 || (_templateObject15$1 = _taggedTemplateLiteral(["SubMysticality"])))], [$skill(_templateObject16$1 || (_templateObject16$1 = _taggedTemplateLiteral(["BCZ: Sweat Equity"]))), $stat(_templateObject17$2 || (_templateObject17$2 = _taggedTemplateLiteral(["SubMoxie"])))]]);
+var PREFS = new Map([[$skill(_templateObject18$2 || (_templateObject18$2 = _taggedTemplateLiteral(["BCZ: Blood Geyser"]))), "_bczBloodGeyserCasts"], [$skill(_templateObject19$3 || (_templateObject19$3 = _taggedTemplateLiteral(["BCZ: Refracted Gaze"]))), "_bczRefractedGazeCasts"], [$skill(_templateObject20$2 || (_templateObject20$2 = _taggedTemplateLiteral(["BCZ: Sweat Bullets"]))), "_bczSweatBulletsCasts"], [$skill(_templateObject21$2 || (_templateObject21$2 = _taggedTemplateLiteral(["BCZ: Blood Bath"]))), "_bczBloodBathCasts"], [$skill(_templateObject22$2 || (_templateObject22$2 = _taggedTemplateLiteral(["BCZ: Dial it up to 11"]))), "_bczDialitupCasts"], [$skill(_templateObject23$2 || (_templateObject23$2 = _taggedTemplateLiteral(["BCZ: Sweat Equity"]))), "_bczSweatEquityCasts"], [$skill(_templateObject24$2 || (_templateObject24$2 = _taggedTemplateLiteral(["BCZ: Create Blood Thinner"]))), "_bczBloodThinnerCasts"], [$skill(_templateObject25$2 || (_templateObject25$2 = _taggedTemplateLiteral(["BCZ: Prepare Spinal Tapas"]))), "_bczSpinalTapasCasts"], [$skill(_templateObject26$2 || (_templateObject26$2 = _taggedTemplateLiteral(["BCZ: Craft a Pheromone Cocktail"]))), "_bczPheromoneCocktailCasts"]]);
 /**
  * @param skill The BCZ skill to check.
  * @returns The number of casts of the skill already used, parsing the pref.
@@ -2325,7 +2325,7 @@ var _templateObject$3;
 // eslint-disable-next-line libram/verify-constants
 var swordOfSWords = $familiar(_templateObject$3 || (_templateObject$3 = _taggedTemplateLiteral(["Sword of S Words"])));
 
-var _templateObject$2, _templateObject3$1, _templateObject4$2, _templateObject5$1, _templateObject6$1, _templateObject7$1, _templateObject8$1, _templateObject9$1, _templateObject0$1, _templateObject1$1, _templateObject10$1, _templateObject11$1, _templateObject12$1, _templateObject13$1, _templateObject14$1, _templateObject15$1, _templateObject16$1, _templateObject17$2, _templateObject23$2;
+var _templateObject$2, _templateObject3$1, _templateObject4$2, _templateObject5$1, _templateObject6$1, _templateObject7$1, _templateObject8$1, _templateObject9$1, _templateObject0$1, _templateObject1$1, _templateObject10$1, _templateObject11$1, _templateObject12$1, _templateObject13$1, _templateObject19$2;
 
 // What the run still needs. Ported from the "Account states" and Force budget
 // helpers in UnderTheSeaGlobals.ash.
@@ -2352,7 +2352,7 @@ function prayerbeadsShort() {
 /** Use the Force charges left on the saber today. */
 function saberChargesLeft() {
   if (!haveItem($item(_templateObject11$1 || (_templateObject11$1 = _taggedTemplateLiteral(["Fourth of May Cosplay Saber"]))))) return 0;
-  return 5 - kolmafia.toInt(get("_saberForceUses"));
+  return 5 - get("_saberForceUses");
 }
 
 /** Charges left after the two the unholy diver hunt claims. */
@@ -2375,19 +2375,18 @@ function saberForcesFree() {
 
 /** Enough lassos thrown or in hand for the twenty training throws plus taming. */
 function doneWithCowboy() {
-  return kolmafia.toInt(get("lassoTrainingCount")) + 3 * kolmafia.itemAmount($item(_templateObject12$1 || (_templateObject12$1 = _taggedTemplateLiteral(["sea lasso"])))) >= 23;
+  return get("lassoTrainingCount") + 3 * kolmafia.itemAmount($item(_templateObject12$1 || (_templateObject12$1 = _taggedTemplateLiteral(["sea lasso"])))) >= 23;
 }
 function doneWithSeaCow() {
-  var leather = kolmafia.itemAmount($item(_templateObject13$1 || (_templateObject13$1 = _taggedTemplateLiteral(["sea leather"])))) + kolmafia.availableAmount($item(_templateObject14$1 || (_templateObject14$1 = _taggedTemplateLiteral(["sea chaps"])))) + kolmafia.availableAmount($item(_templateObject15$1 || (_templateObject15$1 = _taggedTemplateLiteral(["sea cowboy hat"]))));
-  return leather >= 2 && kolmafia.itemAmount($item(_templateObject16$1 || (_templateObject16$1 = _taggedTemplateLiteral(["sea cowbell"])))) >= 3;
+  return !seaCowNeeded();
 }
 function cheatsheetsNeeded() {
-  return kolmafia.itemAmount($item(_templateObject17$2 || (_templateObject17$2 = _taggedTemplateLiteral(["Mer-kin cheatsheet"])))) < 9 && get("merkinVocabularyMastery") === 0;
+  return kolmafia.itemAmount($item(_templateObject13$1 || (_templateObject13$1 = _taggedTemplateLiteral(["Mer-kin cheatsheet"])))) < 9 && get("merkinVocabularyMastery") === 0;
 }
 
 /** Items that lower Yog-Urt's and Shub's stats, one kind each. */
 function delevelers() {
-  return $items(_templateObject23$2 || (_templateObject23$2 = _taggedTemplateLiteral(["Mer-kin mouthsoap, crayon shavings, table tennis ball, sea lasso, sea cowbell"]))).filter(item => kolmafia.itemAmount(item) > 0).length;
+  return $items(_templateObject19$2 || (_templateObject19$2 = _taggedTemplateLiteral(["Mer-kin mouthsoap, crayon shavings, table tennis ball, sea lasso, sea cowbell"]))).filter(item => kolmafia.itemAmount(item) > 0).length;
 }
 
 /** Healings Yog-Urt's fight needs, by prayerbeads worn (0 to 3). */
@@ -2658,7 +2657,7 @@ function freeRun(banish) {
   return freeMonster(foe) ? new Macro() : freeRunAny(banish);
 }
 function bczGazeReady() {
-  if (get("NCtoC") === "true") return false;
+  if (get("NCtoC", false)) return false;
   return kolmafia.myBasestat($stat(_templateObject28 || (_templateObject28 = _taggedTemplateLiteral(["submysticality"])))) - 40000 > skillCost($skill(_templateObject29 || (_templateObject29 = _taggedTemplateLiteral(["BCZ: Refracted Gaze"]))));
 }
 
@@ -3163,7 +3162,7 @@ function corral(plan) {
     plan.step(feelNostalgic());
     // Club 'Em Across the Battlefield does nothing once a noncombat has
     // already been forced into a combat.
-    if (kolmafia.haveEquipped($item(_templateObject213 || (_templateObject213 = _taggedTemplateLiteral(["legendary seal-clubbing club"])))) && get("_clubEmBattlefieldUsed") < 5 && get("NCtoC") !== "true") {
+    if (kolmafia.haveEquipped($item(_templateObject213 || (_templateObject213 = _taggedTemplateLiteral(["legendary seal-clubbing club"])))) && get("_clubEmBattlefieldUsed") < 5 && !get("NCtoC", false)) {
       plan.trySkill(clubBattlefield);
     }
     plan.step(cleanUp());
@@ -3201,7 +3200,7 @@ function abyss(plan) {
 }
 function school(plan) {
   var club = kolmafia.haveEquipped($item(_templateObject233 || (_templateObject233 = _taggedTemplateLiteral(["legendary seal-clubbing club"])))) && get("_clubEmBattlefieldUsed") < 5;
-  var forced = get("NCtoC") === "true";
+  var forced = get("NCtoC", false);
   if (freeMonster(foe)) {
     if (!forced) plan.trySkill(gaze);
     if (club && !forced) plan.trySkill(clubBattlefield);else plan.step(cleanUp());
@@ -3278,7 +3277,7 @@ function colosseum(plan) {
   if (foe.boss && kolmafia.haveSkill($skill(_templateObject252 || (_templateObject252 = _taggedTemplateLiteral(["Saucegeyser"]))))) {
     // championCheck() reads _sebChampionRanEst to stop a rerun before the turn.
     if (geyserLowRoll() < kolmafia.monsterHp()) {
-      kolmafia.setProperty("_sebChampionRanEst", "".concat(geyserLowRoll()));
+      _set("_sebChampionRanEst", geyserLowRoll());
       var why = "SEB: ".concat(foe, " has ").concat(kolmafia.monsterHp(), " HP and one Saucegeyser is estimated at ") + "".concat(geyserLowRoll(), ". Raise Mysticality or spell damage, or fight it by hand, then rerun.");
       freeRunAny(false).runaway().submit();
       if (kolmafia.currentRound() > 0) why += " The fight is still in progress: finish it by hand.";
@@ -3286,7 +3285,7 @@ function colosseum(plan) {
       kolmafia.abort(why);
     }
     // Recorded before the cast: a kill ends the fight and the run moves on.
-    kolmafia.setProperty("_sebChampionRanEst", "".concat(geyserLowRoll()));
+    _set("_sebChampionRanEst", geyserLowRoll());
     plan.skill($skill(_templateObject253 || (_templateObject253 = _taggedTemplateLiteral(["Saucegeyser"]))));
   } else {
     plan.step(freeKill(false));
@@ -3407,7 +3406,7 @@ function noteScreechReady(page) {
   var stop = page.indexOf("</select>", start);
   if (stop < 0) return "";
   var ready = page.slice(start, stop).includes('value="7451"') ? "true" : "false";
-  kolmafia.setProperty("_sebScreechReady", ready);
+  _set("_sebScreechReady", ready);
   return ready;
 }
 
@@ -3417,11 +3416,11 @@ function screechReaim(page, plan) {
   // the caller no cast was attempted.
   var orc = foe.phylum === $phylum(_templateObject303 || (_templateObject303 = _taggedTemplateLiteral(["orc"])));
   if (get("_sebScreechFired") === "" && orc && noteScreechReady(page) === "false") {
-    kolmafia.setProperty("_sebScreechFired", "unready");
+    _set("_sebScreechFired", "unready");
   } else if (get("_sebScreechFired") === "" && orc) {
     var result = Macro.skill(screech).submit();
     // The line mafia itself reads to register the banish.
-    kolmafia.setProperty("_sebScreechFired", result.includes("releases an ear shattering screech") ? "true" : "false");
+    _set("_sebScreechFired", result.includes("releases an ear shattering screech") ? "true" : "false");
   }
   plan.step(freeKill(false)).step(cleanUp());
 }
