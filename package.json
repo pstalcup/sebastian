@@ -1,7 +1,7 @@
 {
   "name": "sebastian",
   "version": "0.1.0",
-  "description": "Automates the KoL underwater quests (a grimoire port of TheSea.ash)",
+  "description": "A grimoire port of UnderTheSea, the 11,037 Leagues Under the Sea run",
   "private": true,
   "license": "MIT",
   "scripts": {

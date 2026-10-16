@@ -1,22 +1,13 @@
-import {
-  getProperty,
-  inebrietyLimit,
-  myInebriety,
-  myLevel,
-  myMeat,
-  print,
-  putCloset,
-  takeCloset,
-  visitUrl,
-} from "kolmafia";
+import { cliExecute, getClanId, maximize, print, visitUrl, writeCcs } from "kolmafia";
 import { Args, getTasks } from "grimoire-kolmafia";
-import { get } from "libram";
 import { args } from "./args";
-import { SeaEngine } from "./engine";
-import { HelmetQuest, SushiMatQuest } from "./tasks/extras";
-import { MonkeesQuest } from "./tasks/monkees";
-import { OldGuyQuest } from "./tasks/oldGuy";
-import { SkateQuest } from "./tasks/skate";
+import { UTS_CCS, UtsEngine } from "./engine";
+import { initialization } from "./initialization";
+import { iotmChecklist, pullChecklist, skillChecklist } from "./lib/checklists";
+import { setDropsItems } from "./lib/gear";
+import { postAdventure } from "./lib/postAdventure";
+import { GuildQuest } from "./tasks/guild";
+import { LassoQuest, MonkeesQuest } from "./tasks/monkees";
 
 export function main(command?: string): void {
   Args.fill(args, command);
@@ -25,40 +16,49 @@ export function main(command?: string): void {
     return;
   }
 
-  if (myInebriety() > inebrietyLimit()) {
-    print(
-      "The Sea is too dangerous to try to traverse while intoxicated to the levels you're attempting. Try again tomorrow.",
-      "red",
-    );
-    return;
-  }
-  if (myLevel() < 13) {
-    print("The Sea is too dangerous for youngsters. Try again when you're older.", "red");
+  if (args.sim) {
+    // Report only: the checklists the run prints at startup, and nothing else.
+    iotmChecklist();
+    skillChecklist();
+    pullChecklist();
     return;
   }
 
-  // Refresh the Skate Park war status, which KoLmafia only learns by visiting.
-  if (args.skate > 0 && get("mapToTheSkateParkPurchased")) visitUrl("sea_skatepark.php");
+  if (args.postloop) {
+    print("The postloop steps are not ported yet; running UnderTheSea.ash postloop.", "blue");
+    cliExecute("UnderTheSea postloop");
+    return;
+  }
 
-  const closeted = args.closetMeat >= 0 ? Math.max(0, myMeat() - args.closetMeat) : 0;
-  const engine = new SeaEngine(
-    getTasks([MonkeesQuest, SkateQuest, OldGuyQuest, SushiMatQuest, HelmetQuest]),
-    // TheSea.ash left combat to the player, so fight with their CCS by default.
-    { ccs: args.ccs || getProperty("customCombatScript") },
-  );
+  setDropsItems(maximize("Drops Items", false) ? "Drops Items, sea" : "item drop, sea");
+  // Fights still go through the original ASH combat script.
+  writeCcs("[ default ]\nconsult UnderTheSeaCCS.ash\nabort", UTS_CCS);
+
+  const clan = getClanId();
+  // In seaMonkees() order: the early lasso, the guild, then the quest itself.
+  const engine = new UtsEngine(getTasks([LassoQuest, GuildQuest, MonkeesQuest]), {
+    ccs: UTS_CCS,
+  });
+
+  print("Starting UnderTheSea");
   try {
-    if (closeted > 0) putCloset(closeted);
+    initialization();
+    // Priming, in case the last run aborted mid-combat.
+    postAdventure();
     engine.run();
   } finally {
     engine.destruct();
-    if (closeted > 0) takeCloset(closeted);
+    // The Sheriff props come from a photo booth in another clan.
+    if (getClanId() !== clan) {
+      visitUrl(`showclan.php?whichclan=${clan}&action=joinclan&confirm=on`);
+    }
+    print("Ending UnderTheSea");
   }
 
-  const remaining = engine.tasks.filter((task) => !task.completed() && task.ready?.() !== false);
-  if (remaining.length > 0) {
-    print("Stopped with these steps left:", "orange");
-    remaining.forEach((task) => print(`  ${task.name}`, "orange"));
+  if (args.handoff) {
+    print("The ported phases are done; UnderTheSea.ash takes it from here.", "blue");
+    cliExecute("UnderTheSea");
   } else {
-    print("The Sea is done for now.", "green");
+    print("The ported phases are done. Run UnderTheSea to finish the run.", "blue");
   }
 }

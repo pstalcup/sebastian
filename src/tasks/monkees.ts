@@ -1,241 +1,283 @@
-import { create, faxbot, use, visitUrl } from "kolmafia";
-import { step } from "grimoire-kolmafia";
-import { $effect, $item, $location, $monster, $skill, get, have, set } from "libram";
-import { args } from "../args";
-import { at, SeaQuest } from "../engine";
 import {
-  askGrandpa,
-  castNoncombatBuffs,
-  getsome,
-  grandpaZone,
-  SAND_DOLLAR,
-  visitCastle,
-} from "../lib";
+  adv1,
+  availableAmount,
+  cliExecute,
+  getProperty,
+  itemAmount,
+  maximize,
+  myLocation,
+  myPrimestat,
+  print,
+  toFloat,
+  toInt,
+  use,
+  visitUrl,
+} from "kolmafia";
+import { $effect, $familiar, $item, $location, $monster, $stat, get, have } from "libram";
+import { UtsQuest } from "../engine";
+import { ashHelpers } from "../lib/ash";
+import { doSWord } from "../lib/familiar";
+import { dropsItems, Gear } from "../lib/gear";
+import { mood, resMood } from "../lib/mood";
+import { postAdventure, refreshMPRecovery } from "../lib/postAdventure";
+import { pullSequence } from "../lib/pulls";
+import {
+  baseballPlayers,
+  equipSwimTrunks,
+  mapMonster,
+  mapReady,
+  ncForce,
+  ncForceEstimate,
+  sheriffOutfit,
+  summon,
+} from "../lib/resources";
+import {
+  countSummons,
+  gotPeriled,
+  haveItem,
+  highShiny,
+  lowShiny,
+  pearlLoc,
+  pearlRes,
+} from "../lib/state";
 
-const MONKEES = "questS02Monkees";
+// The Sea Monkees quest up to asking Grandpa about Grandma. Ported from
+// SWordLasso(), flytrap(), fitzsimmons(), grandpa() and the steps between them
+// in seaMonkees() in UnderTheSea.ash.
 
-/** Topics TheSea.ash asks Grandpa about once, which unlock his shop items. */
-const GRANDPA_TOPICS = [
-  "Wizardfish",
-  "avius ticklium",
-  "Eel",
-  "Neptune flytrap",
-  "Octopus",
-  "Wreck",
-  "Diver",
-  "Reef",
-  "Belle",
-  "Fisherfish",
-  "Mine",
-  "Clownfish",
-  "Lounge lizardfish",
-  "Nurse shark",
-  "Scales",
-  "Groupie",
-];
+const MONKEES_STEPS = ["unstarted", "started"];
 
-/**
- * Hey Hey, Find The Monkees.
- *
- * TheSea.ash tracked its own progress in seafloor_monkeeStep and scraped the
- * castle for anchors like #littlebrother. KoLmafia now tracks the quest in
- * questS02Monkees, so each task here keys off that instead:
- *
- *   unstarted  find the castle (wriggling flytrap pellet)
- *   started    meet Little Brother
- *   step1      rescue Big Brother from the Wreck
- *   step2-3    talk to the brothers
- *   step4      find Grandpa
- *   step5      ask Grandpa about Grandma
- *   step6-7    collect Grandma's note and the yarn, show Grandpa the note
- *   step8      rescue Grandma from the Outpost
- *   step9-11   talk to the brothers, buy the black glass
- *   step12     find Mom in the Caliginous Abyss
- */
-export const MonkeesQuest: SeaQuest = {
-  name: "Monkees",
-  ready: () => args.monkees > 0,
+/** questS02Monkees as a number: -1 unstarted, 0 started, N for stepN, 999 finished. */
+export function monkeesStep(): number {
+  const value = getProperty("questS02Monkees");
+  if (value === "finished") return 999;
+  const index = MONKEES_STEPS.indexOf(value);
+  if (index >= 0) return index - 1;
+  return toInt(value.replace("step", ""));
+}
+
+const garden = $location`An Octopus's Garden`;
+const pellet = $item`wriggling flytrap pellet`;
+const sword = $familiar`Sword of S Words`;
+const havePellet = () => itemAmount(pellet) > 0;
+const flytrapPending = () => monkeesStep() === -1 && !havePellet();
+
+/** The sword and spade route to the skeleton store, for saberless kits. */
+const skeletonRoute = () =>
+  flytrapPending() &&
+  !highShiny() &&
+  have(sword) &&
+  availableAmount($item`Archaeologist's Spade`) > 0;
+
+let swordLassoTried = false;
+let forcingFitzsimmons = false;
+
+/** Sword of S Words, for runs that can't lasso-train in the shadow rift. */
+export const LassoQuest: UtsQuest = {
+  name: "Lasso",
   tasks: [
     {
-      name: "Talk to the Old Man",
-      completed: () => step("questS01OldGuy") >= 0,
-      do: () => visitUrl("place.php?whichplace=sea_oldman&action=oldman_oldman"),
-      limit: { tries: 1 },
-    },
-    {
-      name: "Fax Neptune Flytrap",
-      after: ["Talk to the Old Man"],
-      ready: () => args.faxNeptune && !get("_photocopyUsed"),
-      completed: () => step(MONKEES) >= 0 || have($item`wriggling flytrap pellet`),
-      do: () => {
-        if (!faxbot($monster`Neptune flytrap`))
-          throw new Error("Faxbot failed! Try the script again later.");
-        use($item`photocopied monster`);
+      name: "S Word sea cowboy",
+      ready: () =>
+        have(sword) &&
+        countSummons() >= 3 &&
+        (highShiny() || !haveItem($item`closed-circuit pay phone`)),
+      completed: () => swordLassoTried || toFloat(getProperty("swordOfSWordsMonster")) >= 10,
+      outfit: () => new Gear("item drop").fam(sword).baseball().freeKill().outfit(),
+      prepare: () => {
+        mood("itdrop");
+        cliExecute("recover hp");
       },
-      underwater: true,
-      limit: { tries: 1 },
+      do: () => {
+        swordLassoTried = true;
+        summon($monster`sea cowboy`);
+      },
+      postAdventure: true,
+    },
+  ],
+};
+
+export const MonkeesQuest: UtsQuest = {
+  name: "Sea Monkees",
+  tasks: [
+    {
+      name: "Flytrap: set the sword",
+      ready: skeletonRoute,
+      completed: () => getProperty("swordOfSWordsMonster") === "740" || !flytrapPending(),
+      outfit: () =>
+        new Gear(dropsItems, garden)
+          .fam(sword)
+          .ifEquip($item`Peridot of Peril`)
+          .baseball()
+          .bathysphere($item`toy Cupid bow`)
+          .freeKill()
+          .outfit(),
+      do: garden,
     },
     {
-      name: "Wriggling Flytrap Pellet",
-      after: ["Talk to the Old Man"],
-      completed: () => step(MONKEES) >= 0 || have($item`wriggling flytrap pellet`),
-      ...at($location`An Octopus's Garden`),
-      outfit: { modifier: "item" },
-      limit: { soft: 30 },
+      name: "Flytrap: skeleton store",
+      ready: () => skeletonRoute() && getProperty("swordOfSWordsMonster") === "740",
+      completed: () => !flytrapPending() || myLocation() === $location`The Skeleton Store`,
+      do: () => {
+        if (!get("skeletonStoreAvailable")) visitUrl("shop.php?whichshop=meatsmith&action=talk");
+        refreshMPRecovery();
+        adv1($location`The Skeleton Store`, -1, "");
+        postAdventure();
+        while (get("_archSpadeDigs") < 11 && !havePellet()) {
+          maximize(dropsItems, false);
+          use($item`Archaeologist's Spade`);
+          if (myLocation() !== $location`The Skeleton Store`) break;
+        }
+      },
     },
     {
-      name: "Find the Castle",
-      after: ["Wriggling Flytrap Pellet"],
-      completed: () => step(MONKEES) >= 0,
-      do: () => use($item`wriggling flytrap pellet`),
+      // Citizen of a Zone or the red, white and blue ray on the flytrap.
+      name: "Flytrap: eagle",
+      ready: () => flytrapPending() && have($familiar`Patriotic Eagle`),
+      completed: () =>
+        have($effect`Citizen of a Zone`) ||
+        have($effect`Everything Looks Red, White and Blue`) ||
+        !flytrapPending(),
+      outfit: () => {
+        const gear = new Gear(dropsItems, garden)
+          .fam($familiar`Patriotic Eagle`)
+          .baseball()
+          .bathysphere($item`toy Cupid bow`)
+          .freeKill();
+        if (!gotPeriled(garden)) gear.ifEquip($item`Peridot of Peril`);
+        return gear.outfit();
+      },
+      do: garden,
+    },
+    {
+      name: "Flytrap: pellet",
+      ready: flytrapPending,
+      completed: () => !flytrapPending(),
+      outfit: () => {
+        const rwb = get("rwbMonsterCount");
+        const gear = new Gear(dropsItems, garden).forRole("exp").bathysphere($item`toy Cupid bow`);
+        if (rwb <= 1 && !getProperty("trackedMonsters").includes("Neptune flytrap")) {
+          gear.ifEquip($item`McHugeLarge left pole`);
+        } else {
+          gear.baseball();
+        }
+        if (rwb === 0 && !mapReady() && highShiny()) gear.need($item`Monodent of the Sea`);
+        if (get("_assertYourAuthorityCast") < 3 && sheriffOutfit() && !highShiny()) {
+          gear.need($item`Sheriff moustache`, $item`Sheriff badge`, $item`Sheriff pistol`);
+        }
+        return gear.freeKill().outfit();
+      },
+      prepare: () => {
+        if (get("rwbMonsterCount") === 0) {
+          if (!mapReady()) print("Initiating banishes in Octopus Garden", "red");
+          mapMonster(garden);
+        }
+      },
+      do: garden,
+      post: () => ashHelpers.timeSpinnerRefight("An Octopus's Garden"),
+    },
+    {
+      name: "Flytrap: use pellet",
+      ready: () => monkeesStep() === -1 && havePellet(),
+      completed: () => monkeesStep() >= 0,
+      do: () => use(pellet),
       limit: { tries: 1 },
     },
     {
       name: "Little Brother",
-      after: ["Find the Castle"],
-      completed: () => step(MONKEES) >= 1,
-      do: () => visitCastle(1),
-      underwater: true,
-      limit: { tries: 1 },
+      ready: () => monkeesStep() === 0,
+      completed: () => monkeesStep() >= 1,
+      do: () => {
+        equipSwimTrunks();
+        visitUrl("monkeycastle.php?who=1");
+      },
+      limit: { tries: 5 },
+    },
+    {
+      name: "Wreck of the Edgar Fitzsimmons",
+      ready: () => monkeesStep() === 1,
+      completed: () => monkeesStep() >= 2,
+      before: () => {
+        forcingFitzsimmons = ncForceEstimate() >= 4;
+        if (forcingFitzsimmons) ncForce();
+      },
+      outfit: () => {
+        const wreck = $location`The Wreck of the Edgar Fitzsimmons`;
+        if (forcingFitzsimmons) {
+          return new Gear("item drop,sea, -equip peridot of peril", wreck)
+            .bathysphere()
+            .ifEquip($item`Möbius ring`)
+            .outfit();
+        }
+        return new Gear("-combat,sea, -equip peridot of peril", wreck)
+          .forRole("-combat")
+          .need($item`Monodent of the Sea`)
+          .ifEquip($item`Möbius ring`)
+          .bathysphere($item`toy Cupid bow`)
+          .outfit();
+      },
+      prepare: () => {
+        if (!forcingFitzsimmons) mood("-combat");
+      },
+      do: $location`The Wreck of the Edgar Fitzsimmons`,
     },
     {
       name: "Big Brother",
-      after: ["Little Brother"],
-      ready: () => args.monkees >= 2,
-      completed: () => step(MONKEES) >= 2,
-      prepare: castNoncombatBuffs,
-      ...at($location`The Wreck of the Edgar Fitzsimmons`),
-      outfit: { modifier: "-combat" },
-      choices: { 299: 1 },
-      limit: { soft: 30 },
-    },
-    {
-      name: "Talk to the Brothers",
-      after: ["Big Brother"],
-      completed: () => step(MONKEES) >= 4,
+      ready: () => monkeesStep() === 2,
+      completed: () => monkeesStep() >= 3,
       do: () => {
-        visitCastle(2);
-        visitCastle(1);
+        equipSwimTrunks();
+        visitUrl("monkeycastle.php?who=2");
+        visitUrl("monkeycastle.php?who=1");
       },
-      underwater: true,
       limit: { tries: 1 },
     },
     {
       name: "Grandpa",
-      after: ["Talk to the Brothers"],
-      ready: () => args.monkees >= 3,
-      completed: () => step(MONKEES) >= 5,
-      prepare: castNoncombatBuffs,
-      do: grandpaZone,
-      underwater: true,
-      outfit: { modifier: "-combat" },
-      limit: { soft: 30 },
-    },
-    {
-      name: "Chat with Grandpa",
-      after: ["Grandpa"],
-      completed: () => get("sebastian_grandpaChat", false),
-      do: () => {
-        GRANDPA_TOPICS.forEach(askGrandpa);
-        set("sebastian_grandpaChat", true);
+      ready: () => monkeesStep() === 4,
+      completed: () => monkeesStep() >= 5,
+      before: () => {
+        if (!have($effect`Colorfully Concealed`) && !lowShiny()) {
+          pullSequence($item`Mer-kin hidepaint`);
+          if (itemAmount($item`Mer-kin hidepaint`) > 0) use($item`Mer-kin hidepaint`);
+        }
+        if (baseballPlayers() >= 9 && get("_baseballInnings") <= 2) ashHelpers.baseballD();
       },
-      underwater: true,
-      limit: { tries: 1 },
-    },
-    {
-      name: "Ask Grandpa about the Trophyfish",
-      after: ["Grandpa"],
-      ready: () => args.unlockTrophyfish,
-      completed: () => get("grandpaUnlockedTrophyFish"),
-      do: () => askGrandpa("Trophyfish"),
-      underwater: true,
-      limit: { tries: 1 },
+      outfit: () => {
+        const gear = new Gear("item drop, sea, -100 combat", pearlLoc());
+        if (doSWord()) gear.fam(sword);
+        else gear.forRole("itdrop");
+        gear
+          .need($item`Monodent of the Sea`)
+          .delay()
+          .ifEquip($item`Möbius ring`)
+          .bathysphere($item`toy Cupid bow`);
+        const tracked = getProperty("trackedMonsters");
+        const stat = myPrimestat();
+        if (baseballPlayers() < 9 && availableAmount($item`baseball diamond`) > 0) {
+          gear.baseball();
+        } else if (
+          (stat === $stat`Mysticality` && !tracked.includes("giant squid")) ||
+          (stat === $stat`Moxie` && !tracked.includes("Mer-kin tippler"))
+        ) {
+          gear.ifEquip($item`McHugeLarge left pole`);
+        }
+        if (get("_bczSweatBulletsCasts") < 9) gear.ifEquip($item`blood cubic zirconia`);
+        return gear.outfit();
+      },
+      prepare: () => {
+        if (doSWord()) mood("itdrop");
+        mood(resMood(pearlRes()));
+        mood("-combat");
+      },
+      do: () => pearlLoc(),
     },
     {
       name: "Ask Grandpa about Grandma",
-      after: ["Chat with Grandpa"],
-      completed: () => step(MONKEES) >= 6,
-      do: () => askGrandpa("Grandma"),
-      underwater: true,
+      ready: () => monkeesStep() === 5,
+      completed: () => monkeesStep() >= 6,
+      do: () => cliExecute("grandpa grandma"),
       limit: { tries: 1 },
-    },
-    {
-      name: "Grandma's Note",
-      after: ["Ask Grandpa about Grandma"],
-      ready: () => args.monkees >= 4,
-      completed: () =>
-        step(MONKEES) >= 8 ||
-        (have($item`Grandma's Note`) &&
-          have($item`Grandma's Chartreuse Yarn`) &&
-          have($item`Grandma's Fuchsia Yarn`)),
-      ...at($location`The Mer-kin Outpost`),
-      outfit: { modifier: "item" },
-      limit: { soft: 40 },
-    },
-    {
-      name: "Show Grandpa the Note",
-      after: ["Grandma's Note"],
-      completed: () => step(MONKEES) >= 8,
-      do: () => askGrandpa("note"),
-      underwater: true,
-      limit: { tries: 1 },
-    },
-    {
-      name: "Grandma",
-      after: ["Show Grandpa the Note"],
-      completed: () => step(MONKEES) >= 9,
-      prepare: castNoncombatBuffs,
-      ...at($location`The Mer-kin Outpost`),
-      outfit: { modifier: "-combat" },
-      limit: { soft: 30 },
-    },
-    {
-      name: "Black Glass",
-      after: ["Grandma"],
-      ready: () => args.monkees >= 5,
-      completed: () => step(MONKEES) >= 12 || have($item`black glass`),
-      do: () => {
-        // Little Brother then Big Brother advance the quest to step11, at which
-        // point Big Brother will sell us the black glass.
-        visitCastle(1);
-        visitCastle(2);
-        if (!getsome(13, SAND_DOLLAR))
-          throw new Error("We need 13 sand dollars to buy the black glass.");
-        create($item`black glass`); // bought from Big Brother's coinmaster
-      },
-      underwater: true,
-      limit: { tries: 1 },
-    },
-    {
-      name: "Mom",
-      after: ["Black Glass"],
-      completed: () => step(MONKEES) >= 999,
-      prepare: () => {
-        if (args.abyssEquipment === 0) return;
-        const allowBuying = args.abyssEquipment === 2;
-        const comb = $item`comb jelly`;
-        if (!have($effect`Jelly Combed`) && (have(comb) || (allowBuying && getsome(1, comb)))) {
-          use(comb);
-        }
-      },
-      ...at($location`The Caliginous Abyss`),
-      outfit: () => {
-        const allowBuying = args.abyssEquipment === 2;
-        const wanted = [$item`black glass`];
-        if (args.abyssEquipment > 0) {
-          const underwear = $item`scale-mail underwear`;
-          if (have(underwear) || (allowBuying && getsome(1, underwear))) wanted.push(underwear);
-          const jumper = $item`shark jumper`;
-          if (
-            have($skill`Torso Awareness`) &&
-            (have(jumper) || (allowBuying && getsome(1, jumper)))
-          ) {
-            wanted.push(jumper);
-          }
-        }
-        return { equip: wanted };
-      },
-      limit: { soft: 15 },
     },
   ],
 };

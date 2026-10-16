@@ -1,56 +1,54 @@
 # sebastian
 
-Automates the Kingdom of Loathing underwater quests in KoLmafia. It is a TypeScript port of
-[TheSea.ash](https://kolmafia.us/threads/thesea-ash-automated-underwater-quests.8708/) (v1.6.4, by
-Theraze and contributors) onto [grimoire](https://github.com/loathers/grimoire) and
-[libram](https://github.com/loathers/libram).
+Runs the Kingdom of Loathing path 11,037 Leagues Under the Sea in KoLmafia. It is a TypeScript port
+of [UnderTheSea](https://github.com/Astro3207/UnderTheSea) onto
+[grimoire](https://github.com/loathers/grimoire) and [libram](https://github.com/loathers/libram),
+being moved over a phase at a time.
 
 ## Usage
 
+The original script still has to be installed, because this port hands fights, choices and the
+phases it has not ported yet to it:
+
 ```
-sebastian help
-sebastian monkees=5 skate=1 boot=5 sushimat=2
+git checkout Astro3207/UnderTheSea
 ```
 
-Every option can also be saved as a `sebastian_<option>` preference to change its default, the
-same way TheSea.ash used `seafloor_*` zlib variables.
+Then:
 
-| Option             | TheSea.ash setting          | Default |
-| ------------------ | --------------------------- | ------- |
-| `monkees`          | `seafloor_monkeeQuest`      | 5       |
-| `faxNeptune`       | `seafloor_faxNeptune`       | false   |
-| `unlockTrophyfish` | `seafloor_unlockTrophyfish` | false   |
-| `abyssEquipment`   | `seafloor_abyssEquipment`   | 1       |
-| `skate`            | `seafloor_skateQuest`       | 0       |
-| `buySkateMap`      | `seafloor_buySkateMap`      | false   |
-| `buySkateBoard`    | `seafloor_buySkateBoard`    | false   |
-| `boot`             | `seafloor_bootQuest`        | 0       |
-| `buyBoot`          | `seafloor_buyBoot`          | false   |
-| `sushiMat`         | `seafloor_getSushiMat`      | 0       |
-| `helmet`           | `seafloor_getHelmet`        | 0       |
-| `closetMeat`       | `seafloor_closetMeat`       | -1      |
-| `modifier`         | `seafloor_maximizeString`   | ""      |
-| `ccs`              | (new) combat script to use  | yours   |
+```
+sebastian          # the ported phases, then hands off to UnderTheSea for the rest
+sebastian sim      # print the IOTM, skill and pull checklists and stop
+sebastian postloop # the postloop steps (still run by UnderTheSea.ash)
+sebastian handoff=false
+```
 
-Like the original, surviving combat is up to you: fights use your own custom combat script unless
-you pass `ccs`. You also need a way to breathe underwater. The script will put on breathing gear you
-already own (an aerated diving helmet, a Mer-kin mask or SCUBA gear) but never buys any.
+Everything in UnderTheSea's README still applies: the hard requirements, `autoSatisfyWithNPCs`, the
+high, mid and low "shiny" tiers, and its per-account preferences (`uts_godRunGuard`,
+`uts_usePilsners`, `uts_postloopCommand`, `uts_postLoopRunOutEagleBanish`, `uts_postLoopFarmPearls`,
+`uts_postLoopCloverFishy`, `uts_postLoopPrepCodpiece`), which you still set with the mafia CLI.
 
 ## Port status
 
-Ported:
+Ported to TypeScript:
 
-- Hey Hey, Find The Monkees (Little Brother through Mom), using KoLmafia's `questS02Monkees`
-  tracking instead of scraping the castle
-- An Old Guy and The Ocean (the damp old boot and its rewards)
-- Skate Park unlock and the Skate Park war
-- Sushi-rolling mat and aerated diving helmet
+- Startup: the IOTM, skill and pull checklists, daily setup, workshed, storage pulls and the
+  Sheriff props
+- After-adventure upkeep: lost-combat check, Fishy and the path diet, dolphin whistles, VHS and
+  Club 'Em follow-ups, HP and MP recovery targets
+- Gear, familiar and mood helpers, the noncombat forcer, Map the Monsters and summons
+- Sea Monkees from the start through asking Grandpa about Grandma: the early S Word lasso, the guild
+  unlock, the flytrap pellet, Little Brother, the Wreck of the Edgar Fitzsimmons, Big Brother and
+  Grandpa
 
-Not yet ported:
+Still run by the original ASH:
 
-- The Mer-kin outfit quests (`seafloor_outfitQuest`): stashbox and currents, seahorse taming,
-  gladiator training and the Colosseum, the scholar vocabulary, dreadscroll and Yog-Urt fight
-- `seafloor_outfit` (wear a named outfit; use `modifier` instead)
+- Combat (`UnderTheSeaCCS.ash`, through a CCS that consults it) and choices
+  (`UnderTheSea_Choice.ash`)
+- A few helpers called through `ash import <UnderTheSeaGlobals.ash>`: the model train set, baseball
+  diamond, Leprecondo, autumn-aton, sushi, Source Terminal duplicate, Time-Spinner, the codpiece and
+  the dreadscroll seed check
+- Everything from the golem recall and the outpost on, and the postloop steps
 
 ## Development
 
