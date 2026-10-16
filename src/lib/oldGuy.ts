@@ -21,8 +21,12 @@ export function getSandDollar(): void {
   }
 }
 
-export function oldGuy(): void {
-  while (itemAmount($item`sand dollar`) < 50) getSandDollar();
+/** One step towards the Old Guy's reward: a sand dollar, or the boot and the reward once there are fifty. */
+export function oldGuyTurn(): void {
+  if (itemAmount($item`sand dollar`) < 50) {
+    getSandDollar();
+    return;
+  }
   blackGlass();
   if (!have($item`damp old boot`) && questStep("questS01OldGuy") === 0) {
     buy($coinmaster`Big Brother`, 1, $item`damp old boot`);

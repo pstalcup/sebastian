@@ -92,7 +92,15 @@ export class SebEngine extends Engine<never, SebTask> {
     manager.set({
       choiceAdventureScript: CHOICE_SCRIPT,
       mpAutoRecoveryItems: `${get("mpAutoRecoveryItems")};magical mystery juice;doc galaktik's invigorating tonic`,
+      // The run retunes recovery as it goes (setMPRecovery(), the bosses).
+      // Registering the current values here puts them back at the end.
+      hpAutoRecovery: get("hpAutoRecovery"),
+      hpAutoRecoveryTarget: get("hpAutoRecoveryTarget"),
+      mpAutoRecovery: get("mpAutoRecovery"),
+      mpAutoRecoveryTarget: get("mpAutoRecoveryTarget"),
     });
+    // The saber's daily upgrade: the familiar weight chip.
+    manager.setChoice(1386, 4);
     // The Force's follow-up choice must be answerable from the property
     // alone, for fights that start outside the choice script's reach.
     manager.setChoice(1387, 3);

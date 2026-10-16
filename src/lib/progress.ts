@@ -1,4 +1,4 @@
-import { availableAmount, Item, itemAmount, toInt, toSlot } from "kolmafia";
+import { Item, itemAmount, toSlot } from "kolmafia";
 import { $item, $items, $slot, have, get } from "libram";
 
 import { haveItem } from "./state";
@@ -51,7 +51,7 @@ export function prayerbeadsShort(): boolean {
 /** Use the Force charges left on the saber today. */
 export function saberChargesLeft(): number {
   if (!haveItem($item`Fourth of May Cosplay Saber`)) return 0;
-  return 5 - toInt(get("_saberForceUses"));
+  return 5 - get("_saberForceUses");
 }
 
 /** Charges left after the two the unholy diver hunt claims. */
@@ -75,15 +75,11 @@ export function saberForcesFree(): number {
 
 /** Enough lassos thrown or in hand for the twenty training throws plus taming. */
 export function doneWithCowboy(): boolean {
-  return toInt(get("lassoTrainingCount")) + 3 * itemAmount($item`sea lasso`) >= 23;
+  return get("lassoTrainingCount") + 3 * itemAmount($item`sea lasso`) >= 23;
 }
 
 export function doneWithSeaCow(): boolean {
-  const leather =
-    itemAmount($item`sea leather`) +
-    availableAmount($item`sea chaps`) +
-    availableAmount($item`sea cowboy hat`);
-  return leather >= 2 && itemAmount($item`sea cowbell`) >= 3;
+  return !seaCowNeeded();
 }
 
 export function cheatsheetsNeeded(): boolean {
@@ -95,7 +91,7 @@ export function libraryReady(): boolean {
   return (
     (haveItem($item`Mer-kin scholar mask`) || haveItem($item`Mer-kin facecowl`)) &&
     (haveItem($item`Mer-kin scholar tailpiece`) || haveItem($item`Mer-kin waistrope`)) &&
-    itemAmount($item`Mer-kin wordquiz`) * 10 + toInt(get("merkinVocabularyMastery")) >= 90
+    itemAmount($item`Mer-kin wordquiz`) * 10 + get("merkinVocabularyMastery") >= 90
   );
 }
 

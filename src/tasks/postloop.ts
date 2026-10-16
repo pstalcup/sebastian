@@ -22,7 +22,6 @@ import {
   numericModifier,
   print,
   retrieveItem,
-  setProperty,
   Slot,
   storageAmount,
   use,
@@ -99,7 +98,7 @@ const currentZone = () =>
   PEARL_ZONES.find(([zone, , pref]) => !flag(pref) && canAdventure(zone))?.[0];
 
 const counter = (name: string) => get(name, 0);
-const setCounter = (name: string, value: number) => setProperty(name, `${value}`);
+const setCounter = (name: string, value: number) => set(name, value);
 const spent = () => counter("_sebPearlSpent");
 
 const walking = () => get("_sebPearlWalk") === "on";
@@ -186,7 +185,7 @@ function pearlFarmWorthIt(): boolean {
     );
     worth = true;
   }
-  setProperty("_sebPearlFarmWorth", `${worth}`);
+  set("_sebPearlFarmWorth", worth);
   return worth;
 }
 
@@ -207,7 +206,7 @@ function walkFamiliar(): Familiar {
 }
 
 function endRundown(): void {
-  setProperty("_sebPearlRundown", "off");
+  set("_sebPearlRundown", "off");
 }
 
 /** What the re-aim fight left in _sebScreechFired, and the back-off it calls for. */
@@ -397,17 +396,17 @@ export const PostloopQuest: SebQuest = {
           }
         }
         pullEverything();
-        setProperty("_sebPearlRundown", rundownWanted() ? "on" : "off");
+        set("_sebPearlRundown", rundownWanted() ? "on" : "off");
         setCounter("_sebPearlClaimed", claimedCount());
         setCounter("_sebPearlSpent", 0);
         // The combat script sets _sebScreechReady from each eagle fight's
         // skill list. screechCombats misses eagle chatter, so it only times
         // the fallback.
-        setProperty("_sebScreechReady", "");
+        set("_sebScreechReady", "");
         setCounter("_sebScreechNext", 0);
         setCounter("_sebScreechFallback", Math.max(0, Math.min(get("screechCombats"), 11)));
         setCounter("_sebScreechMisses", 0);
-        setProperty("_sebPearlWalk", "on");
+        set("_sebPearlWalk", "on");
       }),
       limit: { tries: 1 },
     },
@@ -423,7 +422,7 @@ export const PostloopQuest: SebQuest = {
       completed: () => !rundown(),
       outfit: { familiar: $familiar`Patriotic Eagle` },
       prepare: () => {
-        setProperty("_sebScreechFired", "");
+        set("_sebScreechFired", "");
         set("_sebScreechReaim", true);
       },
       do: $location`The Smut Orc Logging Camp`,
@@ -458,7 +457,7 @@ export const PostloopQuest: SebQuest = {
             "blue",
           );
         }
-        setProperty("_sebPearlWalk", "done");
+        set("_sebPearlWalk", "done");
       }),
     },
     {
@@ -491,7 +490,7 @@ export const PostloopQuest: SebQuest = {
         if (rundown()) {
           reportRundownStalled("out of Fishy, so no pearl zone is reachable");
           endRundown();
-          setProperty("_sebPearlWalk", "done");
+          set("_sebPearlWalk", "done");
           return;
         }
         abort(

@@ -1,7 +1,6 @@
 import {
   abort,
   availableAmount,
-  buy,
   cliExecute,
   equip,
   haveSkill,
@@ -9,13 +8,10 @@ import {
   myFamiliar,
   pullsRemaining,
   refreshStatus,
-  setProperty,
-  toInt,
   use,
   useFamiliar,
 } from "kolmafia";
 import {
-  $coinmaster,
   $effect,
   $familiar,
   $item,
@@ -23,11 +19,11 @@ import {
   $monster,
   $phylum,
   $skill,
-  CursedMonkeyPaw,
   get,
   have,
   questStep,
   Snapper,
+  set,
 } from "libram";
 
 import { SebQuest } from "../engine";
@@ -35,7 +31,7 @@ import { doSWord, pickFamiliar, swordOfSWords } from "../lib/familiar";
 import { Gear } from "../lib/gear";
 import { baseballD } from "../lib/iotm";
 import { mood } from "../lib/mood";
-import { oldGuy } from "../lib/oldGuy";
+import { oldGuyTurn } from "../lib/oldGuy";
 import { pulledToday, pullSequence } from "../lib/pulls";
 import {
   baseballPlayers,
@@ -48,18 +44,18 @@ import {
 } from "../lib/resources";
 import { haveItem, highShiny, inAftercore, inSeaPath, lowShiny } from "../lib/state";
 
-import { abyssRecallGear, prayerbeadGear } from "./zones";
+import { farmPrayerbeads, recallCaliginous } from "./zones";
 
 // From the golem recall through the Old Guy. Ported from golemRecall(),
 // outpost(), recallCaliginous(), pullPrayerbead(), farmPrayerbeads() and the
 // stashbox steps in seaMonkees() in UnderTheSea.ash.
 
 const outpost = $location`The Mer-Kin Outpost`;
-const abyss = $location`The Caliginous Abyss`;
+const recallAbyss = recallCaliginous();
 const sword = swordOfSWords;
 
-const habitatFightsLeft = () => toInt(get("_monsterHabitatsFightsLeft"));
-const habitatsRecalled = () => toInt(get("_monsterHabitatsRecalled"));
+const habitatFightsLeft = () => get("_monsterHabitatsFightsLeft");
+const habitatsRecalled = () => get("_monsterHabitatsRecalled");
 const lockkeyHunt = () => get("merkinLockkeyMonster") !== null;
 /** Item drops matter here: few forcers, or no shadow rift to fall back on. */
 const scaleHunt = () =>
@@ -85,7 +81,7 @@ function bofaCaliginous(): boolean {
     lassoShadow() &&
     habitatsRecalled() === 2 &&
     habitatFightsLeft() === 0 &&
-    toInt(get("momSeaMonkeeProgress")) < 40 &&
+    get("momSeaMonkeeProgress") < 40 &&
     step >= 9 &&
     step <= 12
   );
@@ -176,19 +172,21 @@ export const OutpostQuest: SebQuest = {
       limit: { tries: 1 },
     },
     {
+      // The Old Guy's errand brings the black glass along with it.
+      name: "Black glass for the abyss",
+      ready: () => bofaCaliginous() && !have($item`black glass`),
+      completed: () => have($item`black glass`),
+      do: oldGuyTurn,
+    },
+    {
       name: "Recall the abyss",
       ready: bofaCaliginous,
       completed: () => !bofaCaliginous(),
+      ...recallAbyss,
       before: () => {
-        if (!have($item`black glass`)) oldGuy();
         if (!have($item`Elf Guard SCUBA tank`)) pullSequence($item`Elf Guard SCUBA tank`);
-        if (!have($item`black glass`)) buy($coinmaster`Big Brother`, 1, $item`black glass`);
+        recallAbyss.before?.();
       },
-      outfit: () => abyssRecallGear().outfit(),
-      prepare: () => {
-        if (!have($effect`Jelly Combed`) && pullSequence($item`comb jelly`)) use($item`comb jelly`);
-      },
-      do: abyss,
     },
     {
       name: "Search for the stashbox",
@@ -209,7 +207,7 @@ export const OutpostQuest: SebQuest = {
         ) {
           baseballD();
         }
-        if (outpost.turnsSpent < 5) setProperty("stashboxChecked", "0");
+        if (outpost.turnsSpent < 5) set("stashboxChecked", "0");
         const checked = get("stashboxChecked");
         if (["1", "2", "3"].every((n) => checked.includes(n))) {
           abort("All stashbox locations checked but no stashbox — something went wrong");
@@ -262,30 +260,16 @@ export const OutpostQuest: SebQuest = {
     },
     {
       // Short on noncombat forcers, so get prayerbeads now while -combat is up.
-      name: "Wish for prayerbeads",
-      ready: () =>
-        ncForceEstimate() < 4 &&
-        haveItem($item`cursed monkey's paw`) &&
-        CursedMonkeyPaw.wishes() > 0,
+      name: "Prayerbeads",
+      ready: () => ncForceEstimate() < 4,
       completed: () => availableAmount($item`Mer-kin prayerbeads`) >= 2,
-      do: () => CursedMonkeyPaw.wishFor($item`Mer-kin prayerbeads`),
-      limit: { tries: 5 },
-    },
-    {
-      name: "Farm prayerbeads",
-      ready: () =>
-        ncForceEstimate() < 4 && !(CursedMonkeyPaw.have() && CursedMonkeyPaw.wishes() > 0),
-      completed: () => availableAmount($item`Mer-kin prayerbeads`) >= 2,
-      outfit: () => prayerbeadGear().outfit(),
-      prepare: () => mood("-combat"),
-      do: outpost,
+      ...farmPrayerbeads(),
     },
     {
       name: "Old Guy",
       ready: () => questStep("questS01OldGuy") === 0,
       completed: () => questStep("questS01OldGuy") !== 0,
-      do: () => oldGuy(),
-      limit: { tries: 1 },
+      do: oldGuyTurn,
     },
   ],
 };

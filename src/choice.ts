@@ -8,12 +8,11 @@ import {
   print,
   runChoice,
   setLocation,
-  setProperty,
   toInt,
   visitUrl,
   waitq,
 } from "kolmafia";
-import { $effect, $item, $location, get } from "libram";
+import { $effect, $item, $location, get, set } from "libram";
 
 import { zoneTarget } from "./lib/iotm";
 
@@ -36,8 +35,8 @@ function stashboxCheck(priority: number[]): void {
   const option = priority.find((opt) => !checked.includes(`${opt}`));
   if (option === undefined) return;
   runChoice(option);
-  setProperty("stashboxChecked", checked === "" ? `${option}` : `${checked},${option}`);
-  if (itemAmount($item`Mer-kin stashbox`) > 0) setProperty("stashboxFound", `${option}`);
+  set("stashboxChecked", checked === "" ? `${option}` : `${checked},${option}`);
+  if (itemAmount($item`Mer-kin stashbox`) > 0) set("stashboxFound", option);
 }
 
 /** Pick the first option whose text contains the keyword. */
@@ -54,7 +53,7 @@ function pickChoice(keyword: string): boolean {
 /** The school noncombats seen, the last five, so the lounge's place in the cycle is known. */
 function queueElementary(): void {
   const queue = get("elementaryQueue") || "000, 000, 000, 000, 000";
-  setProperty("elementaryQueue", `${queue}, ${lastChoice()}`.slice(5));
+  set("elementaryQueue", `${queue}, ${lastChoice()}`.slice(5));
 }
 
 function dreadScrollPuzzle(): void {
@@ -71,15 +70,15 @@ function dreadScrollPuzzle(): void {
     .join("&");
   runChoice(1, answers);
   waitq(3);
-  if (haveEffect($effect`Deep-Tainted Mind`) === 0) setProperty("dreadScroll7", `${scroll7}`);
+  if (haveEffect($effect`Deep-Tainted Mind`) === 0) set("dreadScroll7", scroll7);
 }
 
 /** The Mer-kin catalog: spade an unknown card, and note which card gave each clue. */
 function dreadCard(): void {
   const options = availableChoiceOptions();
   if (get("catalogChecked") === "false") {
-    setProperty("catalogChecked", "true");
-    for (const [option, text] of Object.entries(options)) setProperty(`cardChoice${option}`, text);
+    set("catalogChecked", true);
+    for (const [option, text] of Object.entries(options)) set(`cardChoice${option}`, text);
   }
   const catalog = get("merkinCatalogChoices");
   const unknown = Object.entries(options).find(([option, text]) =>
@@ -90,11 +89,11 @@ function dreadCard(): void {
   const choice = options[dread];
   runChoice(dread);
   for (const n of [1, 6, 8]) {
-    if (get(`DS${n}`) === "true" || toInt(get(`dreadScroll${n}`)) === 0) continue;
-    setProperty(`DS${n}`, "true");
+    if (get(`DS${n}`, false) || toInt(get(`dreadScroll${n}`)) === 0) continue;
+    set(`DS${n}`, true);
     for (let x = 1; x <= 10; x++) {
       if (get(`cardChoice${x}`) === choice) {
-        setProperty(`cardChoice${x}`, `${n}:${get(`cardChoice${x}`)}`);
+        set(`cardChoice${x}`, `${n}:${get(`cardChoice${x}`)}`);
       }
     }
     break;
@@ -150,7 +149,7 @@ export function main(choice: number, page: string): void {
     case 399:
     case 400:
       queueElementary();
-      setProperty("NCtoC", "true");
+      set("NCtoC", true);
       runChoice(1);
       break;
     case 401:
@@ -198,7 +197,7 @@ export function main(choice: number, page: string): void {
 
     // The Peridot of Peril, from the same table as Map the Monsters.
     case 1557: {
-      setProperty("NCtoC", "true");
+      set("NCtoC", true);
       const here = myLocation();
       const target = zoneTarget(here);
       if (target > 0) {
@@ -210,7 +209,7 @@ export function main(choice: number, page: string): void {
 
     // The Möbius strip.
     case 1562: {
-      const keyword = MOBIUS_KEYWORDS[toInt(get("_mobiusStripEncounters"))];
+      const keyword = MOBIUS_KEYWORDS[get("_mobiusStripEncounters")];
       if (keyword) pickChoice(keyword);
       else if (!pickChoice("investment tips")) pickChoice("from your future self");
       break;

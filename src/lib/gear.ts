@@ -9,7 +9,6 @@ import {
   Location,
   myFamiliar,
   myLocation,
-  toInt,
   totalTurnsPlayed,
   useFamiliar,
 } from "kolmafia";
@@ -55,8 +54,8 @@ const MOBIUS_GAPS = [
 ];
 
 export function mobiusNCReady(): boolean {
-  const gap = MOBIUS_GAPS[toInt(get("_mobiusStripEncounters"))] ?? 76;
-  return totalTurnsPlayed() > toInt(get("_lastMobiusStripTurn")) + gap;
+  const gap = MOBIUS_GAPS[get("_mobiusStripEncounters")] ?? 76;
+  return totalTurnsPlayed() > get("_lastMobiusStripTurn") + gap;
 }
 
 /** "item drop, sea" or "Drops Items, sea", picked once at startup. */
@@ -149,7 +148,7 @@ export class Gear {
     }
     if (highShiny()) return this;
     if (
-      toInt(get("_assertYourAuthorityCast")) < 3 &&
+      get("_assertYourAuthorityCast") < 3 &&
       sheriffOutfit() &&
       [
         $location`An Octopus's Garden`,
@@ -159,7 +158,7 @@ export class Gear {
     ) {
       return this.need($item`Sheriff moustache`, $item`Sheriff badge`, $item`Sheriff pistol`);
     }
-    if (toInt(get("_chestXRayUsed")) < 3 && haveItem($item`Lil' Doctor™ bag`)) {
+    if (get("_chestXRayUsed") < 3 && haveItem($item`Lil' Doctor™ bag`)) {
       return this.need($item`Lil' Doctor™ bag`);
     }
     if (bczSweatReady()) return this.ifEquip($item`blood cubic zirconia`);
@@ -171,7 +170,7 @@ export class Gear {
     if (haveEffect($effect`Everything Looks Green`) === 0) {
       return this.ifEquip($item`spring shoes`);
     }
-    const navel = toInt(get("_navelRunaways"));
+    const navel = get("_navelRunaways");
     if (
       availableAmount($item`Greatest American Pants`) > 0 &&
       (navel < 3 || (navel < 10 && highShiny())) &&

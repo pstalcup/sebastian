@@ -23,11 +23,8 @@ import {
   print,
   runChoice,
   runCombat,
-  setProperty,
   Skill,
-  toInt,
   toMonster,
-  toSlot,
   turnsUntilForcedNoncombat,
   use,
   visitUrl,
@@ -292,7 +289,7 @@ function timeSpinnerReady(): boolean {
 export function timeSpinnerFight(monster: Monster): boolean {
   if (!timeSpinnerReady() || lastMonster() !== monster) return false;
   step(`Time-Spinner: refighting ${monster}`);
-  visitUrl(`inv_use.php?whichitem=${toInt($item`Time-Spinner`)}&pwd=${myHash()}`);
+  visitUrl(`inv_use.php?whichitem=${$item`Time-Spinner`.id}&pwd=${myHash()}`);
   if (!handlingChoice()) {
     step("Time-Spinner choice was auto-resolved or never opened; skipping");
     return false;
@@ -396,16 +393,11 @@ export function banishUsedAtYourLocation(banisher: Skill): boolean {
   return monster.name in getLocationMonsters(myLocation());
 }
 
-/**
- * The banish item for a zone whose last banish has lapsed. Also sets that
- * slot's maximizer override, as the original did.
- */
+/** The banish item for a zone whose last banish has lapsed. */
 export function banishGear(location: Location): Item {
   for (const [item, skill] of BANISH_SOURCES) {
     if (item === $item`Heartstone` && !get("heartstoneBanishUnlocked")) continue;
     if ((appearanceRates(location)[banished(skill).name] ?? 0) === 0 && haveItem(item)) {
-      setProperty(`${toSlot(item)}Override`, `, equip ${item}`);
-      print(`${toSlot(item)}Override`);
       return item;
     }
   }

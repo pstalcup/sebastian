@@ -1,9 +1,7 @@
 import {
-  adv1,
   availableAmount,
   cliExecute,
   itemAmount,
-  maximize,
   myLocation,
   myPrimestat,
   print,
@@ -22,12 +20,11 @@ import {
   questStep,
 } from "libram";
 
-import { SebQuest } from "../engine";
+import { branch, SebQuest } from "../engine";
 import { doSWord, swordOfSWords } from "../lib/familiar";
 import { dropsItems, Gear } from "../lib/gear";
 import { baseballD, timeSpinnerRefight } from "../lib/iotm";
 import { mood, resMood } from "../lib/mood";
-import { postAdventure, refreshMPRecovery } from "../lib/postAdventure";
 import { pullSequence } from "../lib/pulls";
 import {
   baseballPlayers,
@@ -54,6 +51,7 @@ import {
 // in seaMonkees() in UnderTheSea.ash.
 
 const garden = $location`An Octopus's Garden`;
+const wreck = $location`The Wreck of the Edgar Fitzsimmons`;
 const pellet = $item`wriggling flytrap pellet`;
 const sword = swordOfSWords;
 const havePellet = () => itemAmount(pellet) > 0;
@@ -65,8 +63,6 @@ const skeletonRoute = () =>
   !highShiny() &&
   have(sword) &&
   availableAmount($item`Archaeologist's Spade`) > 0;
-
-let forcingFitzsimmons = false;
 
 /** Sword of S Words, for runs that can't lasso-train in the shadow rift. */
 export const LassoQuest: SebQuest = {
@@ -117,15 +113,19 @@ export const MonkeesQuest: SebQuest = {
       completed: () => !flytrapPending() || myLocation() === $location`The Skeleton Store`,
       do: () => {
         if (!get("skeletonStoreAvailable")) visitUrl("shop.php?whichshop=meatsmith&action=talk");
-        refreshMPRecovery();
-        adv1($location`The Skeleton Store`, -1, "");
-        postAdventure();
-        while (get("_archSpadeDigs") < 11 && !havePellet()) {
-          maximize(dropsItems, false);
-          use($item`Archaeologist's Spade`);
-          if (myLocation() !== $location`The Skeleton Store`) break;
-        }
+        return $location`The Skeleton Store`;
       },
+    },
+    {
+      // Each dig refights the store's monster, while the sword keeps it a flytrap.
+      name: "Flytrap: spade",
+      ready: () =>
+        skeletonRoute() &&
+        myLocation() === $location`The Skeleton Store` &&
+        get("_archSpadeDigs") < 11,
+      completed: () => !flytrapPending(),
+      outfit: () => ({ modifier: dropsItems }),
+      do: () => use($item`Archaeologist's Spade`),
     },
     {
       // Citizen of a Zone or the red, white and blue ray on the flytrap.
@@ -194,29 +194,29 @@ export const MonkeesQuest: SebQuest = {
       name: "Wreck of the Edgar Fitzsimmons",
       ready: () => questStep("questS02Monkees") === 1,
       completed: () => questStep("questS02Monkees") >= 2,
-      before: () => {
-        forcingFitzsimmons = ncForceEstimate() >= 4;
-        if (forcingFitzsimmons) ncForce();
-      },
-      outfit: () => {
-        const wreck = $location`The Wreck of the Edgar Fitzsimmons`;
-        if (forcingFitzsimmons) {
-          return new Gear("item drop,sea, -equip peridot of peril", wreck)
-            .bathysphere()
-            .ifEquip($item`Möbius ring`)
-            .outfit();
-        }
-        return new Gear("-combat,sea, -equip peridot of peril", wreck)
-          .forRole("-combat")
-          .need($item`Monodent of the Sea`)
-          .ifEquip($item`Möbius ring`)
-          .bathysphere($item`toy Cupid bow`)
-          .outfit();
-      },
-      prepare: () => {
-        if (!forcingFitzsimmons) mood("-combat");
-      },
-      do: $location`The Wreck of the Edgar Fitzsimmons`,
+      ...branch(
+        () => ncForceEstimate() >= 4,
+        {
+          before: ncForce,
+          outfit: () =>
+            new Gear("item drop,sea, -equip peridot of peril", wreck)
+              .bathysphere()
+              .ifEquip($item`Möbius ring`)
+              .outfit(),
+          do: wreck,
+        },
+        {
+          outfit: () =>
+            new Gear("-combat,sea, -equip peridot of peril", wreck)
+              .forRole("-combat")
+              .need($item`Monodent of the Sea`)
+              .ifEquip($item`Möbius ring`)
+              .bathysphere($item`toy Cupid bow`)
+              .outfit(),
+          prepare: () => mood("-combat"),
+          do: wreck,
+        },
+      ),
     },
     {
       name: "Big Brother",

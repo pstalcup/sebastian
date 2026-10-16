@@ -7,7 +7,6 @@ import {
   itemAmount,
   numericModifier,
   print,
-  toInt,
   toItem,
   toSkill,
 } from "kolmafia";
@@ -46,7 +45,7 @@ function needsMissingSkill(effect: Effect): boolean {
 }
 
 function photoBoothSpent(): boolean {
-  return toInt(get("_photoBoothEffects")) >= 3 || !haveItem($item`Clan VIP Lounge key`);
+  return get("_photoBoothEffects") >= 3 || !haveItem($item`Clan VIP Lounge key`);
 }
 
 function aprilBandWaiting(): boolean {
