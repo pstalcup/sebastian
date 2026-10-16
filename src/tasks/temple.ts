@@ -47,7 +47,7 @@ import {
   uneffect,
 } from "libram";
 
-import { branch, TaskBody, SebQuest, SebTask } from "../engine";
+import { branch, SebQuest, SebTask, TaskBody, withHooks } from "../engine";
 import { Gear } from "../lib/gear";
 import {
   baseballD,
@@ -308,8 +308,8 @@ const vocabularyTasks: SebTask[] = [
     name: "Vocabulary",
     ready: vocabularyRoute,
     completed: () => vocabulary() >= 90,
-    ...((): TaskBody => {
-      const body = branch(
+    ...withHooks(
+      branch(
         () => itemAmount($item`Mer-kin wordquiz`) > 0,
         action(() => {
           if (itemAmount($item`Mer-kin cheatsheet`) === 0) pullSequence($item`Mer-kin cheatsheet`);
@@ -323,15 +323,9 @@ const vocabularyTasks: SebTask[] = [
               .outfit(),
           do: school,
         },
-      );
-      return {
-        ...body,
-        before: () => {
-          takeHallpasses();
-          body.before?.();
-        },
-      };
-    })(),
+      ),
+      { before: takeHallpasses },
+    ),
   },
 ];
 
@@ -458,10 +452,11 @@ const dreadscrollTasks: SebTask[] = [
     name: "Library",
     ready: () => !highPriest() && schoolDone(),
     completed: libraryDone,
-    ...merkinLib(),
-    post: () => {
-      if (haveDreadscroll()) dreadSeedCheck();
-    },
+    ...withHooks(merkinLib(), {
+      post: () => {
+        if (haveDreadscroll()) dreadSeedCheck();
+      },
+    }),
   },
   {
     name: "Knucklebone clue",
@@ -496,15 +491,17 @@ const dreadscrollTasks: SebTask[] = [
     name: "Killscroll for its hint",
     ready: () => !highPriest() && libraryDone() && scroll(5) === 0,
     completed: () => itemAmount($item`Mer-kin killscroll`) > 0,
-    before: () => print("Missed the killscroll hint", "red"),
-    ...scrollFor($item`Mer-kin killscroll`, true),
+    ...withHooks(scrollFor($item`Mer-kin killscroll`, true), {
+      before: () => print("Missed the killscroll hint", "red"),
+    }),
   },
   {
     name: "Healscroll for its hint",
     ready: () => !highPriest() && libraryDone() && scroll(2) === 0,
     completed: () => itemAmount($item`Mer-kin healscroll`) > 0,
-    before: () => print("Missed the healscroll hint", "red"),
-    ...scrollFor($item`Mer-kin healscroll`, false),
+    ...withHooks(scrollFor($item`Mer-kin healscroll`, false), {
+      before: () => print("Missed the healscroll hint", "red"),
+    }),
   },
   {
     name: "Gym for the scroll hints",
@@ -591,13 +588,13 @@ const priestTasks: SebTask[] = [
     ready: () => priestReady() && tainted() && skateWar(),
     completed: () => !tainted(),
     ...skateParkWar(),
+    limit: { tries: 15 },
   },
   {
     name: "Tainted: gym",
     ready: () => priestReady() && tainted() && guardsMissing(),
     completed: () => !tainted(),
-    ...gymnasium(),
-    post: skateBuff,
+    ...withHooks(gymnasium(), { post: skateBuff }),
   },
   {
     name: "Tainted: abyss",
@@ -617,8 +614,10 @@ const priestTasks: SebTask[] = [
     name: "Read the dreadscroll",
     ready: () => priestReady() && !tainted(),
     completed: highPriest,
-    before: () => uneffect($effect`The Sonata of Sneakiness`),
-    ...action(() => use($item`Mer-kin dreadscroll`)),
+    ...withHooks(
+      action(() => use($item`Mer-kin dreadscroll`)),
+      { before: () => uneffect($effect`The Sonata of Sneakiness`) },
+    ),
     postAdventure: true,
     limit: { tries: 5 },
   },
@@ -636,8 +635,8 @@ const skateCleanup: SebTask[] = [
     name: "Skate park war",
     ready: skateWar,
     completed: () => !skateWar(),
-    before: () => visitUrl("sea_skatepark.php"),
     ...skateParkWar(),
+    limit: { tries: 15 },
   },
   {
     name: "Skate park buff",
@@ -724,17 +723,17 @@ export const YogUrtQuest: SebQuest = {
       name: "Delevelers from the corral",
       ready: () => highPriest() && haveEffect($effect`Null Afternoon`) === 0,
       completed: () => delevelers() >= 2,
-      ...corralFarm(),
-      post: () => {
-        corralFarm().post?.();
-        if (corral.turnsSpent % 10 === 0) {
-          print(
-            `Deleveler farming: ${corral.turnsSpent} turns in The Coral Corral. ` +
-              `Yog-Urt needs 2 delevelers and ${delevelers()} are on hand.`,
-            "red",
-          );
-        }
-      },
+      ...withHooks(corralFarm(), {
+        post: () => {
+          if (corral.turnsSpent % 10 === 0) {
+            print(
+              `Deleveler farming: ${corral.turnsSpent} turns in The Coral Corral. ` +
+                `Yog-Urt needs 2 delevelers and ${delevelers()} are on hand.`,
+              "red",
+            );
+          }
+        },
+      }),
     },
     {
       name: "Prayerbeads for the healing",

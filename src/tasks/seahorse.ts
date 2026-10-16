@@ -57,7 +57,7 @@ import {
   set,
 } from "libram";
 
-import { branch, TaskBody, SebQuest, SebTask } from "../engine";
+import { branch, TaskBody, SebQuest, SebTask, withHooks } from "../engine";
 import { swordOfSWords } from "../lib/familiar";
 import { dropsItems, Gear } from "../lib/gear";
 import {
@@ -101,6 +101,7 @@ import {
   curveballBurn,
   digAnemone,
   finishCaliginous,
+  lassoWish,
   mineAnemone,
   monkeypaw,
   pawWishReady,
@@ -320,8 +321,7 @@ function wreckTurn(): TaskBody {
     do: wreck,
   };
   const body = branch(() => totalTurnsPlayed() >= get("_lastFitzsimmonsHatch") + 20, hatch, hunt);
-  return {
-    ...body,
+  return withHooks(body, {
     before: () => {
       diverBaseball();
       // Every free diver source runs before this, so no adventures here
@@ -332,9 +332,8 @@ function wreckTurn(): TaskBody {
             `${availableAmount($item`bubblin' stone`)} bubblin' stone.`,
         );
       }
-      body.before?.();
     },
-  };
+  });
 }
 
 function buildHelmet(): void {
@@ -516,13 +515,11 @@ function leatherPiece(item: Item): TaskBody {
     action(() => create(item)),
     corralFarm(),
   );
-  return {
-    ...body,
+  return withHooks(body, {
     before: () => {
       if (dropLeg()) codpiece("none");
-      body.before?.();
     },
-  };
+  });
 }
 
 const corralTasks: SebTask[] = [
@@ -765,9 +762,10 @@ export const TeflonQuest: SebQuest = {
       name: "Teflon: mine",
       ready: () => teflonNeeded() && haveDigpick(),
       completed: () => !teflonNeeded(),
-      before: () =>
-        print("Failed to acquire teflon ore; can pull mining dynamite for one more try", "red"),
-      ...mineAnemone(),
+      ...withHooks(mineAnemone(), {
+        before: () =>
+          print("Failed to acquire teflon ore; can pull mining dynamite for one more try", "red"),
+      }),
       limit: { tries: 30 },
     },
   ],
@@ -784,17 +782,7 @@ export const BackupLassoQuest: SebQuest = {
       name: "Sea lasso",
       ready: () => get("lassoTrainingCount") < 20,
       completed: () => itemAmount($item`sea lasso`) > 0 || get("lassoTrainingCount") >= 20,
-      ...((): TaskBody => {
-        const lasso = monkeypaw($item`sea lasso`);
-        return {
-          ...lasso,
-          before: () => {
-            equip($item`really, really nice swimming trunks`);
-            equip($item`little bitty bathysphere`);
-            lasso.before?.();
-          },
-        };
-      })(),
+      ...lassoWish(),
     },
     {
       name: "Pearl zone",
@@ -970,8 +958,7 @@ export const PostSeahorseQuest: SebQuest = {
       name: "Sand dollars",
       ready: noTailpiece,
       completed: () => itemAmount($item`sand dollar`) >= 10,
-      before: equipSwimTrunks,
-      ...action(getSandDollar),
+      ...withHooks(action(getSandDollar), { before: equipSwimTrunks }),
     },
     {
       // The diver tasks run only while the seahorse is untamed, so a part

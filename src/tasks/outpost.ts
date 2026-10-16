@@ -25,7 +25,7 @@ import {
   set,
 } from "libram";
 
-import { SebQuest } from "../engine";
+import { SebQuest, withHooks } from "../engine";
 import { doSWord, pickFamiliar, swordOfSWords } from "../lib/familiar";
 import { Gear } from "../lib/gear";
 import { baseballD } from "../lib/iotm";
@@ -50,7 +50,6 @@ import { farmPrayerbeads, recallCaliginous } from "./zones";
 // stashbox steps in seaMonkees() in UnderTheSea.ash.
 
 const outpost = $location`The Mer-Kin Outpost`;
-const recallAbyss = recallCaliginous();
 const sword = swordOfSWords;
 
 const habitatFightsLeft = () => get("_monsterHabitatsFightsLeft");
@@ -181,11 +180,11 @@ export const OutpostQuest: SebQuest = {
       name: "Recall the abyss",
       ready: bofaCaliginous,
       completed: () => !bofaCaliginous(),
-      ...recallAbyss,
-      before: () => {
-        if (!have($item`Elf Guard SCUBA tank`)) pullSequence($item`Elf Guard SCUBA tank`);
-        recallAbyss.before?.();
-      },
+      ...withHooks(recallCaliginous(), {
+        before: () => {
+          if (!have($item`Elf Guard SCUBA tank`)) pullSequence($item`Elf Guard SCUBA tank`);
+        },
+      }),
     },
     {
       name: "Search for the stashbox",
