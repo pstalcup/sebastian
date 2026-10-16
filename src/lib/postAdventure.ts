@@ -254,9 +254,6 @@ function seaPathFishy(): void {
   }
 }
 
-/** Fuel one drive costs. */
-const DRIVE_FUEL = 37;
-
 function seaPathUpkeep(): void {
   if (myAdventures() === 0) {
     if (itemAmount($item`astral six-pack`) > 0) use($item`astral six-pack`);
@@ -266,20 +263,13 @@ function seaPathUpkeep(): void {
     drink($item`astral pilsner`);
   }
   if (haveEffect($effect`Driving Waterproofly`) === 0 && AsdonMartin.installed()) {
-    const pie = $item`pie man was not meant to eat`;
-    if (getFuel() === 0 && !pulledToday(pie) && pullSequence(pie)) AsdonMartin.insertFuel(pie);
-    if (getFuel() < DRIVE_FUEL) {
-      // Soda bread in ronin, the cheapest mall fuel out of it. Not worth stopping the run over.
-      try {
-        AsdonMartin.fillTo(DRIVE_FUEL);
-      } catch (e) {
-        print(`SEB: couldn't buy Asdon fuel: ${e}`, "red");
-      }
-    }
-    if (getFuel() >= DRIVE_FUEL) {
-      AsdonMartin.drive($effect`Driving Waterproofly`, 1, true);
-    } else {
-      print(`SEB: Asdon has ${getFuel()} fuel, skipping Driving Waterproofly.`, "red");
+    // libram fuels from inventory first, then buys (soda bread in ronin).
+    // Without fuel the run goes on undriven rather than stopping.
+    if (!AsdonMartin.drive($effect`Driving Waterproofly`, 1, true)) {
+      print(
+        `SEB: couldn't fuel the Asdon (${getFuel()} fuel), skipping Driving Waterproofly.`,
+        "red",
+      );
     }
   }
   if (haveEffect($effect`Fishy`) === 0) {
