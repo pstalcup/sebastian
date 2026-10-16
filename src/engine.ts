@@ -53,8 +53,8 @@ export class UtsEngine extends Engine<never, UtsTask> {
       choiceAdventureScript: "UnderTheSea_Choice.ash",
       mpAutoRecoveryItems: `${get("mpAutoRecoveryItems")};magical mystery juice;doc galaktik's invigorating tonic`,
     });
-    // c2t_megg clears choiceAdventureScript for its egg fights, so the
-    // Force's follow-up choice must be answerable from the property alone.
+    // The Force's follow-up choice must be answerable from the property
+    // alone, for fights that start outside the choice script's reach.
     manager.setChoice(1387, 3);
   }
 }

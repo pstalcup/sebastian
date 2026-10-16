@@ -28,7 +28,17 @@ import {
   useSkill,
   visitUrl,
 } from "kolmafia";
-import { $coinmaster, $effect, $familiar, $item, $skill, $slot, $stat, get } from "libram";
+import {
+  $coinmaster,
+  $effect,
+  $familiar,
+  $item,
+  $skill,
+  $slot,
+  $stat,
+  ChestMimic,
+  get,
+} from "libram";
 import { gotPeriled, haveItem, inAftercore, inSeaPath, step } from "./state";
 import { pulledToday, pullSequence } from "./pulls";
 
@@ -244,14 +254,12 @@ export function summon(monster: Monster, wishGear?: () => void): boolean {
     use($item`photocopied monster`);
     runCombat();
   } else if ($familiar`Chest Mimic`.experience > 200) {
-    if (!getProperty("mimicEggMonsters").includes(`${monster.id}`)) {
-      cliExecute(`c2t_megg extract ${monster}`);
+    if (ChestMimic.differentiableQuantity(monster) === 0) ChestMimic.receive(monster);
+    if (!ChestMimic.differentiate(monster)) {
+      throw new Error(
+        `Couldn't hatch a ${monster} from a mimic egg. Rerun, and if it happens again ping FS.`,
+      );
     }
-    if (itemAmount($item`mimic egg`) === 0) {
-      throw new Error("Mimic egg failed to extract. Rerun, and if it happens again ping FS.");
-    }
-    cliExecute(`c2t_megg fight ${monster}`);
-    runCombat();
     // A Force cast during the egg fight can strand the session in choice 1387.
     if (handlingChoice() && lastChoice() === 1387) runChoice(3);
   } else if (itemAmount($item`pocket wish`) > 0) {
