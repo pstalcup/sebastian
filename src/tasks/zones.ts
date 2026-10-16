@@ -32,7 +32,7 @@ import {
   questStep,
 } from "libram";
 
-import { branch, TaskBody } from "../engine";
+import { branch, TaskBody, withHooks } from "../engine";
 import { pickFamiliar } from "../lib/familiar";
 import { dropsItems, Gear } from "../lib/gear";
 import {
@@ -321,6 +321,16 @@ function adv1Rift(): void {
   adv1(rift, -1, "");
 }
 
+/** A sea lasso from the monkey's paw or the corral, in the sea gear it needs. */
+export function lassoWish(): TaskBody {
+  return withHooks(monkeypaw($item`sea lasso`), {
+    before: () => {
+      equip($item`really, really nice swimming trunks`);
+      equip($item`little bitty bathysphere`);
+    },
+  });
+}
+
 /**
  * One shadow rift visit: Shadow Waters first, then the Shadow Affinity
  * fights, which want a sea lasso on hand for lasso training.
@@ -330,22 +340,10 @@ export function shadowRift(): TaskBody {
     haveEffect($effect`Shadow Waters`) > 0 &&
     haveEffect($effect`Shadow Affinity`) > 0 &&
     itemAmount($item`sea lasso`) === 0;
-  const lasso = monkeypaw($item`sea lasso`);
   return branch(
     () => haveEffect($effect`Shadow Waters`) === 0,
     shadowWaters(),
-    branch(
-      needLasso,
-      {
-        ...lasso,
-        before: () => {
-          equip($item`really, really nice swimming trunks`);
-          equip($item`little bitty bathysphere`);
-          lasso.before?.();
-        },
-      },
-      shadowAffinity(),
-    ),
+    branch(needLasso, lassoWish(), shadowAffinity()),
   );
 }
 
@@ -481,26 +479,22 @@ function skateParkTurn(): TaskBody {
   };
 }
 
-/** One turn towards ending the skate park war. Ready only while it's on. */
+/**
+ * One turn towards ending the skate park war. Ready only while it's on.
+ * Mafia only updates skateParkStatus from the park's page, so each turn ends
+ * with a visit there and the next completed() check sees the war's real state.
+ */
 export function skateParkWar(): TaskBody {
   const body = branch(
     () => !get("noncombatForcerActive") && (parkaForceAvailable() || leftSkiAvailable()),
     gymnasium(),
     skateParkTurn(),
   );
-  return {
-    ...body,
-    before: () => {
-      ncForce();
-      body.before?.();
-    },
-  };
+  return withHooks(body, {
+    before: ncForce,
+    post: () => visitUrl("sea_skatepark.php"),
+  });
 }
-
-export const skateParkAtWar = () => {
-  visitUrl("sea_skatepark.php");
-  return get("skateParkStatus") === "war";
-};
 
 // ─── ELEMENTARY SCHOOL AND LIBRARY ────────────────────────────────────────────
 

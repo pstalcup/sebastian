@@ -50,6 +50,25 @@ export function branch(pick: () => boolean, yes: TaskBody, no: TaskBody): TaskBo
   };
 }
 
+/**
+ * The body with extra setup before its own before() and extra cleanup after
+ * its own post(). Setting before or post beside a spread body would replace
+ * the body's hook instead of adding to it, so tasks add hooks through this.
+ */
+export function withHooks(body: TaskBody, hooks: Pick<TaskBody, "before" | "post">): TaskBody {
+  return {
+    ...body,
+    before: () => {
+      hooks.before?.();
+      body.before?.();
+    },
+    post: () => {
+      body.post?.();
+      hooks.post?.();
+    },
+  };
+}
+
 /** The CCS the run fights with. It consults the combat script. */
 export const SEB_CCS = "seb_grimoire";
 /** The bundled combat consult script, built from src/combat.ts. */
