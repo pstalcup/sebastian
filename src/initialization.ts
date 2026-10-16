@@ -1,5 +1,4 @@
 import {
-  abort,
   availableChoiceOptions,
   autosell,
   buyUsingStorage,
@@ -91,7 +90,7 @@ function checkChosenFamiliar(): void {
     numericModifier("Item Drop") <= without &&
     !userConfirm("Chosen familiar is not +item, would make some RNG worse. Continue?")
   ) {
-    abort();
+    throw new Error("Chosen familiar is not +item.");
   }
 }
 
@@ -244,7 +243,7 @@ function dailies(): void {
     }
     if (storageAmount(item) === 0) {
       if (item === $item`Congressional Medal of Insanity`) {
-        abort("Get yer own CMOI, ya filthy animal!");
+        throw new Error("Get yer own CMOI, ya filthy animal!");
       }
       buyUsingStorage(item);
     }
@@ -255,7 +254,7 @@ function dailies(): void {
 }
 
 export function initialization(): void {
-  if (getRevision() < 29057) abort("Please update mafia to newer than 29057");
+  if (getRevision() < 29057) throw new Error("Please update mafia to newer than 29057");
   // A pearl farm or screech re-aim that aborted mid-loop leaves these set,
   // and the CCS reads them.
   set("_sebPearlFarm", false);
@@ -263,7 +262,7 @@ export function initialization(): void {
 
   checkChosenFamiliar();
   if (!get("autoSatisfyWithNPCs")) {
-    abort("set autoSatisfyWithNPCs = true, the script isn't going to work if it's false");
+    throw new Error("set autoSatisfyWithNPCs = true, the script isn't going to work if it's false");
   }
 
   iotmChecklist();

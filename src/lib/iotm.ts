@@ -1,5 +1,4 @@
 import {
-  abort,
   appearanceRates,
   availableAmount,
   availableChoiceOptions,
@@ -157,7 +156,7 @@ export function codpiece(input: string): void {
   });
   const mounted = EternityCodpiece.currentGems();
   wanted.forEach((gem, i) => {
-    if (placed[i] && mounted[i] !== gem) abort("Codpiece slot incorrect");
+    if (placed[i] && mounted[i] !== gem) throw new Error("Codpiece slot incorrect");
   });
 }
 
@@ -210,7 +209,7 @@ export function mineNum(): Mining.MiningCoordinate {
   for (const [x, y] of chunks) {
     if (y < 4) return at(x, y);
   }
-  return abort(
+  throw new Error(
     "Generic mining did not find teflon ore, mine manually. TIP: the ores show up in adjacent veins of 5.",
   );
 }
@@ -513,7 +512,8 @@ export function baseballD(): void {
         filled++;
       }
     }
-    if (filled < 2) abort(`Not enough open slots to fill prereqs for outcome at slot ${slot}`);
+    if (filled < 2)
+      throw new Error(`Not enough open slots to fill prereqs for outcome at slot ${slot}`);
   };
   const canBanish = (p: number) => {
     if (!pitches.has(9)) return false;

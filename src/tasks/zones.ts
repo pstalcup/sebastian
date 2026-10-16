@@ -1,5 +1,4 @@
 import {
-  abort,
   adv1,
   availableAmount,
   buy,
@@ -395,23 +394,25 @@ export function curveballBurn(): TaskBody {
 // ─── ANEMONE MINE ─────────────────────────────────────────────────────────────
 
 /** One dig in the anemone mine for teflon ore. A page, not an adventure. */
-export function mineAnemone(): TaskBody {
+export function mineAnemone(dig: () => void = digAnemone): TaskBody {
   return {
     outfit: () => {
       const familiar = pickFamiliar("itdrop");
       return familiar ? { familiar } : {};
     },
-    do: () => {
-      equip($item`Mer-kin digpick`);
-      equipSwimTrunks();
-      Mining.mineCoordinate(Mining.Mine.ANEMONE, mineNum());
-      if (myHp() === 0) cliExecute("restore HP");
-      if (itemAmount($item`teflon ore`) > 0 && haveEffect($effect`Beaten Up`) > 0) {
-        if (haveSkill($skill`Tongue of the Walrus`)) useSkill($skill`Tongue of the Walrus`);
-        else cliExecute("rest");
-      }
-    },
+    do: dig,
   };
+}
+
+export function digAnemone(): void {
+  equip($item`Mer-kin digpick`);
+  equipSwimTrunks();
+  Mining.mineCoordinate(Mining.Mine.ANEMONE, mineNum());
+  if (myHp() === 0) cliExecute("restore HP");
+  if (itemAmount($item`teflon ore`) > 0 && haveEffect($effect`Beaten Up`) > 0) {
+    if (haveSkill($skill`Tongue of the Walrus`)) useSkill($skill`Tongue of the Walrus`);
+    else cliExecute("rest");
+  }
 }
 
 // ─── GYMNASIUM AND SKATE PARK ─────────────────────────────────────────────────
@@ -437,7 +438,7 @@ export function gymnasium(): TaskBody {
     prepare: () => {
       mood("combat");
       if (get("noncombatForcerActive")) {
-        abort("Sneak active while trying to adventure in gymnasium, get rid of it");
+        throw new Error("Sneak active while trying to adventure in gymnasium, get rid of it");
       }
     },
     do: gym,

@@ -96,6 +96,15 @@ import { haveItem, highShiny, lowShiny, step } from "./lib/state";
 // and Shub's deleveling react to HP and stats round by round, so those submit
 // one round's macro at a time.
 
+/**
+ * Stops the run from inside a fight, recording why for halfloop first. A throw
+ * here would end only this consult, so this one still aborts.
+ */
+function stop(why: string): never {
+  set("_lastScriptError", why);
+  return abort(why);
+}
+
 const saber = $item`Fourth of May Cosplay Saber`;
 const curveballOn = (monster: Monster) =>
   get("_curveballMonster") === monster && get("_curveballFightsLeft", 0) > 0;
@@ -425,7 +434,7 @@ function yogDeleveler(): Item {
     return $item.none;
   }
   const found = DELEVELERS.find((item) => itemAmount(item) > 0 && !itemUsedThisCombat(item));
-  if (!found) abort("Yog-Urt needs a deleveler and none is left.");
+  if (!found) stop("Yog-Urt needs a deleveler and none is left.");
   return found ?? $item.none;
 }
 
@@ -450,7 +459,7 @@ function yogSuckramentRound(needHeal: boolean): Macro {
   if (!needHeal && yogDeleveler() !== $item.none) return Macro.item(yogDeleveler());
   if (yogDocPair()) return Macro.item([elixir, unguent]);
   if (heal !== $item.none) return Macro.item(heal);
-  return abort(
+  return stop(
     "Yog-Urt: nothing harmless left to throw under More Like a Suckrament. Finish the fight by hand.",
   );
 }
@@ -461,9 +470,9 @@ function yogUrtFight(): void {
   let stuck = 0;
   while (currentRound() > 0 && haveEffect($effect`More Like a Suckrament`) > 0) {
     if (currentRound() > 12) {
-      abort("Yog-Urt: More Like a Suckrament is still up past round 12. Finish the fight by hand.");
+      stop("Yog-Urt: More Like a Suckrament is still up past round 12. Finish the fight by hand.");
     }
-    if (stuck >= 3) abort("Yog-Urt: throws are not advancing the round. Finish the fight by hand.");
+    if (stuck >= 3) stop("Yog-Urt: throws are not advancing the round. Finish the fight by hand.");
     const round = currentRound();
     // She hits first each round; past the counted heals the action only fills the round.
     yogSuckramentRound(round <= YOG_HEALINGS_NEEDED[beads]).submit();
@@ -583,7 +592,7 @@ function knobAlleyPantry(plan: Plan): void {
 }
 
 function madnessBakery(plan: Plan): void {
-  if (!haveSkill(screech)) abort("Need patriotic eagle");
+  if (!haveSkill(screech)) stop("Need patriotic eagle");
   plan.trySkill(screech, talkToFish).step(freeKill(false)).step(cleanUp());
 }
 
@@ -608,7 +617,7 @@ function shadowRift(plan: Plan): void {
       }
     }
   }
-  if (foe === $monster`tumbleweed`) abort("Unexpected mob encountered in shadow rift");
+  if (foe === $monster`tumbleweed`) stop("Unexpected mob encountered in shadow rift");
   // Talk to the fish once the pickpocket is spent, or while scales are short.
   if (myPrimestat() !== $stat`Moxie` || availableAmount($item`pristine fish scale`) < 6) {
     plan.trySkill(talkToFish);
@@ -1041,7 +1050,7 @@ function colosseum(plan: Plan): void {
       freeRunAny(false).runaway().submit();
       if (currentRound() > 0) why += " The fight is still in progress: finish it by hand.";
       print(why, "red");
-      abort(why);
+      stop(why);
     }
     // Recorded before the cast: a kill ends the fight and the run moves on.
     set("_sebChampionRanEst", geyserLowRoll());
@@ -1056,7 +1065,7 @@ function colosseum(plan: Plan): void {
 function temple(plan: Plan): void {
   if (foe === $monster`Yog-Urt, Elder Goddess of Hatred`) {
     if (myMaxhp() > 311) {
-      abort("Too much HP to beat Yogurt (need < 312 after debuff) — check what's granting HP");
+      stop("Too much HP to beat Yogurt (need < 312 after debuff) — check what's granting HP");
     }
     const opener =
       availableAmount($item`crayon shavings`) >= 9
@@ -1077,7 +1086,7 @@ function temple(plan: Plan): void {
   }
   if (foe === $monster`Dad Sea Monkee`) {
     cliExecute("dad");
-    abort(
+    stop(
       "execute spells in the above order, can use shrap instead of toynado and volcanometeor instead of awesome balls of fire",
     );
   }
@@ -1296,5 +1305,5 @@ export function main(round: number, monster: Monster, page: string): void {
     }
   }
   if (currentRound() > 0)
-    abort(`The fight against ${lastMonster()} is still going. Finish it by hand.`);
+    stop(`The fight against ${lastMonster()} is still going. Finish it by hand.`);
 }

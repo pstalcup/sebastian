@@ -1,7 +1,7 @@
 import {
-  abort,
   availableAmount,
   buy,
+  canAdventure,
   cliExecute,
   create,
   elementalResistance,
@@ -99,6 +99,7 @@ import {
   combJelly,
   corralFarm,
   curveballBurn,
+  digAnemone,
   finishCaliginous,
   mineAnemone,
   monkeypaw,
@@ -326,7 +327,7 @@ function wreckTurn(): TaskBody {
       // Every free diver source runs before this, so no adventures here
       // means nothing is left to spend on the hunt.
       if (myAdventures() < 1) {
-        abort(
+        throw new Error(
           `Out of adventures with the diving helmet chain short: ${diverChainReport()}, ` +
             `${availableAmount($item`bubblin' stone`)} bubblin' stone.`,
         );
@@ -338,7 +339,7 @@ function wreckTurn(): TaskBody {
 
 function buildHelmet(): void {
   if (!retrieveItem($item`aerated diving helmet`)) {
-    abort(
+    throw new Error(
       `Could not build an aerated diving helmet: ${diverChainReport()}, ` +
         `${availableAmount($item`rusty diving helmet`)} rusty diving helmet, ` +
         `${availableAmount($item`bubblin' stone`)} bubblin' stone, ${myAdventures()} adventures left.`,
@@ -491,7 +492,7 @@ const abyssTasks: SebTask[] = [
         .need($item`shark jumper`, $item`scale-mail underwear`, $item`Monodent of the Sea`)
         .outfit(),
     prepare: () => {
-      if (myBuffedstat($stat`Moxie`) < 500) abort("Need 500 moxie here to be safe");
+      if (myBuffedstat($stat`Moxie`) < 500) throw new Error("Need 500 moxie here to be safe");
     },
     do: $location`Cyberzone 1`,
   },
@@ -618,6 +619,15 @@ export const SeahorseRouteQuest: SebQuest = {
 
 const curveballLive = () =>
   get("_curveballFightsLeft", 0) > 0 && get("_curveballMonster") === $monster`some fish`;
+/** An Unaccompanied Miner swing, which stops the run if mining.php didn't count it. */
+function freeDig(): void {
+  const used = get("_unaccompaniedMinerUsed");
+  digAnemone();
+  if (get("_unaccompaniedMinerUsed") <= used) {
+    throw new Error("Unaccompanied Miner swing didn't count in mining.php. Mine unlocked?");
+  }
+}
+
 const teflonNeeded = () => itemAmount($item`teflon ore`) === 0 && tailpiece() === $item.none;
 const haveDigpick = () => availableAmount($item`Mer-kin digpick`) > 0;
 const affinityLeft = () => haveEffect($effect`Shadow Affinity`) > 0 || !get("_shadowAffinityToday");
@@ -698,9 +708,11 @@ export const TeflonQuest: SebQuest = {
         teflonNeeded() &&
         haveDigpick() &&
         haveSkill($skill`Unaccompanied Miner`) &&
-        get("_unaccompaniedMinerUsed") < 5,
+        get("_unaccompaniedMinerUsed") < 5 &&
+        // Muscle classes get in at the Grandpa step, the rest need Big Brother's map.
+        canAdventure($location`Anemone Mine`),
       completed: () => !teflonNeeded(),
-      ...mineAnemone(),
+      ...mineAnemone(freeDig),
       limit: { tries: 5 },
     },
     {
@@ -871,7 +883,7 @@ export const TamingQuest: SebQuest = {
       name: "Tame the seahorse",
       completed: tamed,
       before: () => {
-        if (itemAmount($item`sea cowbell`) < 3) abort("need more cowbells");
+        if (itemAmount($item`sea cowbell`) < 3) throw new Error("need more cowbells");
         if (itemAmount($item`waffle`) === 0) pullSequence($item`waffle`);
       },
       outfit: () => {
@@ -910,7 +922,7 @@ export const aftercoreBoss = () => get("_sebAftercoreBoss");
 /** Mafia skips Deep Dark Visions below 500 maximum HP; under 67% spooky res a cast ends Beaten Up. */
 function deepDarkVisions(): void {
   if (myMaxhp() < 500) {
-    abort(`Deep Dark Visions needs 500 maximum HP; you have ${myMaxhp()}.`);
+    throw new Error(`Deep Dark Visions needs 500 maximum HP; you have ${myMaxhp()}.`);
   }
   const spookyRes = Math.floor(elementalResistance($element`spooky`));
   if (spookyRes < 67) {
@@ -920,10 +932,10 @@ function deepDarkVisions(): void {
     );
   }
   if (!restoreHp(spookyRes < 67 ? 1000 : myMaxhp())) {
-    abort("Could not restore HP before Deep Dark Visions; see the message above.");
+    throw new Error("Could not restore HP before Deep Dark Visions; see the message above.");
   }
   if (!useSkill(1, $skill`Deep Dark Visions`)) {
-    abort("Could not cast Deep Dark Visions; see the message above.");
+    throw new Error("Could not cast Deep Dark Visions; see the message above.");
   }
 }
 
@@ -986,7 +998,7 @@ export const PostSeahorseQuest: SebQuest = {
       completed: () => availableAmount($item`pristine fish scale`) >= 3,
       before: () => {
         if (get("_cloversPurchased") >= 3) {
-          abort(
+          throw new Error(
             `get a total of ${availableAmount($item`pristine fish scale`)} pristine fish scale, out of hermitage clovers`,
           );
         }
@@ -1005,7 +1017,9 @@ export const PostSeahorseQuest: SebQuest = {
       ...action(() => {
         cliExecute("unequip sea chaps; unequip aerated diving helmet");
         if (!retrieveItem($item`crappy Mer-kin mask`)) {
-          abort("Could not build a crappy Mer-kin mask; the aerated diving helmet chain is short.");
+          throw new Error(
+            "Could not build a crappy Mer-kin mask; the aerated diving helmet chain is short.",
+          );
         }
       }),
       limit: { tries: 1 },
@@ -1016,7 +1030,7 @@ export const PostSeahorseQuest: SebQuest = {
       ...action(() => {
         cliExecute("unequip sea chaps");
         if (!retrieveItem($item`crappy Mer-kin tailpiece`)) {
-          abort(
+          throw new Error(
             `Could not build a crappy Mer-kin tailpiece: ${availableAmount($item`sea chaps`)} sea chaps, ` +
               `${availableAmount($item`teflon swim fins`)} swim fins, ` +
               `${availableAmount($item`pristine fish scale`)}/3 fish scales.`,
@@ -1036,7 +1050,7 @@ export const PostSeahorseQuest: SebQuest = {
           Dad: true,
           Abort: true,
         });
-        if (boss === "Abort" || boss === "") abort();
+        if (boss === "Abort" || boss === "") throw new Error("No aftercore boss chosen.");
         set("_sebAftercoreBoss", boss);
       }),
       limit: { tries: 1 },

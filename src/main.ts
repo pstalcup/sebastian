@@ -1,6 +1,6 @@
 import { Args, getTasks } from "grimoire-kolmafia";
 import { maximize, print, writeCcs } from "kolmafia";
-import { Clan, get, questStep } from "libram";
+import { Clan, get, questStep, set } from "libram";
 
 import { args } from "./args";
 import { COMBAT_SCRIPT, SEB_CCS, SebEngine } from "./engine";
@@ -51,6 +51,9 @@ export function main(command?: string): void {
       // A run killed mid-walk can leave these set.
       engine.properties.set({ _sebPearlFarm: false, _sebScreechReaim: false });
       engine.run();
+    } catch (e) {
+      set("_lastScriptError", `${e}`);
+      throw e;
     } finally {
       engine.destruct();
       print("Ending UnderTheSea");
@@ -96,6 +99,11 @@ export function main(command?: string): void {
         "red",
       );
     }
+  } catch (e) {
+    // halfloop reads this when cli_execute("sebastian") fails. abort() skips
+    // both, so failures throw instead.
+    set("_lastScriptError", `${e}`);
+    throw e;
   } finally {
     engine.destruct();
     // The Sheriff props come from a photo booth in another clan.

@@ -1,5 +1,4 @@
 import {
-  abort,
   buy,
   canAdventure,
   cliExecute,
@@ -115,7 +114,7 @@ function pearlResCheck(zone: Location): void {
   mood("combat");
   const res = numericModifier(`${element} resistance`);
   if (res < 18) {
-    abort(
+    throw new Error(
       `Pearl farming needs 18 ${element} resistance for full speed in ${zone} and only ` +
         `${Math.floor(res)} is up; add ${element} resistance gear or buffs and rerun.`,
     );
@@ -125,7 +124,7 @@ function pearlResCheck(zone: Location): void {
 /** Empty Hagnk's once per ascension: the run is over, so everything may as well be on hand. */
 function pullEverything(): void {
   if (get("lastEmptiedStorage") === myAscensions()) return;
-  if (!cliExecute("pull all")) abort("pull all didn't empty storage.");
+  if (!cliExecute("pull all")) throw new Error("pull all didn't empty storage.");
 }
 
 /** A guaranteed Lucky! for The Brinier Deepers' Haggling, which grants 20 turns of Fishy. */
@@ -201,7 +200,8 @@ function walkFamiliar(): Familiar {
   if (haveFamiliar($familiar`Jumpsuited Hound Dog`)) return $familiar`Jumpsuited Hound Dog`;
   if (myFamiliar() !== $familiar.none) return myFamiliar();
   const fallback = $familiars`Patriotic Eagle, Grouper Groupie`.find((f) => haveFamiliar(f));
-  if (!fallback) abort("postloop pearls: no familiar out; take out any familiar and rerun.");
+  if (!fallback)
+    throw new Error("postloop pearls: no familiar out; take out any familiar and rerun.");
   return fallback;
 }
 
@@ -249,7 +249,9 @@ function pilsnerForAdventures(): void {
     use($item`astral six-pack`);
   }
   if (itemAmount($item`astral pilsner`) === 0) {
-    abort("seb_runOutEagleBanish: out of adventures and no astral pilsner left to drink.");
+    throw new Error(
+      "seb_runOutEagleBanish: out of adventures and no astral pilsner left to drink.",
+    );
   }
   uneffect($effect`Donho's Bubbly Ballad`);
   if (haveSkill($skill`The Ode to Booze`)) useSkill($skill`The Ode to Booze`);
@@ -316,14 +318,14 @@ function usePilsners(): void {
 /** seb_postLoopPrepCodpiece: five unblemished pearls slotted for the next run. */
 function prepCodpiece(): void {
   if (!haveItem($item`The Eternity Codpiece`)) {
-    abort("seb_postLoopPrepCodpiece: you don't own The Eternity Codpiece.");
+    throw new Error("seb_postLoopPrepCodpiece: you don't own The Eternity Codpiece.");
   }
   pullEverything();
   codpiece("none");
   const pearl = $item`unblemished pearl`;
   if (itemAmount(pearl) < 5) retrieveItem(5, pearl);
   if (itemAmount(pearl) < 5) {
-    abort(
+    throw new Error(
       `seb_postLoopPrepCodpiece: couldn't get to five unblemished pearls (have ${itemAmount(pearl)}).`,
     );
   }
@@ -385,12 +387,12 @@ export const PostloopQuest: SebQuest = {
         if (rundownWanted()) {
           print("SEB: postloop: re-aiming the Patriotic Screech off the construct phylum", "blue");
           if (!haveFamiliar($familiar`Patriotic Eagle`)) {
-            abort(
+            throw new Error(
               "seb_postLoopRunOutEagleBanish: no Patriotic Eagle in the terrarium, so the screech can't be re-aimed.",
             );
           }
           if (!canAdventure($location`The Smut Orc Logging Camp`)) {
-            abort(
+            throw new Error(
               "seb_postLoopRunOutEagleBanish: The Smut Orc Logging Camp isn't open, and the re-aim needs a place to screech.",
             );
           }
@@ -493,7 +495,7 @@ export const PostloopQuest: SebQuest = {
           set("_sebPearlWalk", "done");
           return;
         }
-        abort(
+        throw new Error(
           `postloop pearls: out of Fishy mid-zone after ${spent()} turns with ${claimedCount() - counter("_sebPearlClaimed")} pearls claimed; today's zone progress won't survive rollover.`,
         );
       }),
@@ -514,7 +516,7 @@ export const PostloopQuest: SebQuest = {
       },
       prepare: () => {
         if (spent() >= 90) {
-          abort(
+          throw new Error(
             "postloop pearls: 90 turns spent without finishing; something is wrong, bailing out.",
           );
         }

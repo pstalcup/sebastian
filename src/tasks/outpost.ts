@@ -1,5 +1,4 @@
 import {
-  abort,
   availableAmount,
   cliExecute,
   equip,
@@ -210,7 +209,7 @@ export const OutpostQuest: SebQuest = {
         if (outpost.turnsSpent < 5) set("stashboxChecked", "0");
         const checked = get("stashboxChecked");
         if (["1", "2", "3"].every((n) => checked.includes(n))) {
-          abort("All stashbox locations checked but no stashbox — something went wrong");
+          throw new Error("All stashbox locations checked but no stashbox — something went wrong");
         }
       },
       outfit: () => outpostGear().outfit(),
