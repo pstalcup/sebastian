@@ -2501,6 +2501,14 @@ var _templateObject, _templateObject2, _templateObject3, _templateObject4, _temp
 // and Shub's deleveling react to HP and stats round by round, so those submit
 // one round's macro at a time.
 
+/**
+ * Stops the run from inside a fight, recording why for halfloop first. A throw
+ * here would end only this consult, so this one still aborts.
+ */
+function stop(why) {
+  _set("_lastScriptError", why);
+  return kolmafia.abort(why);
+}
 var saber = $item(_templateObject || (_templateObject = _taggedTemplateLiteral(["Fourth of May Cosplay Saber"])));
 var curveballOn = monster => get("_curveballMonster") === monster && get("_curveballFightsLeft", 0) > 0;
 var someFishCurveball = () => curveballOn($monster(_templateObject2 || (_templateObject2 = _taggedTemplateLiteral(["some fish"]))));
@@ -2805,7 +2813,7 @@ function yogDeleveler() {
     return $item.none;
   }
   var found = DELEVELERS.find(item => kolmafia.itemAmount(item) > 0 && !itemUsedThisCombat(item));
-  if (!found) kolmafia.abort("Yog-Urt needs a deleveler and none is left.");
+  if (!found) stop("Yog-Urt needs a deleveler and none is left.");
   return found ?? $item.none;
 }
 
@@ -2827,7 +2835,7 @@ function yogSuckramentRound(needHeal) {
   if (!needHeal && yogDeleveler() !== $item.none) return Macro.item(yogDeleveler());
   if (yogDocPair()) return Macro.item([elixir, unguent]);
   if (heal !== $item.none) return Macro.item(heal);
-  return kolmafia.abort("Yog-Urt: nothing harmless left to throw under More Like a Suckrament. Finish the fight by hand.");
+  return stop("Yog-Urt: nothing harmless left to throw under More Like a Suckrament. Finish the fight by hand.");
 }
 
 /** Heal through More Like a Suckrament without touching Yog-Urt, then kill her. One round per macro. */
@@ -2836,9 +2844,9 @@ function yogUrtFight() {
   var stuck = 0;
   while (kolmafia.currentRound() > 0 && kolmafia.haveEffect($effect(_templateObject85 || (_templateObject85 = _taggedTemplateLiteral(["More Like a Suckrament"])))) > 0) {
     if (kolmafia.currentRound() > 12) {
-      kolmafia.abort("Yog-Urt: More Like a Suckrament is still up past round 12. Finish the fight by hand.");
+      stop("Yog-Urt: More Like a Suckrament is still up past round 12. Finish the fight by hand.");
     }
-    if (stuck >= 3) kolmafia.abort("Yog-Urt: throws are not advancing the round. Finish the fight by hand.");
+    if (stuck >= 3) stop("Yog-Urt: throws are not advancing the round. Finish the fight by hand.");
     var round = kolmafia.currentRound();
     // She hits first each round; past the counted heals the action only fills the round.
     yogSuckramentRound(round <= YOG_HEALINGS_NEEDED[beads]).submit();
@@ -2942,7 +2950,7 @@ function knobAlleyPantry(plan) {
   plan.trySkill(talkToFish, $skill(_templateObject114 || (_templateObject114 = _taggedTemplateLiteral(["Prepare to reanimate your Foe"])))).step(darts()).step(cleanUp());
 }
 function madnessBakery(plan) {
-  if (!kolmafia.haveSkill(screech)) kolmafia.abort("Need patriotic eagle");
+  if (!kolmafia.haveSkill(screech)) stop("Need patriotic eagle");
   plan.trySkill(screech, talkToFish).step(freeKill(false)).step(cleanUp());
 }
 function shadowRift(plan) {
@@ -2962,7 +2970,7 @@ function shadowRift(plan) {
       }
     }
   }
-  if (foe === $monster(_templateObject125 || (_templateObject125 = _taggedTemplateLiteral(["tumbleweed"])))) kolmafia.abort("Unexpected mob encountered in shadow rift");
+  if (foe === $monster(_templateObject125 || (_templateObject125 = _taggedTemplateLiteral(["tumbleweed"])))) stop("Unexpected mob encountered in shadow rift");
   // Talk to the fish once the pickpocket is spent, or while scales are short.
   if (kolmafia.myPrimestat() !== $stat(_templateObject126 || (_templateObject126 = _taggedTemplateLiteral(["Moxie"]))) || kolmafia.availableAmount($item(_templateObject127 || (_templateObject127 = _taggedTemplateLiteral(["pristine fish scale"])))) < 6) {
     plan.trySkill(talkToFish);
@@ -3282,7 +3290,7 @@ function colosseum(plan) {
       freeRunAny(false).runaway().submit();
       if (kolmafia.currentRound() > 0) why += " The fight is still in progress: finish it by hand.";
       kolmafia.print(why, "red");
-      kolmafia.abort(why);
+      stop(why);
     }
     // Recorded before the cast: a kill ends the fight and the run moves on.
     _set("_sebChampionRanEst", geyserLowRoll());
@@ -3297,7 +3305,7 @@ function colosseum(plan) {
 function temple(plan) {
   if (foe === $monster(_templateObject254 || (_templateObject254 = _taggedTemplateLiteral(["Yog-Urt, Elder Goddess of Hatred"])))) {
     if (kolmafia.myMaxhp() > 311) {
-      kolmafia.abort("Too much HP to beat Yogurt (need < 312 after debuff) — check what's granting HP");
+      stop("Too much HP to beat Yogurt (need < 312 after debuff) — check what's granting HP");
     }
     var opener = kolmafia.availableAmount($item(_templateObject255 || (_templateObject255 = _taggedTemplateLiteral(["crayon shavings"])))) >= 9 ? $item(_templateObject256 || (_templateObject256 = _taggedTemplateLiteral(["crayon shavings"]))) : $item(_templateObject257 || (_templateObject257 = _taggedTemplateLiteral(["table tennis ball"])));
     plan.item([opener, $item(_templateObject258 || (_templateObject258 = _taggedTemplateLiteral(["Mer-kin healscroll"])))], [$item(_templateObject259 || (_templateObject259 = _taggedTemplateLiteral(["Mer-kin mouthsoap"]))), $item(_templateObject260 || (_templateObject260 = _taggedTemplateLiteral(["waterlogged scroll of healing"])))], $item(_templateObject261 || (_templateObject261 = _taggedTemplateLiteral(["sea gel"]))));
@@ -3311,7 +3319,7 @@ function temple(plan) {
   }
   if (foe === $monster(_templateObject269 || (_templateObject269 = _taggedTemplateLiteral(["Dad Sea Monkee"])))) {
     kolmafia.cliExecute("dad");
-    kolmafia.abort("execute spells in the above order, can use shrap instead of toynado and volcanometeor instead of awesome balls of fire");
+    stop("execute spells in the above order, can use shrap instead of toynado and volcanometeor instead of awesome balls of fire");
   }
 }
 function byLocation(plan) {
@@ -3487,7 +3495,7 @@ function main(round, monster, page) {
       page = kolmafia.visitUrl("fight.php");
     }
   }
-  if (kolmafia.currentRound() > 0) kolmafia.abort("The fight against ".concat(kolmafia.lastMonster(), " is still going. Finish it by hand."));
+  if (kolmafia.currentRound() > 0) stop("The fight against ".concat(kolmafia.lastMonster(), " is still going. Finish it by hand."));
 }
 
 exports.main = main;
