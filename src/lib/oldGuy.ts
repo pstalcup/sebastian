@@ -1,5 +1,6 @@
-import { buy, getProperty, itemAmount, storageAmount, use, visitUrl } from "kolmafia";
-import { $coinmaster, $item, $location, have } from "libram";
+import { buy, itemAmount, storageAmount, use, visitUrl } from "kolmafia";
+import { $coinmaster, $item, $location, have, get } from "libram";
+
 import { adv } from "./postAdventure";
 import { getLucky, pullSequence } from "./pulls";
 import { blackGlass } from "./resources";
@@ -23,7 +24,7 @@ export function getSandDollar(): void {
 export function oldGuy(): void {
   while (itemAmount($item`sand dollar`) < 50) getSandDollar();
   blackGlass();
-  if (!have($item`damp old boot`) && getProperty("questS01OldGuy") === "started") {
+  if (!have($item`damp old boot`) && get("questS01OldGuy") === "started") {
     buy($coinmaster`Big Brother`, 1, $item`damp old boot`);
   }
   visitUrl(

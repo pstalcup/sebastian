@@ -8,7 +8,6 @@ import {
   equippedItem,
   Familiar,
   familiarWeight,
-  getProperty,
   haveEffect,
   haveFamiliar,
   haveSkill,
@@ -26,17 +25,18 @@ import {
   setProperty,
   Slot,
   storageAmount,
-  toInt,
   use,
   useSkill,
 } from "kolmafia";
 import { $coinmaster, $effect, $familiar, $familiars, $item, $location, $skill, get } from "libram";
-import { UtsQuest } from "../engine";
+
+import { SebQuest } from "../engine";
 import { Gear } from "../lib/gear";
 import { codpiece } from "../lib/iotm";
 import { mood, Mood } from "../lib/mood";
 import { getLucky } from "../lib/pulls";
 import { haveItem, inSeaPath } from "../lib/state";
+
 import { action } from "./zones";
 
 // After the prism: spend the sand pennies, then the opt-in postloop steps
@@ -44,28 +44,27 @@ import { action } from "./zones";
 // the end of seaMonkees() and pearlPostloop() through prepCodpiece() in
 // UnderTheSea.ash.
 
-const flag = (name: string) => getProperty(name) === "true";
-const prop = (name: string) => getProperty(name);
+const flag = (name: string) => get(name, false);
 
 // ─── PEARL FARMING / EAGLE BANISH RE-AIM ──────────────────────────────────────
-// One walk serves both postloop prefs. uts_postLoopRunOutEagleBanish
+// One walk serves both postloop prefs. seb_postLoopRunOutEagleBanish
 // (experimental): the Patriotic Eagle farms pearl zones until the screech
 // recharges, spends it on the first monster at the Smut Orc Logging Camp,
 // which moves the leftover construct banish onto the orc phylum, and is done.
-// uts_postLoopFarmPearls: when a pearl's mall price beats the ten turns its
+// seb_postLoopFarmPearls: when a pearl's mall price beats the ten turns its
 // farm costs at valueOfAdventure, keep walking until every open zone's daily
 // pearl is claimed.
 //
 // Free kills, free runs and fight-enders advance neither a zone's pearl
 // progress nor screechCombats; only a combat fought to a plain win on a spent
-// turn counts. _utsPearlFarm tells the combat script to fight that way.
+// turn counts. _sebPearlFarm tells the combat script to fight that way.
 //
 // The walk's state lives in daily properties, so a rerun carries on with it:
-//   _utsPearlWalk      "" not started, "on", or "done"
-//   _utsPearlRundown   "on" while the re-aim is still wanted
-//   _utsPearlSpent     turns the walk has spent
-//   _utsPearlClaimed   pearls already claimed when the walk started
-//   _utsScreechNext / _utsScreechFallback / _utsScreechMisses: the re-aim's
+//   _sebPearlWalk      "" not started, "on", or "done"
+//   _sebPearlRundown   "on" while the re-aim is still wanted
+//   _sebPearlSpent     turns the walk has spent
+//   _sebPearlClaimed   pearls already claimed when the walk started
+//   _sebScreechNext / _sebScreechFallback / _sebScreechMisses: the re-aim's
 //                      back-off, in walk turns
 
 const PEARL_ZONES: [Location, string, string][] = [
@@ -87,12 +86,12 @@ const claimedCount = () => PEARL_ZONES.filter(([, , pref]) => flag(pref)).length
 const currentZone = () =>
   PEARL_ZONES.find(([zone, , pref]) => !flag(pref) && canAdventure(zone))?.[0];
 
-const counter = (name: string) => toInt(prop(name));
+const counter = (name: string) => get(name, 0);
 const setCounter = (name: string, value: number) => setProperty(name, `${value}`);
-const spent = () => counter("_utsPearlSpent");
+const spent = () => counter("_sebPearlSpent");
 
-const walking = () => prop("_utsPearlWalk") === "on";
-const rundown = () => walking() && prop("_utsPearlRundown") === "on";
+const walking = () => get("_sebPearlWalk") === "on";
+const rundown = () => walking() && get("_sebPearlRundown") === "on";
 const farming = () => walking() && pearlFarmWorthIt();
 
 /**
@@ -120,7 +119,7 @@ function pullEverything(): void {
 
 /** A guaranteed Lucky! for The Brinier Deepers' Haggling, which grants 20 turns of Fishy. */
 function cloverFishyReady(): boolean {
-  if (!flag("uts_postLoopCloverFishy") || myAdventures() < 3) return false;
+  if (!flag("seb_postLoopCloverFishy") || myAdventures() < 3) return false;
   if (!canAdventure($location`The Brinier Deepers`)) return false;
   const aug2Free =
     haveSkill($skill`Aug. 2nd: Find an Eleven-Leaf Clover Day`) &&
@@ -136,7 +135,7 @@ function cloverFishyReady(): boolean {
 
 function reportRundownStalled(why: string): void {
   print(
-    `uts_postLoopRunOutEagleBanish: ${why} after ${spent()} turns; the Patriotic Screech is still aimed at the construct phylum.`,
+    `seb_postLoopRunOutEagleBanish: ${why} after ${spent()} turns; the Patriotic Screech is still aimed at the construct phylum.`,
     "red",
   );
   print(
@@ -147,40 +146,40 @@ function reportRundownStalled(why: string): void {
 
 /** Whether a pearl mall-buys for more than ten farming turns are worth. Asked once a day. */
 function pearlFarmWorthIt(): boolean {
-  if (!flag("uts_postLoopFarmPearls")) return false;
-  const cached = prop("_utsPearlFarmWorth");
+  if (!flag("seb_postLoopFarmPearls")) return false;
+  const cached = get("_sebPearlFarmWorth");
   if (cached !== "") return cached === "true";
   const pearlPrice = mallPrice($item`unblemished pearl`);
   let voa = get("valueOfAdventure");
   if (pearlPrice > 0 && voa <= 0) {
     // garbo's own default; an unset zero would make farming always win.
     voa = 4000;
-    print(`uts_postLoopFarmPearls: valueOfAdventure isn't set, assuming ${voa}.`, "blue");
+    print(`seb_postLoopFarmPearls: valueOfAdventure isn't set, assuming ${voa}.`, "blue");
   }
   let worth = false;
   if (pearlPrice <= 0) {
     print(
-      "uts_postLoopFarmPearls: couldn't get a mall price for the pearl; skipping the farm.",
+      "seb_postLoopFarmPearls: couldn't get a mall price for the pearl; skipping the farm.",
       "red",
     );
   } else if (pearlPrice <= voa * 10) {
     print(
-      `uts_postLoopFarmPearls: a pearl mall-buys at ${pearlPrice} and ten farming turns are worth ${voa * 10} -- buying beats farming today.`,
+      `seb_postLoopFarmPearls: a pearl mall-buys at ${pearlPrice} and ten farming turns are worth ${voa * 10} -- buying beats farming today.`,
       "blue",
     );
   } else {
     print(
-      `UTS: postloop: pearls sell for ${pearlPrice} against ${voa * 10} for ten farming turns -- farming`,
+      `SEB: postloop: pearls sell for ${pearlPrice} against ${voa * 10} for ten farming turns -- farming`,
       "blue",
     );
     worth = true;
   }
-  setProperty("_utsPearlFarmWorth", `${worth}`);
+  setProperty("_sebPearlFarmWorth", `${worth}`);
   return worth;
 }
 
 const rundownWanted = () =>
-  flag("uts_postLoopRunOutEagleBanish") && prop("banishedPhyla").includes("construct");
+  flag("seb_postLoopRunOutEagleBanish") && get("banishedPhyla").includes("construct");
 
 /**
  * The eagle's combats recharge the screech, so it stays out until the
@@ -196,20 +195,20 @@ function walkFamiliar(): Familiar {
 }
 
 function endRundown(): void {
-  setProperty("_utsPearlRundown", "off");
+  setProperty("_sebPearlRundown", "off");
 }
 
-/** What the re-aim fight left in _utsScreechFired, and the back-off it calls for. */
+/** What the re-aim fight left in _sebScreechFired, and the back-off it calls for. */
 function readScreech(): void {
   // banishedPhyla is the ground truth; the recorded cast only explains a
   // banish that did not move.
-  const fired = prop("_utsScreechFired");
+  const fired = get("_sebScreechFired");
   const backOff = (next: boolean) => {
-    setCounter("_utsScreechMisses", 0);
-    if (next) setCounter("_utsScreechNext", spent() + 11);
-    setCounter("_utsScreechFallback", spent() + 11);
+    setCounter("_sebScreechMisses", 0);
+    if (next) setCounter("_sebScreechNext", spent() + 11);
+    setCounter("_sebScreechFallback", spent() + 11);
   };
-  if (!prop("banishedPhyla").includes("construct")) {
+  if (!get("banishedPhyla").includes("construct")) {
     print(
       fired === "true"
         ? `Patriotic Screech re-aimed at smut orcs after ${spent()} turns; constructs are free.`
@@ -228,8 +227,8 @@ function readScreech(): void {
     backOff(false);
   } else {
     // No cast attempted twice: back off both paths.
-    setCounter("_utsScreechMisses", counter("_utsScreechMisses") + 1);
-    if (counter("_utsScreechMisses") >= 2) backOff(true);
+    setCounter("_sebScreechMisses", counter("_sebScreechMisses") + 1);
+    if (counter("_sebScreechMisses") >= 2) backOff(true);
   }
 }
 
@@ -239,7 +238,7 @@ function pilsnerForAdventures(): void {
     use($item`astral six-pack`);
   }
   if (itemAmount($item`astral pilsner`) === 0) {
-    abort("uts_runOutEagleBanish: out of adventures and no astral pilsner left to drink.");
+    abort("seb_runOutEagleBanish: out of adventures and no astral pilsner left to drink.");
   }
   cliExecute("shrug Donho's Bubbly Ballad");
   if (haveSkill($skill`The Ode to Booze`)) useSkill($skill`The Ode to Booze`);
@@ -265,7 +264,7 @@ function pilsnerLiver(): number {
 const pilsnersLeft = () =>
   itemAmount($item`astral pilsner`) + 6 * itemAmount($item`astral six-pack`);
 
-/** uts_usePilsners: drink the astral pilsners out. */
+/** seb_usePilsners: drink the astral pilsners out. */
 function usePilsners(): void {
   if (storageAmount($item`astral pilsner`) > 0 || storageAmount($item`astral six-pack`) > 0) {
     pullEverything();
@@ -285,10 +284,10 @@ function usePilsners(): void {
     if (before === 0) break;
     if (haveEffect($effect`Ode to Booze`) === 0 && haveSkill($skill`The Ode to Booze`)) {
       if (!cliExecute("shrug Donho's Bubbly Ballad")) {
-        print("uts_usePilsners: Donho's Bubbly Ballad wouldn't shrug.", "blue");
+        print("seb_usePilsners: Donho's Bubbly Ballad wouldn't shrug.", "blue");
       }
       if (!useSkill(1, $skill`The Ode to Booze`) && !odeWarned) {
-        print("uts_usePilsners: no Ode to Booze; drinking without it.", "blue");
+        print("seb_usePilsners: no Ode to Booze; drinking without it.", "blue");
         odeWarned = true;
       }
     }
@@ -298,15 +297,15 @@ function usePilsners(): void {
     if (itemAmount($item`astral pilsner`) >= before) break;
     drunk++;
   }
-  print(`uts_usePilsners: drank ${drunk}, ${pilsnersLeft()} pilsners left.`, "blue");
+  print(`seb_usePilsners: drank ${drunk}, ${pilsnersLeft()} pilsners left.`, "blue");
 }
 
 // ─── THE CODPIECE ─────────────────────────────────────────────────────────────
 
-/** uts_postLoopPrepCodpiece: five unblemished pearls slotted for the next run. */
+/** seb_postLoopPrepCodpiece: five unblemished pearls slotted for the next run. */
 function prepCodpiece(): void {
   if (!haveItem($item`The Eternity Codpiece`)) {
-    abort("uts_postLoopPrepCodpiece: you don't own The Eternity Codpiece.");
+    abort("seb_postLoopPrepCodpiece: you don't own The Eternity Codpiece.");
   }
   pullEverything();
   codpiece("none");
@@ -314,7 +313,7 @@ function prepCodpiece(): void {
   if (itemAmount(pearl) < 5) retrieveItem(5, pearl);
   if (itemAmount(pearl) < 5) {
     abort(
-      `uts_postLoopPrepCodpiece: couldn't get to five unblemished pearls (have ${itemAmount(pearl)}).`,
+      `seb_postLoopPrepCodpiece: couldn't get to five unblemished pearls (have ${itemAmount(pearl)}).`,
     );
   }
   codpiece(Array(5).fill("unblemished pearl").join(", "));
@@ -324,9 +323,9 @@ function prepCodpiece(): void {
 // ─── THE QUESTS ───────────────────────────────────────────────────────────────
 
 /** After the prism: spend the sand pennies and see the council. */
-export const PathCleanupQuest: UtsQuest = {
+export const PathCleanupQuest: SebQuest = {
   name: "Path cleanup",
-  ready: () => inSeaPath() && prop("questL13Final") === "finished",
+  ready: () => inSeaPath() && get("questL13Final") === "finished",
   tasks: [
     {
       name: "Sand pennies",
@@ -344,25 +343,25 @@ export const PathCleanupQuest: UtsQuest = {
     {
       // The storage pull pilsners may need is refused before the prism breaks.
       name: "Council",
-      completed: () => prop("_utsCouncilVisited") === "true",
+      completed: () => get("_sebCouncilVisited") === "true",
       ...action(() => {
         council();
         council();
-        setProperty("_utsCouncilVisited", "true");
+        setProperty("_sebCouncilVisited", "true");
       }),
       limit: { tries: 1 },
     },
   ],
 };
 
-/** The opt-in postloop steps. Each gates on its own uts_* pref. */
-export const PostloopQuest: UtsQuest = {
+/** The opt-in postloop steps. Each gates on its own seb_* pref. */
+export const PostloopQuest: SebQuest = {
   name: "Postloop",
   tasks: [
     {
       // First, since the later ones can abort and leave the supply undrunk.
       name: "Drink the astral pilsners",
-      ready: () => flag("uts_usePilsners"),
+      ready: () => flag("seb_usePilsners"),
       completed: () => myInebriety() >= pilsnerLiver() || pilsnersLeft() === 0,
       ...action(usePilsners),
       limit: { skip: 1 },
@@ -370,33 +369,33 @@ export const PostloopQuest: UtsQuest = {
     {
       name: "Start the pearl walk",
       ready: () => rundownWanted() || pearlFarmWorthIt(),
-      completed: () => prop("_utsPearlWalk") !== "",
+      completed: () => get("_sebPearlWalk") !== "",
       ...action(() => {
         if (rundownWanted()) {
-          print("UTS: postloop: re-aiming the Patriotic Screech off the construct phylum", "blue");
+          print("SEB: postloop: re-aiming the Patriotic Screech off the construct phylum", "blue");
           if (!haveFamiliar($familiar`Patriotic Eagle`)) {
             abort(
-              "uts_postLoopRunOutEagleBanish: no Patriotic Eagle in the terrarium, so the screech can't be re-aimed.",
+              "seb_postLoopRunOutEagleBanish: no Patriotic Eagle in the terrarium, so the screech can't be re-aimed.",
             );
           }
           if (!canAdventure($location`The Smut Orc Logging Camp`)) {
             abort(
-              "uts_postLoopRunOutEagleBanish: The Smut Orc Logging Camp isn't open, and the re-aim needs a place to screech.",
+              "seb_postLoopRunOutEagleBanish: The Smut Orc Logging Camp isn't open, and the re-aim needs a place to screech.",
             );
           }
         }
         pullEverything();
-        setProperty("_utsPearlRundown", rundownWanted() ? "on" : "off");
-        setCounter("_utsPearlClaimed", claimedCount());
-        setCounter("_utsPearlSpent", 0);
-        // The combat script sets _utsScreechReady from each eagle fight's
+        setProperty("_sebPearlRundown", rundownWanted() ? "on" : "off");
+        setCounter("_sebPearlClaimed", claimedCount());
+        setCounter("_sebPearlSpent", 0);
+        // The combat script sets _sebScreechReady from each eagle fight's
         // skill list. screechCombats misses eagle chatter, so it only times
         // the fallback.
-        setProperty("_utsScreechReady", "");
-        setCounter("_utsScreechNext", 0);
-        setCounter("_utsScreechFallback", Math.max(0, Math.min(get("screechCombats"), 11)));
-        setCounter("_utsScreechMisses", 0);
-        setProperty("_utsPearlWalk", "on");
+        setProperty("_sebScreechReady", "");
+        setCounter("_sebScreechNext", 0);
+        setCounter("_sebScreechFallback", Math.max(0, Math.min(get("screechCombats"), 11)));
+        setCounter("_sebScreechMisses", 0);
+        setProperty("_sebPearlWalk", "on");
       }),
       limit: { tries: 1 },
     },
@@ -407,19 +406,19 @@ export const PostloopQuest: UtsQuest = {
       ready: () =>
         rundown() &&
         myAdventures() > 0 &&
-        spent() >= counter("_utsScreechNext") &&
-        (prop("_utsScreechReady") === "true" || spent() >= counter("_utsScreechFallback")),
+        spent() >= counter("_sebScreechNext") &&
+        (get("_sebScreechReady") === "true" || spent() >= counter("_sebScreechFallback")),
       completed: () => !rundown(),
       outfit: { familiar: $familiar`Patriotic Eagle` },
       prepare: () => {
-        setProperty("_utsScreechFired", "");
-        setProperty("_utsScreechReaim", "true");
+        setProperty("_sebScreechFired", "");
+        setProperty("_sebScreechReaim", "true");
       },
       do: $location`The Smut Orc Logging Camp`,
       postAdventure: false,
       post: () => {
-        setProperty("_utsScreechReaim", "false");
-        setCounter("_utsPearlSpent", spent() + 1);
+        setProperty("_sebScreechReaim", "false");
+        setCounter("_sebPearlSpent", spent() + 1);
         readScreech();
       },
     },
@@ -440,14 +439,14 @@ export const PostloopQuest: UtsQuest = {
         if (rundown()) reportRundownStalled("no open pearl zone with today's pearl unclaimed");
         if (farming()) {
           for (const [zone, , pref] of PEARL_ZONES) {
-            if (!flag(pref)) print(`uts_postLoopFarmPearls: ${zone} left unclaimed.`, "red");
+            if (!flag(pref)) print(`seb_postLoopFarmPearls: ${zone} left unclaimed.`, "red");
           }
           print(
-            `uts_postLoopFarmPearls: ${claimedCount() - counter("_utsPearlClaimed")} pearls claimed in ${spent()} turns.`,
+            `seb_postLoopFarmPearls: ${claimedCount() - counter("_sebPearlClaimed")} pearls claimed in ${spent()} turns.`,
             "blue",
           );
         }
-        setProperty("_utsPearlWalk", "done");
+        setProperty("_sebPearlWalk", "done");
       }),
     },
     {
@@ -464,7 +463,7 @@ export const PostloopQuest: UtsQuest = {
       outfit: () => new Gear("combat,sea", $location`The Brinier Deepers`).bathysphere().outfit(),
       do: () => {
         if (haveEffect($effect`Lucky!`) === 0) return;
-        print("UTS: postloop pearls: Lucky! trip to The Brinier Deepers for 20 turns of Fishy");
+        print("SEB: postloop pearls: Lucky! trip to The Brinier Deepers for 20 turns of Fishy");
         return $location`The Brinier Deepers`;
       },
       postAdventure: false,
@@ -480,11 +479,11 @@ export const PostloopQuest: UtsQuest = {
         if (rundown()) {
           reportRundownStalled("out of Fishy, so no pearl zone is reachable");
           endRundown();
-          setProperty("_utsPearlWalk", "done");
+          setProperty("_sebPearlWalk", "done");
           return;
         }
         abort(
-          `postloop pearls: out of Fishy mid-zone after ${spent()} turns with ${claimedCount() - counter("_utsPearlClaimed")} pearls claimed; today's zone progress won't survive rollover.`,
+          `postloop pearls: out of Fishy mid-zone after ${spent()} turns with ${claimedCount() - counter("_sebPearlClaimed")} pearls claimed; today's zone progress won't survive rollover.`,
         );
       }),
     },
@@ -509,32 +508,32 @@ export const PostloopQuest: UtsQuest = {
           );
         }
         pearlResCheck(currentZone() ?? $location.none);
-        setProperty("_utsPearlFarm", "true");
+        setProperty("_sebPearlFarm", "true");
       },
       do: () => currentZone() ?? $location.none,
       postAdventure: false,
       post: () => {
-        setProperty("_utsPearlFarm", "false");
-        setCounter("_utsPearlSpent", spent() + 1);
+        setProperty("_sebPearlFarm", "false");
+        setCounter("_sebPearlSpent", spent() + 1);
       },
     },
     {
       name: "Load the codpiece",
-      ready: () => flag("uts_postLoopPrepCodpiece") && !walking(),
-      completed: () => prop("_utsCodpieceLoaded") === "true",
+      ready: () => flag("seb_postLoopPrepCodpiece") && !walking(),
+      completed: () => get("_sebCodpieceLoaded") === "true",
       ...action(() => {
         prepCodpiece();
-        setProperty("_utsCodpieceLoaded", "true");
+        setProperty("_sebCodpieceLoaded", "true");
       }),
       limit: { tries: 1 },
     },
     {
       name: "Postloop command",
-      ready: () => prop("uts_postloopCommand") !== "" && !walking(),
-      completed: () => prop("_utsPostloopCommandRan") === "true",
+      ready: () => get("seb_postloopCommand") !== "" && !walking(),
+      completed: () => get("_sebPostloopCommandRan") === "true",
       ...action(() => {
-        setProperty("_utsPostloopCommandRan", "true");
-        cliExecute(prop("uts_postloopCommand"));
+        setProperty("_sebPostloopCommandRan", "true");
+        cliExecute(get("seb_postloopCommand"));
       }),
       limit: { tries: 1 },
     },

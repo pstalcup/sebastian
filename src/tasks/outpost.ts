@@ -4,7 +4,6 @@ import {
   buy,
   cliExecute,
   equip,
-  getProperty,
   haveSkill,
   itemAmount,
   myFamiliar,
@@ -26,10 +25,11 @@ import {
   get,
   have,
 } from "libram";
-import { UtsQuest } from "../engine";
-import { baseballD } from "../lib/iotm";
-import { doSWord, pickFamiliar } from "../lib/familiar";
+
+import { SebQuest } from "../engine";
+import { doSWord, pickFamiliar, swordOfSWords } from "../lib/familiar";
 import { Gear } from "../lib/gear";
+import { baseballD } from "../lib/iotm";
 import { mood } from "../lib/mood";
 import { oldGuy } from "../lib/oldGuy";
 import { pulledToday, pullSequence } from "../lib/pulls";
@@ -43,8 +43,9 @@ import {
   summon,
 } from "../lib/resources";
 import { haveItem, highShiny, inAftercore, inSeaPath, lowShiny } from "../lib/state";
-import { abyssRecallGear, prayerbeadGear } from "./zones";
+
 import { monkeesStep } from "./monkees";
+import { abyssRecallGear, prayerbeadGear } from "./zones";
 
 // From the golem recall through the Old Guy. Ported from golemRecall(),
 // outpost(), recallCaliginous(), pullPrayerbead(), farmPrayerbeads() and the
@@ -52,11 +53,11 @@ import { monkeesStep } from "./monkees";
 
 const outpost = $location`The Mer-Kin Outpost`;
 const abyss = $location`The Caliginous Abyss`;
-const sword = $familiar`Sword of S Words`;
+const sword = swordOfSWords;
 
-const habitatFightsLeft = () => toInt(getProperty("_monsterHabitatsFightsLeft"));
-const habitatsRecalled = () => toInt(getProperty("_monsterHabitatsRecalled"));
-const lockkeyHunt = () => getProperty("merkinLockkeyMonster") !== "";
+const habitatFightsLeft = () => toInt(get("_monsterHabitatsFightsLeft"));
+const habitatsRecalled = () => toInt(get("_monsterHabitatsRecalled"));
+const lockkeyHunt = () => get("merkinLockkeyMonster") !== null;
 /** Item drops matter here: few forcers, or no shadow rift to fall back on. */
 const scaleHunt = () =>
   (highShiny() || lowShiny() || !haveItem($item`closed-circuit pay phone`)) &&
@@ -81,7 +82,7 @@ function bofaCaliginous(): boolean {
     lassoShadow() &&
     habitatsRecalled() === 2 &&
     habitatFightsLeft() === 0 &&
-    toInt(getProperty("momSeaMonkeeProgress")) < 40 &&
+    toInt(get("momSeaMonkeeProgress")) < 40 &&
     step >= 9 &&
     step <= 12
   );
@@ -119,7 +120,7 @@ function outpostGear(): Gear {
     gear.need($item`sea cowboy hat`, $item`sea chaps`);
   }
   if (
-    getProperty("lastCopyableMonster") === "Black Crayon Golem" &&
+    get("lastCopyableMonster") === $monster`Black Crayon Golem` &&
     get("_backUpUses") < 7 &&
     haveItem($item`backup camera`) &&
     (outpost.turnsSpent < 26 || lockkey)
@@ -130,9 +131,9 @@ function outpostGear(): Gear {
   } else if (lowShiny()) {
     gear.ifEquip($item`Congressional Medal of Insanity`);
   }
-  const habitat = getProperty("_monsterHabitatsMonster");
+  const habitat = get("_monsterHabitatsMonster");
   if (
-    (habitat === "eye in the darkness" || habitat === "slithering thing") &&
+    (habitat === $monster`eye in the darkness` || habitat === $monster`slithering thing`) &&
     habitatFightsLeft() > 0
   ) {
     gear.need($item`shark jumper`, $item`scale-mail underwear`);
@@ -141,14 +142,14 @@ function outpostGear(): Gear {
   return lockkey ? gear.delay() : gear.freeKill();
 }
 
-export const OutpostQuest: UtsQuest = {
+export const OutpostQuest: SebQuest = {
   name: "Outpost",
   tasks: [
     {
       name: "Golem recall",
       ready: () =>
         monkeesStep() === 6 && inSeaPath() && !highShiny() && haveSkill($skill`Just the Facts`),
-      completed: () => getProperty("_monsterHabitatsMonster") !== "" || monkeesStep() > 6,
+      completed: () => get("_monsterHabitatsMonster") !== null || monkeesStep() > 6,
       outfit: () =>
         new Gear("item drop")
           .forRole(have($familiar`Red-Nosed Snapper`) ? "itdrop" : "-combat")
@@ -197,13 +198,13 @@ export const OutpostQuest: UtsQuest = {
           inSeaPath() &&
           !haveSkill($skill`Steely-Eyed Squint`) &&
           ncForceEstimate() < 4 &&
-          getProperty("baseballTeam").includes("773") &&
+          get("baseballTeam").includes("773") &&
           baseballPlayers() === 9
         ) {
           baseballD();
         }
         if (outpost.turnsSpent < 5) setProperty("stashboxChecked", "0");
-        const checked = getProperty("stashboxChecked");
+        const checked = get("stashboxChecked");
         if (["1", "2", "3"].every((n) => checked.includes(n))) {
           abort("All stashbox locations checked but no stashbox — something went wrong");
         }
@@ -276,8 +277,8 @@ export const OutpostQuest: UtsQuest = {
     },
     {
       name: "Old Guy",
-      ready: () => getProperty("questS01OldGuy") === "started",
-      completed: () => getProperty("questS01OldGuy") !== "started",
+      ready: () => get("questS01OldGuy") === "started",
+      completed: () => get("questS01OldGuy") !== "started",
       do: () => oldGuy(),
       limit: { tries: 1 },
     },

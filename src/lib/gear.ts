@@ -1,9 +1,9 @@
+import { Modes, Outfit } from "grimoire-kolmafia";
 import {
   availableAmount,
   cliExecute,
   Familiar,
   familiarWeight,
-  getProperty,
   haveEffect,
   haveEquipped,
   Item,
@@ -15,8 +15,9 @@ import {
   useFamiliar,
   weightAdjustment,
 } from "kolmafia";
-import { Modes, Outfit } from "grimoire-kolmafia";
-import { $effect, $familiar, $item, $items, $location, have } from "libram";
+import { $effect, $familiar, $item, $items, $location, have, get } from "libram";
+
+import { FamiliarRole, mummery, pickFamiliar, swordOfSWords } from "./familiar";
 import {
   champagneZone,
   cloakeReady,
@@ -27,7 +28,6 @@ import {
   saberReady,
   saberZone,
 } from "./iotm";
-import { FamiliarRole, mummery, pickFamiliar } from "./familiar";
 import { diverForceReady, forcesAfterDiver, prayerbeadsShort } from "./progress";
 import { baseballPlayers, bczSweatReady, sheriffOutfit } from "./resources";
 import { haveItem, highShiny } from "./state";
@@ -39,7 +39,7 @@ import { haveItem, highShiny } from "./state";
 
 /** Gems the Eternity Codpiece may be holding, emptied before they are worn. */
 const CODPIECE_GEMS = new Set(
-  $items`baseball diamond, Peridot of Peril, heartstone, blood cubic zirconia`,
+  $items`Baseball Diamond, Peridot of Peril, Heartstone, blood cubic zirconia`,
 );
 
 /** Turns between Möbius strip noncombats, by encounters so far today. */
@@ -48,8 +48,8 @@ const MOBIUS_GAPS = [
 ];
 
 export function mobiusNCReady(): boolean {
-  const gap = MOBIUS_GAPS[toInt(getProperty("_mobiusStripEncounters"))] ?? 76;
-  return totalTurnsPlayed() > toInt(getProperty("_lastMobiusStripTurn")) + gap;
+  const gap = MOBIUS_GAPS[toInt(get("_mobiusStripEncounters"))] ?? 76;
+  return totalTurnsPlayed() > toInt(get("_lastMobiusStripTurn")) + gap;
 }
 
 /** "item drop, sea" or "Drops Items, sea", picked once at startup. */
@@ -120,7 +120,7 @@ export class Gear {
 
   /** The baseball diamond while the team is short. */
   baseball(): this {
-    if (baseballPlayers() < 9 && !highShiny()) this.ifEquip($item`baseball diamond`);
+    if (baseballPlayers() < 9 && !highShiny()) this.ifEquip($item`Baseball Diamond`);
     return this;
   }
 
@@ -134,7 +134,7 @@ export class Gear {
     }
     if (
       highShiny() &&
-      (this.familiar ?? myFamiliar()) !== $familiar`Sword of S Words` &&
+      (this.familiar ?? myFamiliar()) !== swordOfSWords &&
       haveEffect($effect`Everything Looks Yellow`) === 0
     ) {
       this.modes = { ...this.modes, parka: "dilophosaur" };
@@ -142,7 +142,7 @@ export class Gear {
     }
     if (highShiny()) return this;
     if (
-      toInt(getProperty("_assertYourAuthorityCast")) < 3 &&
+      toInt(get("_assertYourAuthorityCast")) < 3 &&
       sheriffOutfit() &&
       [
         $location`An Octopus's Garden`,
@@ -152,7 +152,7 @@ export class Gear {
     ) {
       return this.need($item`Sheriff moustache`, $item`Sheriff badge`, $item`Sheriff pistol`);
     }
-    if (toInt(getProperty("_chestXRayUsed")) < 3 && haveItem($item`Lil' Doctor™ bag`)) {
+    if (toInt(get("_chestXRayUsed")) < 3 && haveItem($item`Lil' Doctor™ bag`)) {
       return this.need($item`Lil' Doctor™ bag`);
     }
     if (bczSweatReady()) return this.ifEquip($item`blood cubic zirconia`);
@@ -164,7 +164,7 @@ export class Gear {
     if (haveEffect($effect`Everything Looks Green`) === 0) {
       return this.ifEquip($item`spring shoes`);
     }
-    const navel = toInt(getProperty("_navelRunaways"));
+    const navel = toInt(get("_navelRunaways"));
     if (
       availableAmount($item`Greatest American Pants`) > 0 &&
       (navel < 3 || (navel < 10 && highShiny())) &&
@@ -172,22 +172,15 @@ export class Gear {
     ) {
       return this.ifEquip($item`Greatest American Pants`);
     }
-    if (
-      availableAmount($item`V for Vivala mask`) > 0 &&
-      getProperty("_vmaskBanisherUsed") !== "true"
-    )
+    if (availableAmount($item`V for Vivala mask`) > 0 && !get("_vmaskBanisherUsed"))
       return this.ifEquip($item`V for Vivala mask`);
-    if (
-      availableAmount($item`latte lovers member's mug`) > 0 &&
-      getProperty("_latteBanishUsed") !== "true"
-    ) {
+    if (availableAmount($item`latte lovers member's mug`) > 0 && !get("_latteBanishUsed")) {
       return this.ifEquip($item`latte lovers member's mug`);
     }
     const boots = $familiar`Pair of Stomping Boots`;
     if (
       have(boots) &&
-      Math.round(familiarWeight(boots) + weightAdjustment() / 5) >
-        toInt(getProperty("_banderRunaways"))
+      Math.round(familiarWeight(boots) + weightAdjustment() / 5) > toInt(get("_banderRunaways"))
     ) {
       return this.fam(boots);
     }

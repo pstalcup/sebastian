@@ -1,5 +1,6 @@
-import { availableAmount, getProperty, Item, itemAmount, toInt, toSlot } from "kolmafia";
-import { $item, $items, $slot, have } from "libram";
+import { availableAmount, Item, itemAmount, toInt, toSlot } from "kolmafia";
+import { $item, $items, $slot, have, get } from "libram";
+
 import { haveItem } from "./state";
 
 // What the run still needs. Ported from the "Account states" and Force budget
@@ -50,7 +51,7 @@ export function prayerbeadsShort(): boolean {
 /** Use the Force charges left on the saber today. */
 export function saberChargesLeft(): number {
   if (!haveItem($item`Fourth of May Cosplay Saber`)) return 0;
-  return 5 - toInt(getProperty("_saberForceUses"));
+  return 5 - toInt(get("_saberForceUses"));
 }
 
 /** Charges left after the two the unholy diver hunt claims. */
@@ -74,7 +75,7 @@ export function saberForcesFree(): number {
 
 /** Enough lassos thrown or in hand for the twenty training throws plus taming. */
 export function doneWithCowboy(): boolean {
-  return toInt(getProperty("lassoTrainingCount")) + 3 * itemAmount($item`sea lasso`) >= 23;
+  return toInt(get("lassoTrainingCount")) + 3 * itemAmount($item`sea lasso`) >= 23;
 }
 
 export function doneWithSeaCow(): boolean {
@@ -86,9 +87,7 @@ export function doneWithSeaCow(): boolean {
 }
 
 export function cheatsheetsNeeded(): boolean {
-  return (
-    itemAmount($item`Mer-kin cheatsheet`) < 9 && getProperty("merkinVocabularyMastery") === "0"
-  );
+  return itemAmount($item`Mer-kin cheatsheet`) < 9 && get("merkinVocabularyMastery") === 0;
 }
 
 /** Library-ready: the scholar outfit (or its lounge pieces) and the vocabulary done. */
@@ -96,7 +95,7 @@ export function libraryReady(): boolean {
   return (
     (haveItem($item`Mer-kin scholar mask`) || haveItem($item`Mer-kin facecowl`)) &&
     (haveItem($item`Mer-kin scholar tailpiece`) || haveItem($item`Mer-kin waistrope`)) &&
-    itemAmount($item`Mer-kin wordquiz`) * 10 + toInt(getProperty("merkinVocabularyMastery")) >= 90
+    itemAmount($item`Mer-kin wordquiz`) * 10 + toInt(get("merkinVocabularyMastery")) >= 90
   );
 }
 

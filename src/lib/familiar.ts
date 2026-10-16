@@ -1,18 +1,22 @@
 import {
   cliExecute,
   Familiar,
-  getProperty,
   haveFamiliar,
   itemAmount,
   myFamiliar,
   print,
   useFamiliar,
 } from "kolmafia";
-import { $effect, $familiar, $item, get, have } from "libram";
+import { $effect, $familiar, $item, $monster, get, have } from "libram";
+
 import { haveItem, highShiny } from "./state";
 
 // Familiar choices. Ported from use_familiar(string) in UnderTheSea.ash, but
 // pure: it names the familiar and the task's outfit puts it on.
+
+// Newer than eslint-plugin-libram's data, so it is named once, here.
+// eslint-disable-next-line libram/verify-constants
+export const swordOfSWords = $familiar`Sword of S Words`;
 
 export type FamiliarRole = "-combat" | "combat" | "exp" | "itdrop";
 
@@ -74,8 +78,7 @@ export function mummery(): void {
 
 /** Sword of S Words is set on the sea cowboy and lassos are still short. */
 export function doSWord(): boolean {
-  if (!have($familiar`Sword of S Words`) || getProperty("swordOfSWordsMonster") !== "776")
-    return false;
+  if (!have(swordOfSWords) || get("swordOfSWordsMonster") !== $monster`sea cowboy`) return false;
   const lassos = itemAmount($item`sea lasso`);
   if (highShiny() && lassos < 7) return true;
   return !haveItem($item`closed-circuit pay phone`) && lassos < 4;

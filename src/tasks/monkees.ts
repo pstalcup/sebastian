@@ -2,22 +2,21 @@ import {
   adv1,
   availableAmount,
   cliExecute,
-  getProperty,
   itemAmount,
   maximize,
   myLocation,
   myPrimestat,
   print,
-  toFloat,
   toInt,
   use,
   visitUrl,
 } from "kolmafia";
 import { $effect, $familiar, $item, $location, $monster, $stat, get, have } from "libram";
-import { UtsQuest } from "../engine";
-import { baseballD, timeSpinnerRefight } from "../lib/iotm";
-import { doSWord } from "../lib/familiar";
+
+import { SebQuest } from "../engine";
+import { doSWord, swordOfSWords } from "../lib/familiar";
 import { dropsItems, Gear } from "../lib/gear";
+import { baseballD, timeSpinnerRefight } from "../lib/iotm";
 import { mood, resMood } from "../lib/mood";
 import { postAdventure, refreshMPRecovery } from "../lib/postAdventure";
 import { pullSequence } from "../lib/pulls";
@@ -49,7 +48,7 @@ const MONKEES_STEPS = ["unstarted", "started"];
 
 /** questS02Monkees as a number: -1 unstarted, 0 started, N for stepN, 999 finished. */
 export function monkeesStep(): number {
-  const value = getProperty("questS02Monkees");
+  const value = get("questS02Monkees");
   if (value === "finished") return 999;
   const index = MONKEES_STEPS.indexOf(value);
   if (index >= 0) return index - 1;
@@ -58,7 +57,7 @@ export function monkeesStep(): number {
 
 const garden = $location`An Octopus's Garden`;
 const pellet = $item`wriggling flytrap pellet`;
-const sword = $familiar`Sword of S Words`;
+const sword = swordOfSWords;
 const havePellet = () => itemAmount(pellet) > 0;
 const flytrapPending = () => monkeesStep() === -1 && !havePellet();
 
@@ -72,7 +71,7 @@ const skeletonRoute = () =>
 let forcingFitzsimmons = false;
 
 /** Sword of S Words, for runs that can't lasso-train in the shadow rift. */
-export const LassoQuest: UtsQuest = {
+export const LassoQuest: SebQuest = {
   name: "Lasso",
   tasks: [
     {
@@ -81,7 +80,7 @@ export const LassoQuest: UtsQuest = {
         have(sword) &&
         countSummons() >= 3 &&
         (highShiny() || !haveItem($item`closed-circuit pay phone`)),
-      completed: () => toFloat(getProperty("swordOfSWordsMonster")) >= 10,
+      completed: () => get("swordOfSWordsMonster") !== null,
       outfit: () => new Gear("item drop").fam(sword).baseball().freeKill().outfit(),
       prepare: () => {
         mood("itdrop");
@@ -96,13 +95,14 @@ export const LassoQuest: UtsQuest = {
   ],
 };
 
-export const MonkeesQuest: UtsQuest = {
+export const MonkeesQuest: SebQuest = {
   name: "Sea Monkees",
   tasks: [
     {
       name: "Flytrap: set the sword",
       ready: skeletonRoute,
-      completed: () => getProperty("swordOfSWordsMonster") === "740" || !flytrapPending(),
+      completed: () =>
+        get("swordOfSWordsMonster") === $monster`Neptune flytrap` || !flytrapPending(),
       outfit: () =>
         new Gear(dropsItems, garden)
           .fam(sword)
@@ -115,7 +115,7 @@ export const MonkeesQuest: UtsQuest = {
     },
     {
       name: "Flytrap: skeleton store",
-      ready: () => skeletonRoute() && getProperty("swordOfSWordsMonster") === "740",
+      ready: () => skeletonRoute() && get("swordOfSWordsMonster") === $monster`Neptune flytrap`,
       completed: () => !flytrapPending() || myLocation() === $location`The Skeleton Store`,
       do: () => {
         if (!get("skeletonStoreAvailable")) visitUrl("shop.php?whichshop=meatsmith&action=talk");
@@ -155,7 +155,7 @@ export const MonkeesQuest: UtsQuest = {
       outfit: () => {
         const rwb = get("rwbMonsterCount");
         const gear = new Gear(dropsItems, garden).forRole("exp").bathysphere($item`toy Cupid bow`);
-        if (rwb <= 1 && !getProperty("trackedMonsters").includes("Neptune flytrap")) {
+        if (rwb <= 1 && !get("trackedMonsters").includes("Neptune flytrap")) {
           gear.ifEquip($item`McHugeLarge left pole`);
         } else {
           gear.baseball();
@@ -251,9 +251,9 @@ export const MonkeesQuest: UtsQuest = {
           .delay()
           .ifEquip($item`Möbius ring`)
           .bathysphere($item`toy Cupid bow`);
-        const tracked = getProperty("trackedMonsters");
+        const tracked = get("trackedMonsters");
         const stat = myPrimestat();
-        if (baseballPlayers() < 9 && availableAmount($item`baseball diamond`) > 0) {
+        if (baseballPlayers() < 9 && availableAmount($item`Baseball Diamond`) > 0) {
           gear.baseball();
         } else if (
           (stat === $stat`Mysticality` && !tracked.includes("giant squid")) ||

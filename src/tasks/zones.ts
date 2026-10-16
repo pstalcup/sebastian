@@ -5,7 +5,6 @@ import {
   buy,
   cliExecute,
   equip,
-  getProperty,
   haveEffect,
   haveFamiliar,
   haveSkill,
@@ -20,6 +19,7 @@ import {
   visitUrl,
 } from "kolmafia";
 import { $coinmaster, $effect, $familiar, $item, $location, $skill, get } from "libram";
+
 import { branch, TaskBody } from "../engine";
 import { pickFamiliar } from "../lib/familiar";
 import { dropsItems, Gear } from "../lib/gear";
@@ -70,7 +70,7 @@ const rift = $location`Shadow Rift (The Misspelled Cemetary)`;
 const gym = $location`Mer-kin Gymnasium`;
 const skatePark = $location`The Skate Park`;
 
-const banishedMonsters = () => getProperty("banishedMonsters");
+const banishedMonsters = () => get("banishedMonsters");
 
 /** A body that spends no turn. */
 export function action(run: () => void): TaskBody {
@@ -216,7 +216,7 @@ export function corralFarm(): TaskBody {
     post: () => {
       timeSpinnerRefight(corral);
       if (
-        getProperty("baseballTeam").includes("775") &&
+        get("baseballTeam").includes("775") &&
         baseballPlayers() === 9 &&
         itemAmount($item`sea cowbell`) < 3
       ) {
@@ -247,7 +247,7 @@ function shadowRiftGear(): Gear {
     .baseball();
 }
 
-const riftQuest = () => getProperty("questRufus");
+const riftQuest = () => get("questRufus");
 
 /** Shadow Waters: the pay phone, the quest's noncombat, then one rift fight. */
 function shadowWaters(): TaskBody {
@@ -343,7 +343,7 @@ export function shadowRift(): TaskBody {
 
 /** The peril zone a curveball fight goes to, or the Knob's outskirts if all are periled. */
 function curveballZone(): [Mood | undefined, string, Location] {
-  const periled = getProperty("_perilLocations");
+  const periled = get("_perilLocations");
   const zones: [string, Mood, string, Location][] = [
     ["196", "spookyres", "spooky res,sea", $location`Anemone Mine`],
     ["195", "hotres", "hot res,sea", $location`The Marinara Trench`],
@@ -411,7 +411,7 @@ export function gymnasium(): TaskBody {
   return {
     outfit: () => {
       const gear = new Gear("combat,sea", gym).forRole("combat");
-      if (getProperty("skateParkStatus") === "war") {
+      if (get("skateParkStatus") === "war") {
         if (leftSkiAvailable()) gear.ifEquip($item`McHugeLarge left ski`);
         else if (parkaForceAvailable()) {
           gear.ifEquip($item`Jurassic Parka`).mode({ parka: "spikolodon" });
@@ -441,7 +441,7 @@ const skateBoard = () => (highShiny() ? $item`skate board` : $item`skate blade`)
 function skateParkTurn(): TaskBody {
   return {
     before: () => {
-      if (!parkaForceAvailable() && !leftSkiAvailable() && haveItem($item`allied radio backpack`)) {
+      if (!parkaForceAvailable() && !leftSkiAvailable() && haveItem($item`Allied Radio Backpack`)) {
         cliExecute("alliedradio misc sniper");
       }
       const board = skateBoard();
@@ -489,7 +489,7 @@ export function skateParkWar(): TaskBody {
 
 export const skateParkAtWar = () => {
   visitUrl("sea_skatepark.php");
-  return getProperty("skateParkStatus") === "war";
+  return get("skateParkStatus") === "war";
 };
 
 // ─── ELEMENTARY SCHOOL AND LIBRARY ────────────────────────────────────────────
@@ -547,7 +547,7 @@ export function getCheatsheet(): TaskBody {
 export function merkinLib(): TaskBody {
   return {
     outfit: () => {
-      const scroll7 = getProperty("dreadScroll7") === "0";
+      const scroll7 = get("dreadScroll7") === 0;
       const kill = itemAmount($item`Mer-kin killscroll`);
       const heal = itemAmount($item`Mer-kin healscroll`);
       const worktea = itemAmount($item`Mer-kin worktea`);
@@ -580,7 +580,7 @@ export function merkinLib(): TaskBody {
         heal < 2 ||
         (worktea === 0 && scroll7) ||
         (knucklebone === 0 && scroll7) ||
-        (kill === 0 && getProperty("dreadScroll5") === "0")
+        (kill === 0 && get("dreadScroll5") === 0)
       ) {
         gear.ifEquip($item`blood cubic zirconia`);
       } else {

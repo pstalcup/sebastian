@@ -1,15 +1,8 @@
-import {
-  equip,
-  getProperty,
-  itemAmount,
-  myFamiliar,
-  myPrimestat,
-  cliExecute,
-  visitUrl,
-} from "kolmafia";
-import { $familiar, $item, $stat, have } from "libram";
-import { UtsQuest } from "../engine";
-import { doSWord } from "../lib/familiar";
+import { equip, itemAmount, myFamiliar, myPrimestat, cliExecute, visitUrl } from "kolmafia";
+import { $familiar, $item, $stat, have, get } from "libram";
+
+import { SebQuest } from "../engine";
+import { doSWord, swordOfSWords } from "../lib/familiar";
 import { Gear } from "../lib/gear";
 import { mood } from "../lib/mood";
 import { pullSequence } from "../lib/pulls";
@@ -20,19 +13,19 @@ import { haveItem, highShiny, inSeaPath, questLoc, questProp } from "../lib/stat
 
 function guildWanted(): boolean {
   return (
-    getProperty("questG03Ego") === "unstarted" &&
+    get("questG03Ego") === "unstarted" &&
     itemAmount($item`closed-circuit pay phone`) > 0 &&
     inSeaPath() &&
     !highShiny()
   );
 }
 
-const testState = () => getProperty(questProp());
+const testState = () => get(questProp());
 const tearawayShortcut = () => myPrimestat() === $stat`Moxie` && haveItem($item`tearaway pants`);
 
 function testGear(): Gear {
   const gear = new Gear("item drop", questLoc());
-  if (doSWord()) gear.fam($familiar`Sword of S Words`);
+  if (doSWord()) gear.fam(swordOfSWords);
   else if (have($familiar`Artistic Goth Kid`)) gear.fam($familiar`Artistic Goth Kid`);
   else if (have($familiar`Red-Nosed Snapper`)) gear.forRole("itdrop");
   else gear.forRole("-combat");
@@ -49,7 +42,7 @@ function testGear(): Gear {
   return gear.delay();
 }
 
-export const GuildQuest: UtsQuest = {
+export const GuildQuest: SebQuest = {
   name: "Guild",
   tasks: [
     {
@@ -87,7 +80,7 @@ export const GuildQuest: UtsQuest = {
     {
       name: "Open the Ego quest",
       ready: () => guildWanted() && testState() === "finished",
-      completed: () => getProperty("questG03Ego") !== "unstarted",
+      completed: () => get("questG03Ego") !== "unstarted",
       do: () => {
         visitUrl("guild.php?place=ocg");
         visitUrl("guild.php?place=ocg");

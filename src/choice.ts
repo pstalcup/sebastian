@@ -1,7 +1,6 @@
 import {
   availableAmount,
   availableChoiceOptions,
-  getProperty,
   haveEffect,
   itemAmount,
   lastChoice,
@@ -14,7 +13,8 @@ import {
   visitUrl,
   waitq,
 } from "kolmafia";
-import { $effect, $item, $location } from "libram";
+import { $effect, $item, $location, get } from "libram";
+
 import { zoneTarget } from "./lib/iotm";
 
 // The choice adventure script. Ported from UnderTheSea_Choice.ash; mafia
@@ -32,7 +32,7 @@ for (const choice of [1312, 1599]) SIMPLE[choice] = 5;
 
 /** Try the stashbox spots in priority order, skipping the ones already checked. */
 function stashboxCheck(priority: number[]): void {
-  const checked = getProperty("stashboxChecked");
+  const checked = get("stashboxChecked");
   const option = priority.find((opt) => !checked.includes(`${opt}`));
   if (option === undefined) return;
   runChoice(option);
@@ -53,15 +53,15 @@ function pickChoice(keyword: string): boolean {
 
 /** The school noncombats seen, the last five, so the lounge's place in the cycle is known. */
 function queueElementary(): void {
-  const queue = getProperty("elementaryQueue") || "000, 000, 000, 000, 000";
+  const queue = get("elementaryQueue") || "000, 000, 000, 000, 000";
   setProperty("elementaryQueue", `${queue}, ${lastChoice()}`.slice(5));
 }
 
 function dreadScrollPuzzle(): void {
-  const scroll = (n: number) => getProperty(`dreadScroll${n}`);
+  const scroll = (n: number) => get(`dreadScroll${n}`, 0);
   const prefix = [1, 2, 3, 4, 5, 6].map(scroll).join("");
   const suffix = scroll(8);
-  const guesses = getProperty("dreadScrollGuesses");
+  const guesses = get("dreadScrollGuesses");
   let scroll7 = toInt(scroll(7));
   if (scroll7 === 0) {
     scroll7 = [4, 3, 2, 1].find((c) => !guesses.includes(`${prefix}${c}${suffix}`)) ?? 0;
@@ -77,11 +77,11 @@ function dreadScrollPuzzle(): void {
 /** The Mer-kin catalog: spade an unknown card, and note which card gave each clue. */
 function dreadCard(): void {
   const options = availableChoiceOptions();
-  if (getProperty("catalogChecked") === "false") {
+  if (get("catalogChecked") === "false") {
     setProperty("catalogChecked", "true");
     for (const [option, text] of Object.entries(options)) setProperty(`cardChoice${option}`, text);
   }
-  const catalog = getProperty("merkinCatalogChoices");
+  const catalog = get("merkinCatalogChoices");
   const unknown = Object.entries(options).find(([option, text]) =>
     catalog.includes(`${text.slice(0, text.indexOf(":"))}:${option}:unknown`),
   );
@@ -90,11 +90,11 @@ function dreadCard(): void {
   const choice = options[dread];
   runChoice(dread);
   for (const n of [1, 6, 8]) {
-    if (getProperty(`DS${n}`) === "true" || toInt(getProperty(`dreadScroll${n}`)) === 0) continue;
+    if (get(`DS${n}`) === "true" || toInt(get(`dreadScroll${n}`)) === 0) continue;
     setProperty(`DS${n}`, "true");
     for (let x = 1; x <= 10; x++) {
-      if (getProperty(`cardChoice${x}`) === choice) {
-        setProperty(`cardChoice${x}`, `${n}:${getProperty(`cardChoice${x}`)}`);
+      if (get(`cardChoice${x}`) === choice) {
+        setProperty(`cardChoice${x}`, `${n}:${get(`cardChoice${x}`)}`);
       }
     }
     break;
@@ -114,7 +114,7 @@ export function main(choice: number, page: string): void {
     runChoice(SIMPLE[choice]);
     return;
   }
-  const intenseCurrents = getProperty("intenseCurrents") === "true";
+  const intenseCurrents = get("intenseCurrents");
   switch (choice) {
     case 312:
       if (intenseCurrents) runChoice(3);
@@ -131,15 +131,9 @@ export function main(choice: number, page: string): void {
         stashboxCheck([3, 1, 2]); // healer
       } else if (availableAmount($item`Mer-kin prayerbeads`) < 3) {
         runChoice(3);
-      } else if (
-        availableAmount($item`Mer-kin killscroll`) === 0 &&
-        getProperty("dreadScroll5") === "0"
-      ) {
+      } else if (availableAmount($item`Mer-kin killscroll`) === 0 && get("dreadScroll5") === 0) {
         runChoice(1);
-      } else if (
-        availableAmount($item`Mer-kin healscroll`) === 0 &&
-        getProperty("dreadScroll2") === "0"
-      ) {
+      } else if (availableAmount($item`Mer-kin healscroll`) === 0 && get("dreadScroll2") === 0) {
         runChoice(2);
       } else {
         // Nothing needed, but still answer, or mafia drops to manual control.
@@ -171,7 +165,7 @@ export function main(choice: number, page: string): void {
       dreadCard();
       break;
     case 1059:
-      if (getProperty("choiceAdventure1059") === "") runChoice(1);
+      if (get("choiceAdventure1059") === "") runChoice(1);
       break;
 
     // Map the Monsters: the zone's wanted monster, or let mafia resolve it.
@@ -185,10 +179,7 @@ export function main(choice: number, page: string): void {
       runChoice(3);
       break;
     case 1500:
-      if (
-        haveEffect($effect`Shadow Waters`) > 0 &&
-        getProperty("_shadowForestLooted") === "false"
-      ) {
+      if (haveEffect($effect`Shadow Waters`) > 0 && !get("_shadowForestLooted")) {
         runChoice(3);
       } else {
         runChoice(2);
@@ -219,7 +210,7 @@ export function main(choice: number, page: string): void {
 
     // The Möbius strip.
     case 1562: {
-      const keyword = MOBIUS_KEYWORDS[toInt(getProperty("_mobiusStripEncounters"))];
+      const keyword = MOBIUS_KEYWORDS[toInt(get("_mobiusStripEncounters"))];
       if (keyword) pickChoice(keyword);
       else if (!pickChoice("investment tips")) pickChoice("from your future self");
       break;

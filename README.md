@@ -4,7 +4,11 @@ Runs the Kingdom of Loathing path 11,037 Leagues Under the Sea in KoLmafia. It i
 of [UnderTheSea](https://github.com/Astro3207/UnderTheSea) onto
 [grimoire](https://github.com/loathers/grimoire) and [libram](https://github.com/loathers/libram).
 
-## Usage
+## Installation
+
+```
+git checkout pstalcup/sebastian release
+```
 
 The one ASH dependency left is [seedfinder](https://github.com/VeeArrKoL/seedfinder), which solves the
 dreadscroll, as it was for the original:
@@ -22,9 +26,10 @@ sebastian postloop # only the postloop steps (pilsners, pearls, the eagle re-aim
 ```
 
 Everything in UnderTheSea's README still applies: the hard requirements, `autoSatisfyWithNPCs`, the
-high, mid and low "shiny" tiers, and its per-account preferences (`uts_godRunGuard`,
-`uts_usePilsners`, `uts_postloopCommand`, `uts_postLoopRunOutEagleBanish`, `uts_postLoopFarmPearls`,
-`uts_postLoopCloverFishy`, `uts_postLoopPrepCodpiece`), which you still set with the mafia CLI.
+high, mid and low "shiny" tiers, and its per-account preferences, renamed from `uts_` to `seb_`
+(`seb_godRunGuard`,
+`seb_usePilsners`, `seb_postloopCommand`, `seb_postLoopRunOutEagleBanish`, `seb_postLoopFarmPearls`,
+`seb_postLoopCloverFishy`, `seb_postLoopPrepCodpiece`), which you still set with the mafia CLI.
 
 ## Layout
 
@@ -32,7 +37,7 @@ high, mid and low "shiny" tiers, and its per-account preferences (`uts_godRunGua
   `seaMonkees()` ran them.
 - `src/tasks` holds the whole run as grimoire tasks: the early quest (the S Word lasso, the guild,
   Sea Monkees, the outpost), the seahorse branch, the temple bosses, the path cleanup and the
-  postloop steps. Each task reads its state from the game (or from a `_uts*` daily property where
+  postloop steps. Each task reads its state from the game (or from a `_seb*` daily property where
   the game keeps none), so rerunning after an abort picks up where the last run stopped.
   `src/tasks/zones.ts` holds how each zone is farmed, shared by the tasks that farm it.
 - `src/combat.ts` is the combat consult script (`sebastian_combat.js`) and `src/choice.ts` the
@@ -42,11 +47,17 @@ high, mid and low "shiny" tiers, and its per-account preferences (`uts_godRunGua
 
 ## Development
 
+Set up as in the [loathers.net TypeScript guide](https://loathers.net/scripting/ts-script-setup/),
+with Yarn through corepack:
+
 ```
-npm install
-npm run build   # writes the three scripts to dist/scripts/sebastian
-npm run check   # typecheck
-npm run lint
+yarn install
+yarn run build          # writes the three scripts to dist/scripts/sebastian
+yarn run install-mafia  # symlinks the build into your KoLmafia folder
+yarn run watch          # rebuilds on save
+yarn run check          # typecheck
+yarn run lint           # eslint, with libram's name checks, and prettier
+yarn run format
 ```
 
-Copy `dist/scripts/sebastian` into your KoLmafia `scripts` folder to run it.
+Every push to `main` builds the scripts onto the `release` branch.

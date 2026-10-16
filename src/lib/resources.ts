@@ -7,7 +7,6 @@ import {
   faxbot,
   getCampground,
   getLocketMonsters,
-  getProperty,
   handlingChoice,
   haveEffect,
   haveFamiliar,
@@ -41,9 +40,10 @@ import {
   get,
   have,
 } from "libram";
+
 import { pickFamiliar } from "./familiar";
-import { gotPeriled, haveItem, inAftercore, inSeaPath, step } from "./state";
 import { pulledToday, pullSequence } from "./pulls";
+import { gotPeriled, haveItem, inAftercore, inSeaPath, step } from "./state";
 
 // Daily resources and one-shot IOTM helpers. Ported from the "REMAINING SHARED
 // HELPERS" sections of UnderTheSeaGlobals.ash and summon() in UnderTheSea.ash.
@@ -68,7 +68,7 @@ export function briefcase(): void {
 
 /** Cargo Cultist Shorts pocket 494. */
 export function cargoPocket(): void {
-  if (`,${getProperty("cargoPocketsEmptied")},`.includes(",494,")) return;
+  if (`,${get("cargoPocketsEmptied")},`.includes(",494,")) return;
   if (!haveItem($item`Cargo Cultist Shorts`)) return;
   step("Cargo shorts: opening pocket 494");
   cliExecute("cargo pocket 494");
@@ -156,15 +156,15 @@ export function ncForce(): void {
   } else if (
     !haveItem($item`McHugeLarge duffel bag`) &&
     !haveItem($item`Jurassic Parka`) &&
-    !haveItem($item`allied radio backpack`)
+    !haveItem($item`Allied Radio Backpack`)
   ) {
-    for (const item of [$item`Handheld Allied radio`, $item`Clara's bell`, $item`stench jelly`]) {
+    for (const item of [$item`handheld Allied radio`, $item`Clara's bell`, $item`stench jelly`]) {
       if (pulledToday(item)) continue;
       if (item === $item`Clara's bell` && storageAmount(item) === 0) continue;
       if (pullsRemaining() === 0) return;
       pullSequence(item);
       if (item === $item`Clara's bell`) use(item);
-      else if (item === $item`Handheld Allied radio`) cliExecute("alliedradio misc sniper");
+      else if (item === $item`handheld Allied radio`) cliExecute("alliedradio misc sniper");
       else chew(item);
       return;
     }
@@ -193,14 +193,14 @@ export function sheriffOutfit(): boolean {
 }
 
 export function baseballPlayers(): number {
-  return getProperty("baseballTeam")
+  return get("baseballTeam")
     .split(",")
     .filter((s) => s !== "").length;
 }
 
 /** Substats a Blood Cubic Zirconia skill's next cast costs. */
 export function bczCost(skill: string): number {
-  let cast = toInt(getProperty(`_bcz${skill}`));
+  let cast = toInt(get(`_bcz${skill}`));
   if (cast === 12) return 420000;
   if (cast > 12) cast -= 1;
   const floor = Math.floor(cast / 3);
@@ -218,7 +218,7 @@ export function momNCyber(): boolean {
   return (
     haveFamiliar($familiar`Patriotic Eagle`) &&
     haveItem($item`server room key`) &&
-    haveSkill($skill`Overclock(10)`) &&
+    haveSkill($skill`OVERCLOCK(10)`) &&
     haveSkill($skill`Just the Facts`)
   );
 }
@@ -240,7 +240,7 @@ export function equipSwimTrunks(): void {
  * that order. False when none of them is available.
  */
 export function summon(monster: Monster, wishGear?: () => void): boolean {
-  const fought = getProperty("_locketMonstersFought");
+  const fought = get("_locketMonstersFought");
   if (
     getLocketMonsters()[monster.name] &&
     !fought.split(",").includes(`${monster.id}`) &&

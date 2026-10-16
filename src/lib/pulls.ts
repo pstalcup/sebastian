@@ -13,6 +13,7 @@ import {
   useSkill,
 } from "kolmafia";
 import { $effect, $item, $skill, get, have } from "libram";
+
 import { lowShiny } from "./state";
 
 // Hagnk's pulls and luck. Ported from "Game Mechanics" in UnderTheSeaGlobals.ash.
@@ -75,7 +76,7 @@ export function getLucky(): void {
     if (have($effect`Lucky!`)) return;
   }
   if (
-    availableAmount($item`heartstone`) > 0 &&
+    availableAmount($item`Heartstone`) > 0 &&
     get("heartstoneLuckUnlocked") &&
     !get("_heartstoneLuckUsed")
   ) {

@@ -1,12 +1,14 @@
-import { getClanId, getProperty, maximize, print, visitUrl, writeCcs } from "kolmafia";
 import { Args, getTasks } from "grimoire-kolmafia";
+import { getClanId, maximize, print, visitUrl, writeCcs } from "kolmafia";
+import { get } from "libram";
+
 import { args } from "./args";
-import { COMBAT_SCRIPT, UTS_CCS, UtsEngine } from "./engine";
+import { COMBAT_SCRIPT, SEB_CCS, SebEngine } from "./engine";
 import { initialization } from "./initialization";
 import { iotmChecklist, pullChecklist, skillChecklist } from "./lib/checklists";
 import { setDropsItems } from "./lib/gear";
-import { inSeaPath } from "./lib/state";
 import { postAdventure } from "./lib/postAdventure";
+import { inSeaPath } from "./lib/state";
 import { GuildQuest } from "./tasks/guild";
 import { LassoQuest, MonkeesQuest } from "./tasks/monkees";
 import { OutpostQuest } from "./tasks/outpost";
@@ -37,17 +39,17 @@ export function main(command?: string): void {
 
   setDropsItems(maximize("Drops Items", false) ? "Drops Items, sea" : "item drop, sea");
   // Every fight goes through the ported combat script.
-  writeCcs(`[ default ]\nconsult ${COMBAT_SCRIPT}\nabort`, UTS_CCS);
+  writeCcs(`[ default ]\nconsult ${COMBAT_SCRIPT}\nabort`, SEB_CCS);
 
   if (args.postloop) {
     // The finishing steps the run would have reached on its own, without
     // initialization() or any of the run itself. Each self-gates on its own
-    // uts_postLoop* pref, so with none set this only sets up and tears down.
-    const engine = new UtsEngine(getTasks([PostloopQuest]), { ccs: UTS_CCS });
+    // seb_postLoop* pref, so with none set this only sets up and tears down.
+    const engine = new SebEngine(getTasks([PostloopQuest]), { ccs: SEB_CCS });
     print("Starting UnderTheSea (postloop only)");
     try {
       // A run killed mid-walk can leave these set.
-      engine.properties.set({ _utsPearlFarm: false, _utsScreechReaim: false });
+      engine.properties.set({ _sebPearlFarm: false, _sebScreechReaim: false });
       engine.run();
     } finally {
       engine.destruct();
@@ -60,7 +62,7 @@ export function main(command?: string): void {
   // In seaMonkees() order: the early lasso, the guild, the quest, the outpost,
   // the seahorse, the temple, then past the prism. Every task reads its state
   // from the game, so a rerun picks up where the last one stopped.
-  const engine = new UtsEngine(
+  const engine = new SebEngine(
     getTasks([
       LassoQuest,
       GuildQuest,
@@ -77,9 +79,9 @@ export function main(command?: string): void {
       FinalBossQuest,
       PathCleanupQuest,
       // The postloop steps wait for the council visit that closes the path.
-      { ...PostloopQuest, ready: () => getProperty("_utsCouncilVisited") === "true" },
+      { ...PostloopQuest, ready: () => get("_sebCouncilVisited") === "true" },
     ]),
-    { ccs: UTS_CCS },
+    { ccs: SEB_CCS },
   );
 
   print("Starting UnderTheSea");
@@ -88,9 +90,9 @@ export function main(command?: string): void {
     // Priming, in case the last run aborted mid-combat.
     postAdventure();
     engine.run();
-    if (inSeaPath() && getProperty("questL13Final") !== "finished") {
+    if (inSeaPath() && get("questL13Final") !== "finished") {
       print(
-        "UTS: no task is ready to run, but the prism isn't broken yet. Check the log above.",
+        "SEB: no task is ready to run, but the prism isn't broken yet. Check the log above.",
         "red",
       );
     }

@@ -6,7 +6,6 @@ import {
   create,
   elementalResistance,
   equip,
-  getProperty,
   handlingChoice,
   haveEffect,
   haveFamiliar,
@@ -51,7 +50,9 @@ import {
   ChestMimic,
   get,
 } from "libram";
-import { branch, TaskBody, UtsQuest, UtsTask } from "../engine";
+
+import { branch, TaskBody, SebQuest, SebTask } from "../engine";
+import { swordOfSWords } from "../lib/familiar";
 import { dropsItems, Gear } from "../lib/gear";
 import { banishGear, baseballD, codpiece, timeSpinnerFight, yellowRayPrep } from "../lib/iotm";
 import { mood } from "../lib/mood";
@@ -79,6 +80,7 @@ import {
   pearlLoc,
   pearlRes,
 } from "../lib/state";
+
 import {
   action,
   combJelly,
@@ -103,12 +105,11 @@ const wreck = $location`The Wreck of the Edgar Fitzsimmons`;
 const abyss = $location`The Caliginous Abyss`;
 const corral = $location`The Coral Corral`;
 const rift = $location`Shadow Rift (The Misspelled Cemetary)`;
-const sword = $familiar`Sword of S Words`;
+const sword = swordOfSWords;
 
-const prop = (name: string) => getProperty(name);
 const helmetOn = () => toSlot(divingHelmet()) === $slot`hat`;
-export const tamed = () => prop("seahorseName") !== "";
-const momProgress = () => toInt(prop("momSeaMonkeeProgress"));
+export const tamed = () => get("seahorseName") !== "";
+const momProgress = () => toInt(get("momSeaMonkeeProgress"));
 
 // ─── THE ROUTE ────────────────────────────────────────────────────────────────
 
@@ -118,7 +119,7 @@ const momProgress = () => toInt(prop("momSeaMonkeeProgress"));
  *  - squint, Mom and CyberRealm, a rift lasso and the zirconia: summon the diver,
  *    CyberRealm abyss, McTwist the corral;
  *  - anything else: the corral, the diver directly, then the abyss.
- * Picked once a day and kept in _utsSeahorseRoute, so a rerun stays on it.
+ * Picked once a day and kept in _sebSeahorseRoute, so a rerun stays on it.
  */
 type Leg =
   | "diver:summon"
@@ -129,12 +130,12 @@ type Leg =
   | "corral:drop";
 
 function route(): Leg[] {
-  let value = prop("_utsSeahorseRoute");
+  let value = get("_sebSeahorseRoute");
   if (value === "") {
     if (highShiny()) {
       value = "abyss:cheap,diver:direct,corral:collect";
     } else if (
-      haveSkill($skill`Steely-eyed Squint`) &&
+      haveSkill($skill`Steely-Eyed Squint`) &&
       momNCyber() &&
       lassoShadow() &&
       availableAmount($item`blood cubic zirconia`) > 0
@@ -143,7 +144,7 @@ function route(): Leg[] {
     } else {
       value = `corral:collect,diver:direct,abyss:${momNCyber() ? "cyberrealm" : "cheap"}`;
     }
-    setProperty("_utsSeahorseRoute", value);
+    setProperty("_sebSeahorseRoute", value);
   }
   return value.split(",") as Leg[];
 }
@@ -201,7 +202,7 @@ const diverLeg = () => legReady("diver:summon", "diver:direct");
 const summonLeg = () => legReady("diver:summon");
 
 function diverBaseball(): void {
-  if (baseballPlayers() >= 9 && prop("baseballTeam").includes("745")) baseballD();
+  if (baseballPlayers() >= 9 && get("baseballTeam").includes("745")) baseballD();
 }
 
 function diverChainReport(): string {
@@ -226,7 +227,7 @@ function summonDiver(): TaskBody {
       else gear.forRole("itdrop");
       return gear
         .diverSaber()
-        .ifEquip($item`blood cubic zirconia`, $item`baseball diamond`, $item`toy Cupid bow`)
+        .ifEquip($item`blood cubic zirconia`, $item`Baseball Diamond`, $item`toy Cupid bow`)
         .outfit();
     },
     prepare: () => {
@@ -273,17 +274,17 @@ function wreckTurn(): TaskBody {
         if (haveItem($item`Fourth of May Cosplay Saber`)) gear.saber();
         return gear.bathysphere($item`toy Cupid bow`).outfit();
       }
-      const habitat = prop("_monsterHabitatsMonster");
+      const habitat = get("_monsterHabitatsMonster");
       if (
-        (habitat === "eye in the darkness" || habitat === "slithering thing") &&
-        toInt(prop("_monsterHabitatsFightsLeft")) > 0
+        (habitat === $monster`eye in the darkness` || habitat === $monster`slithering thing`) &&
+        toInt(get("_monsterHabitatsFightsLeft")) > 0
       ) {
         gear.need($item`shark jumper`, $item`scale-mail underwear`);
       }
       if (banishGear(wreck) === $item`spring shoes` && availableAmount($item`spring shoes`) > 0) {
         gear.need($item`spring shoes`);
       } else if (get("heartstoneBanishUnlocked")) {
-        gear.ifEquip($item`heartstone`);
+        gear.ifEquip($item`Heartstone`);
       }
       return gear
         .saber()
@@ -305,7 +306,7 @@ function wreckTurn(): TaskBody {
     do: wreck,
   };
   const body = branch(
-    () => totalTurnsPlayed() >= toInt(prop("_lastFitzsimmonsHatch")) + 20,
+    () => totalTurnsPlayed() >= toInt(get("_lastFitzsimmonsHatch")) + 20,
     hatch,
     hunt,
   );
@@ -336,7 +337,7 @@ function buildHelmet(): void {
   }
 }
 
-const diverTasks: UtsTask[] = [
+const diverTasks: SebTask[] = [
   {
     name: "Diver: Shadow Waters",
     ready: () =>
@@ -387,15 +388,16 @@ const diverTasks: UtsTask[] = [
 
 const cheapLeg = () => legReady("abyss:cheap");
 const cyberLeg = () => legReady("abyss:cyberrealm") && momProgress() < momTarget();
-const habitat = () => prop("_monsterHabitatsMonster");
-const abyssHabitat = () => habitat() === "eye in the darkness" || habitat() === "slithering thing";
+const habitat = () => get("_monsterHabitatsMonster");
+const abyssHabitat = () =>
+  habitat() === $monster`eye in the darkness` || habitat() === $monster`slithering thing`;
 
-const abyssTasks: UtsTask[] = [
+const abyssTasks: SebTask[] = [
   {
     // Sets the sword on the sea cow, for cowbells while grinding the abyss.
     name: "Abyss: S Word sea cow",
     ready: () => cheapLeg() && highShiny() && momProgress() < 36,
-    completed: () => prop("swordOfSWordsMonster") === "775",
+    completed: () => get("swordOfSWordsMonster") === $monster`sea cow`,
     outfit: () =>
       new Gear("item drop,sea", corral)
         .fam(sword)
@@ -426,7 +428,7 @@ const abyssTasks: UtsTask[] = [
       );
       if (availableAmount($item`sea cowbell`) < 3 && haveFamiliar(sword)) gear.fam(sword);
       else gear.forRole("itdrop");
-      if (!prop("banishedMonsters").includes("school of many")) {
+      if (!get("banishedMonsters").includes("school of many")) {
         gear.need($item`Monodent of the Sea`);
       }
       if (get("lassoTrainingCount") < 20 && availableAmount($item`sea cowboy hat`) > 0) {
@@ -448,7 +450,7 @@ const abyssTasks: UtsTask[] = [
   {
     name: "Abyss: banish constructs",
     ready: () => cyberLeg() && $location`Madness Bakery`.turnsSpent < 3,
-    completed: () => prop("banishedPhyla").includes("construct"),
+    completed: () => get("banishedPhyla").includes("construct"),
     before: () => {
       if (!get("madnessBakeryAvailable")) {
         visitUrl("shop.php?whichshop=armory&action=talk");
@@ -465,16 +467,14 @@ const abyssTasks: UtsTask[] = [
   {
     name: "Abyss: recall the habitat",
     ready: () =>
-      cyberLeg() &&
-      haveSkill($skill`Just the Facts`) &&
-      toInt(prop("_monsterHabitatsRecalled")) < 3,
+      cyberLeg() && haveSkill($skill`Just the Facts`) && toInt(get("_monsterHabitatsRecalled")) < 3,
     completed: abyssHabitat,
     ...recallCaliginous(),
   },
   {
     name: "Abyss: cyberzone",
     ready: () =>
-      cyberLeg() && toInt(prop("_monsterHabitatsFightsLeft")) > 0 && get("_cyberFreeFights") < 10,
+      cyberLeg() && toInt(get("_monsterHabitatsFightsLeft")) > 0 && get("_cyberFreeFights") < 10,
     completed: () => momProgress() >= 40,
     outfit: () =>
       new Gear("moxie", $location`Cyberzone 1`)
@@ -515,7 +515,7 @@ function leatherPiece(item: Item): TaskBody {
   };
 }
 
-const corralTasks: UtsTask[] = [
+const corralTasks: SebTask[] = [
   {
     name: "Corral: Shadow Waters",
     ready: () =>
@@ -537,11 +537,11 @@ const corralTasks: UtsTask[] = [
       if (availableAmount($item`pro skateboard`) === 0) pullSequence($item`pro skateboard`);
     },
     outfit: () => {
-      const copied = prop("lastCopyableMonster");
+      const copied = get("lastCopyableMonster");
       if (
         get("_backUpUses") < 11 &&
         haveItem($item`backup camera`) &&
-        (copied === "eye in the darkness" || copied === "slithering thing")
+        (copied === $monster`eye in the darkness` || copied === $monster`slithering thing`)
       ) {
         return new Gear("item drop, sea, -equip peridot of peril", corral)
           .forRole("itdrop")
@@ -552,7 +552,7 @@ const corralTasks: UtsTask[] = [
           .need($item`backup camera`)
           .outfit();
       }
-      if (haveSkill($skill`Steely-eyed Squint`) && haveItem($item`cursed monkey's paw`)) {
+      if (haveSkill($skill`Steely-Eyed Squint`) && haveItem($item`cursed monkey's paw`)) {
         pullSequence($item`software glitch`);
       }
       return new Gear("item drop, sea, -equip peridot of peril, equip monodent of the sea", corral)
@@ -589,7 +589,7 @@ const corralTasks: UtsTask[] = [
   },
 ];
 
-export const SeahorseRouteQuest: UtsQuest = {
+export const SeahorseRouteQuest: SebQuest = {
   name: "Seahorse route",
   tasks: [
     {
@@ -608,17 +608,17 @@ export const SeahorseRouteQuest: UtsQuest = {
 // ─── SHADOW RIFT AND TEFLON ───────────────────────────────────────────────────
 
 const curveballLive = () =>
-  toInt(prop("_curveballFightsLeft")) > 0 && prop("_curveballMonster") === "some fish";
+  get("_curveballFightsLeft", 0) > 0 && get("_curveballMonster") === $monster`some fish`;
 const teflonNeeded = () => itemAmount($item`teflon ore`) === 0 && tailpiece() === $item.none;
 const haveDigpick = () => availableAmount($item`Mer-kin digpick`) > 0;
 const affinityLeft = () => haveEffect($effect`Shadow Affinity`) > 0 || !get("_shadowAffinityToday");
 const phone = () => haveItem($item`closed-circuit pay phone`);
-const card = $item`platinum Yendorian express card`;
+const card = $item`Platinum Yendorian Express Card`;
 const mine = $location`Anemone Mine`;
 const riftTraining = () =>
   inSeaPath() && get("lassoTrainingCount") < 20 && !highShiny() && affinityLeft() && phone();
 
-export const TeflonQuest: UtsQuest = {
+export const TeflonQuest: SebQuest = {
   name: "Shadow rift and teflon",
   ready: routeDone,
   tasks: [
@@ -629,7 +629,7 @@ export const TeflonQuest: UtsQuest = {
         !highShiny() &&
         get("encountersUntilSRChoice") > 9 &&
         itemAmount($item`closed-circuit pay phone`) > 0,
-      completed: () => prop("questRufus") !== "unstarted",
+      completed: () => get("questRufus") !== "unstarted",
       before: () => {
         retrieveItem($item`oversized sparkler`);
         if (itemAmount($item`lump of loyal latite`) > 0) use($item`lump of loyal latite`);
@@ -676,6 +676,7 @@ export const TeflonQuest: UtsQuest = {
           equip($item`bat wings`);
           return mine;
         }
+        return undefined;
       },
       post: () => {
         if (!haveDigpick()) pullSequence($item`Mer-kin digpick`);
@@ -754,7 +755,7 @@ export const TeflonQuest: UtsQuest = {
 // ─── LASSO TRAINING ───────────────────────────────────────────────────────────
 
 /** Lasso training in the pearl zone, when the rift can't finish it. */
-export const BackupLassoQuest: UtsQuest = {
+export const BackupLassoQuest: SebQuest = {
   name: "Backup lasso training",
   ready: () => routeDone() && !riftTraining(),
   tasks: [
@@ -805,11 +806,11 @@ function cowbellsWanted(): number {
   return 0;
 }
 
-const predictions = () => prop("crystalBallPredictions").toLowerCase();
+const predictions = () => get("crystalBallPredictions").toLowerCase();
 const seahorseNext = () => predictions().includes("the coral corral:wild seahorse");
 const crystalBall = () => availableAmount($item`miniature crystal ball`) > 0;
 
-export const TamingQuest: UtsQuest = {
+export const TamingQuest: SebQuest = {
   name: "Taming",
   ready: () => routeDone() && !tamed(),
   tasks: [
@@ -867,15 +868,15 @@ export const TamingQuest: UtsQuest = {
       },
       outfit: () => {
         const gear = new Gear(dropsItems, corral).forRole("itdrop");
-        if (!prop("_perilLocations").includes("199")) gear.ifEquip($item`Peridot of Peril`);
+        if (!get("_perilLocations").includes("199")) gear.ifEquip($item`Peridot of Peril`);
         if (!haveItem($item`august scepter`)) {
-          gear.need($item`Monodent of the Sea`).ifEquip($item`heartstone`);
+          gear.need($item`Monodent of the Sea`).ifEquip($item`Heartstone`);
         } else if (haveItem($item`miniature crystal ball`)) {
           gear.need($item`miniature crystal ball`);
         }
         if (curveballLive()) gear.need($item`Monodent of the Sea`);
         // All three non-seahorse monsters banished: the tearaway pants.
-        const banished = prop("banishedMonsters");
+        const banished = get("banishedMonsters");
         if (
           banished.includes("Mer-kin rustler") &&
           banished.includes("sea cowboy") &&
@@ -899,7 +900,7 @@ const disguiseShort = () =>
   availableAmount($item`crappy Mer-kin tailpiece`) === 0;
 
 /** Which boss an aftercore run is for, asked once and kept for reruns. */
-export const aftercoreBoss = () => prop("_utsAftercoreBoss");
+export const aftercoreBoss = () => get("_sebAftercoreBoss");
 
 /** Mafia skips Deep Dark Visions below 500 maximum HP; under 67% spooky res a cast ends Beaten Up. */
 function deepDarkVisions(): void {
@@ -921,7 +922,7 @@ function deepDarkVisions(): void {
   }
 }
 
-export const PostSeahorseQuest: UtsQuest = {
+export const PostSeahorseQuest: SebQuest = {
   name: "After the seahorse",
   ready: tamed,
   tasks: [
@@ -935,13 +936,13 @@ export const PostSeahorseQuest: UtsQuest = {
     {
       name: "Rift choice",
       ready: () => phone(),
-      completed: () => prop("encountersUntilSRChoice") !== "0",
+      completed: () => get("encountersUntilSRChoice") !== 0,
       do: rift,
       limit: { tries: 1 },
     },
     {
       name: "Rufus",
-      completed: () => prop("questRufus") !== "step1",
+      completed: () => get("questRufus") !== "step1",
       do: () => {
         use($item`closed-circuit pay phone`);
         return rift;
@@ -1031,13 +1032,13 @@ export const PostSeahorseQuest: UtsQuest = {
           Abort: true,
         });
         if (boss === "Abort" || boss === "") abort();
-        setProperty("_utsAftercoreBoss", boss);
+        setProperty("_sebAftercoreBoss", boss);
       }),
       limit: { tries: 1 },
     },
     {
       name: "Deep Dark Visions",
-      completed: () => prop("dreadScroll3") !== "0",
+      completed: () => get("dreadScroll3") !== 0,
       outfit: { modifier: "50 spooky res, hp" },
       prepare: () => mood("spookyres"),
       ...action(deepDarkVisions),

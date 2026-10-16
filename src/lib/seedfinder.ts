@@ -1,4 +1,5 @@
-import { cliExecute, getProperty, setProperty } from "kolmafia";
+import { cliExecute, setProperty } from "kolmafia";
+import { get } from "libram";
 
 // The one ASH dependency left: seedfinder, which solves the dreadscroll from
 // the clues found so far. It is an ASH library with no TypeScript port, so it
@@ -24,12 +25,12 @@ export function dreadSeedCheck(): void {
  * sushi clues), so the school can be skipped. False with no seeds at all.
  */
 export function isKBandSushiEnough(): boolean {
-  const flag = "_utsKBandSushiEnough";
+  const flag = "_sebKBandSushiEnough";
   setProperty(flag, "false");
   seedfinder(
     "SeedData[int] s = find_seeds(); boolean ok = count(s) > 0; boolean [string] seen; " +
       'foreach i, seed in s { string key = seed.dreadscroll[3] + ":" + seed.dreadscroll[6]; if (seen contains key) ok = false; seen[key] = true; } ' +
       `set_property("${flag}", ok);`,
   );
-  return getProperty(flag) === "true";
+  return get(flag) === "true";
 }

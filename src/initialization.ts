@@ -10,7 +10,6 @@ import {
   Familiar,
   familiarEquippedEquipment,
   getFuel,
-  getProperty,
   getRevision,
   getWorkshed,
   handlingChoice,
@@ -33,9 +32,10 @@ import {
   visitUrl,
 } from "kolmafia";
 import { $class, $familiar, $item, $items, $skill, $skills, get, have } from "libram";
-import { leprecondo, sourceEducate } from "./lib/iotm";
+
 import { iotmChecklist, pullChecklist, skillChecklist } from "./lib/checklists";
-import { chosenFamiliar, pickFamiliar } from "./lib/familiar";
+import { chosenFamiliar, pickFamiliar, swordOfSWords } from "./lib/familiar";
+import { leprecondo, sourceEducate } from "./lib/iotm";
 import { pulledToday } from "./lib/pulls";
 import {
   blackGlass,
@@ -97,7 +97,7 @@ function borrowSheriffProps(): void {
 }
 
 function dailies(): void {
-  if (getProperty("questM05Toot") === "started") {
+  if (get("questM05Toot") === "started") {
     council();
     visitUrl("tutorial.php?action=toot");
     council();
@@ -108,10 +108,7 @@ function dailies(): void {
     if (itemAmount(item) > 0) use(itemAmount(item), item);
   }
   if (haveItem($item`wardrobe-o-matic`)) use($item`wardrobe-o-matic`);
-  if (
-    haveItem($item`SongBoom™ BoomBox`) &&
-    getProperty("boomBoxSong") !== "Total Eclipse of Your Meat"
-  ) {
+  if (haveItem($item`SongBoom™ BoomBox`) && get("boomBoxSong") !== "Total Eclipse of Your Meat") {
     use($item`SongBoom™ BoomBox`);
   }
 
@@ -145,7 +142,7 @@ function dailies(): void {
     }
   }
 
-  for (const item of $items`hamethyst, baconstone, porquoise, kokomo resort pass`) {
+  for (const item of $items`hamethyst, baconstone, porquoise, Kokomo Resort Pass`) {
     if (item === $item`porquoise` && haveItem($item`portable pantogram`)) continue;
     autosell(itemAmount(item), item);
   }
@@ -161,21 +158,21 @@ function dailies(): void {
   }
 
   step("initialization: Mayam rings");
-  if (getProperty("_mayamSymbolsUsed") === "" && haveItem($item`Mayam Calendar`)) {
+  if (get("_mayamSymbolsUsed") === "" && haveItem($item`Mayam Calendar`)) {
     if (haveFamiliar($familiar`Chest Mimic`)) useFamiliar($familiar`Chest Mimic`);
     else switchFamiliar(pickFamiliar("itdrop"));
     cliExecute(
       "mayam rings vessel yam cheese explosion; mayam rings fur lightning eyepatch yam; mayam rings eye meat yam clock",
     );
   }
-  if (getProperty("leprecondoInstalled") === "0,0,0,0" && itemAmount($item`Leprecondo`) > 0) {
+  if (get("leprecondoInstalled") === "0,0,0,0" && itemAmount($item`Leprecondo`) > 0) {
     leprecondo(highShiny() ? "10,11,12,24,4,5,6" : "22,24,12,11,10,4,5,6");
   }
   visitUrl("campground.php?preaction=leaves");
   if (itemAmount($item`S.I.T. Course Completion Certificate`) > 0 && !get("_sitCourseCompleted")) {
     use($item`S.I.T. Course Completion Certificate`);
   }
-  if (getProperty("_aprilBandInstruments") === "0" && haveItem($item`Apriling band helmet`)) {
+  if (get("_aprilBandInstruments") === 0 && haveItem($item`Apriling band helmet`)) {
     cliExecute("aprilband item tuba");
     if (highShiny()) {
       cliExecute("aprilband item quad tom");
@@ -230,7 +227,7 @@ function dailies(): void {
     }
     if (
       item === $item`sea lasso` &&
-      (lowShiny() || (haveFamiliar($familiar`Sword of S Words`) && countSummons() >= 3))
+      (lowShiny() || (haveFamiliar(swordOfSWords) && countSummons() >= 3))
     ) {
       continue;
     }
@@ -250,8 +247,8 @@ export function initialization(): void {
   if (getRevision() < 29057) abort("Please update mafia to newer than 29057");
   // A pearl farm or screech re-aim that aborted mid-loop leaves these set,
   // and the CCS reads them.
-  setProperty("_utsPearlFarm", "false");
-  setProperty("_utsScreechReaim", "false");
+  setProperty("_sebPearlFarm", "false");
+  setProperty("_sebScreechReaim", "false");
 
   checkChosenFamiliar();
   if (!get("autoSatisfyWithNPCs")) {
@@ -262,7 +259,7 @@ export function initialization(): void {
   skillChecklist();
   if (inSeaPath()) pullChecklist();
 
-  if (getProperty("questS01OldGuy") === "unstarted") {
+  if (get("questS01OldGuy") === "unstarted") {
     visitUrl("place.php?whichplace=sea_oldman&action=oldman_oldman");
   }
   if (!have($item`black glass`) && itemAmount($item`sand dollar`) > 13) blackGlass();
@@ -277,7 +274,7 @@ export function initialization(): void {
     getWorkshed() === $item`Asdon Martin keyfob (on ring)` &&
     !highShiny() &&
     !get("_missileLauncherUsed") &&
-    getProperty("_utsMissileFailed") !== "true" &&
+    get("_sebMissileFailed") !== "true" &&
     getFuel() < 100 &&
     retrieveItem(17, $item`loaf of soda bread`)
   ) {

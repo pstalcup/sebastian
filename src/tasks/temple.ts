@@ -5,7 +5,6 @@ import {
   cliExecute,
   closetAmount,
   equip,
-  getProperty,
   haveEffect,
   haveEquipped,
   haveFamiliar,
@@ -43,7 +42,8 @@ import {
   $stat,
   get,
 } from "libram";
-import { branch, TaskBody, UtsQuest, UtsTask } from "../engine";
+
+import { branch, TaskBody, SebQuest, SebTask } from "../engine";
 import { Gear } from "../lib/gear";
 import {
   baseballD,
@@ -67,6 +67,7 @@ import { pulledToday, pullSequence, reservedPulls } from "../lib/pulls";
 import { baseballPlayers, equipSwimTrunks } from "../lib/resources";
 import { dreadSeedCheck, isKBandSushiEnough } from "../lib/seedfinder";
 import { haveItem, highShiny, inAftercore, inSeaPath, lowShiny } from "../lib/state";
+
 import { aftercoreBoss, tamed } from "./seahorse";
 import {
   action,
@@ -93,9 +94,8 @@ const rightDoor = $location`Mer-kin Temple (Right Door)`;
 const leftDoor = $location`Mer-kin Temple (Left Door)`;
 const center = $location`Mer-kin Temple (Center Door)`;
 const colosseum = $location`Mer-kin Colosseum`;
-const prop = (name: string) => getProperty(name);
-const scroll = (n: number) => prop(`dreadScroll${n}`);
-const vocabulary = () => toInt(prop("merkinVocabularyMastery"));
+const scroll = (n: number) => get(`dreadScroll${n}`, 0);
+const vocabulary = () => toInt(get("merkinVocabularyMastery"));
 const highPriest = () => get("isMerkinHighPriest");
 const beads = () => availableAmount($item`Mer-kin prayerbeads`);
 
@@ -167,10 +167,10 @@ function yogHpCheck(): boolean {
  * (the lounge's scholar pieces). Picked once a day, since it asks seedfinder.
  */
 function schoolRoute(): "vocabulary" | "lounge" {
-  let value = prop("_utsSchoolRoute");
+  let value = get("_sebSchoolRoute");
   if (value === "") {
     value = !isKBandSushiEnough() || inAftercore() ? "vocabulary" : "lounge";
-    setProperty("_utsSchoolRoute", value);
+    setProperty("_sebSchoolRoute", value);
   }
   return value as "vocabulary" | "lounge";
 }
@@ -189,7 +189,7 @@ function takeHallpasses(): void {
   takeCloset(closetAmount($item`Mer-kin hallpass`), $item`Mer-kin hallpass`);
 }
 
-const vocabularyTasks: UtsTask[] = [
+const vocabularyTasks: SebTask[] = [
   {
     name: "Aftercore school supplies",
     ready: () => vocabularyRoute() && inAftercore(),
@@ -224,8 +224,8 @@ const vocabularyTasks: UtsTask[] = [
       }
       if (get("_clubEmBattlefieldUsed") < 5) {
         gear.ifEquip($item`legendary seal-clubbing club`);
-      } else if (baseballPlayers() < 9 || !prop("baseballTeam").includes("838")) {
-        gear.ifEquip($item`baseball diamond`);
+      } else if (baseballPlayers() < 9 || !get("baseballTeam").includes("838")) {
+        gear.ifEquip($item`Baseball Diamond`);
       }
       return gear
         .ifEquip($item`blood cubic zirconia`)
@@ -242,7 +242,7 @@ const vocabularyTasks: UtsTask[] = [
     ready: vocabularyRoute,
     completed: () => availableAmount($item`Mer-kin bunwig`) > 0 || libraryReady(),
     before: () => {
-      if (prop("baseballTeam").includes("773") && baseballPlayers() === 9) baseballD();
+      if (get("baseballTeam").includes("773") && baseballPlayers() === 9) baseballD();
     },
     outfit: () =>
       new Gear("item drop, hat drop,sea", school)
@@ -331,7 +331,7 @@ const vocabularyTasks: UtsTask[] = [
   },
 ];
 
-const loungeTasks: UtsTask[] = [
+const loungeTasks: SebTask[] = [
   {
     name: "Lounge: unlock the teacher",
     ready: loungeRoute,
@@ -345,8 +345,8 @@ const loungeTasks: UtsTask[] = [
           $item`crappy Mer-kin tailpiece`,
           $item`crappy Mer-kin mask`,
         );
-      if (baseballPlayers() < 9 || !prop("baseballTeam").includes("838")) {
-        gear.ifEquip($item`baseball diamond`);
+      if (baseballPlayers() < 9 || !get("baseballTeam").includes("838")) {
+        gear.ifEquip($item`Baseball Diamond`);
       }
       return gear
         .ifEquip($item`blood cubic zirconia`)
@@ -420,8 +420,8 @@ const scholarGear = () =>
 const schoolDone = () =>
   schoolRoute() === "vocabulary" ? vocabulary() >= 90 : !loungeRoute() || loungePieces();
 const haveDreadscroll = () => availableAmount($item`Mer-kin dreadscroll`) > 0;
-const libraryDone = () => haveDreadscroll() && [1, 6, 8].every((n) => scroll(n) !== "0");
-const hintsDone = () => [1, 2, 3, 4, 5, 6, 8].every((n) => scroll(n) !== "0");
+const libraryDone = () => haveDreadscroll() && [1, 6, 8].every((n) => scroll(n) !== 0);
+const hintsDone = () => [1, 2, 3, 4, 5, 6, 8].every((n) => scroll(n) !== 0);
 
 function sushiClue(): void {
   if (availableAmount($item`Mer-kin worktea`) === 0) pullSequence($item`Mer-kin worktea`);
@@ -442,7 +442,7 @@ function scrollFor(item: Item, fromPouches: boolean): TaskBody {
   );
 }
 
-const dreadscrollTasks: UtsTask[] = [
+const dreadscrollTasks: SebTask[] = [
   {
     name: "Scholar gear",
     ready: () => !highPriest() && schoolDone(),
@@ -462,7 +462,7 @@ const dreadscrollTasks: UtsTask[] = [
   {
     name: "Knucklebone clue",
     ready: () => !highPriest() && haveDreadscroll(),
-    completed: () => scroll(4) !== "0",
+    completed: () => scroll(4) !== 0,
     ...action(() => {
       if (itemAmount($item`Mer-kin knucklebone`) === 0) pullSequence($item`Mer-kin knucklebone`);
       use($item`Mer-kin knucklebone`);
@@ -473,7 +473,7 @@ const dreadscrollTasks: UtsTask[] = [
   {
     name: "Sushi clue",
     ready: () => !highPriest() && haveDreadscroll() && vocabulary() < 90,
-    completed: () => scroll(7) !== "0",
+    completed: () => scroll(7) !== 0,
     ...action(() => {
       sushiClue();
       dreadSeedCheck();
@@ -490,14 +490,14 @@ const dreadscrollTasks: UtsTask[] = [
   // hints come from a gym fight with the scroll in hand.
   {
     name: "Killscroll for its hint",
-    ready: () => !highPriest() && libraryDone() && scroll(5) === "0",
+    ready: () => !highPriest() && libraryDone() && scroll(5) === 0,
     completed: () => itemAmount($item`Mer-kin killscroll`) > 0,
     before: () => print("Missed the killscroll hint", "red"),
     ...scrollFor($item`Mer-kin killscroll`, true),
   },
   {
     name: "Healscroll for its hint",
-    ready: () => !highPriest() && libraryDone() && scroll(2) === "0",
+    ready: () => !highPriest() && libraryDone() && scroll(2) === 0,
     completed: () => itemAmount($item`Mer-kin healscroll`) > 0,
     before: () => print("Missed the healscroll hint", "red"),
     ...scrollFor($item`Mer-kin healscroll`, false),
@@ -505,7 +505,7 @@ const dreadscrollTasks: UtsTask[] = [
   {
     name: "Gym for the scroll hints",
     ready: () => !highPriest() && libraryDone(),
-    completed: () => scroll(5) !== "0" && scroll(2) !== "0",
+    completed: () => scroll(5) !== 0 && scroll(2) !== 0,
     ...gymnasium(),
     limit: { skip: 1 },
   },
@@ -514,7 +514,7 @@ const dreadscrollTasks: UtsTask[] = [
     ready: () => !highPriest() && libraryDone(),
     completed: hintsDone,
     ...action(() => {
-      const missed = [1, 3, 4, 6, 8].find((n) => scroll(n) === "0");
+      const missed = [1, 3, 4, 6, 8].find((n) => scroll(n) === 0);
       if (missed) abort(`Missed dreadscroll ${missed} hint`);
     }),
     limit: { tries: 1 },
@@ -525,7 +525,7 @@ const dreadscrollTasks: UtsTask[] = [
 
 const priestReady = () => !highPriest() && libraryDone() && hintsDone();
 const tainted = () => haveEffect($effect`Deep-Tainted Mind`) > 0;
-const skateWar = () => prop("skateParkStatus") === "war";
+const skateWar = () => get("skateParkStatus") === "war";
 const guardsMissing = () =>
   itemAmount($item`Mer-kin thighguard`) === 0 || itemAmount($item`Mer-kin headguard`) === 0;
 
@@ -536,7 +536,7 @@ function skateBuff(): void {
   }
 }
 
-const priestTasks: UtsTask[] = [
+const priestTasks: SebTask[] = [
   {
     name: "Prayerbeads for Yog-Urt's healing",
     ready: priestReady,
@@ -547,7 +547,7 @@ const priestTasks: UtsTask[] = [
     name: "Leprecondo",
     ready: () =>
       priestReady() &&
-      prop("leprecondoInstalled").includes("11") &&
+      get("leprecondoInstalled").includes("11") &&
       itemAmount($item`Leprecondo`) > 0,
     completed: highPriest,
     ...action(() =>
@@ -558,11 +558,8 @@ const priestTasks: UtsTask[] = [
   {
     name: "Sushi for a god run",
     ready: () =>
-      priestReady() &&
-      turnsPlayed() <= 17 &&
-      prop("uts_godRunGuard") === "true" &&
-      scroll(7) === "0",
-    completed: () => scroll(7) !== "0",
+      priestReady() && turnsPlayed() <= 17 && get("seb_godRunGuard") === "true" && scroll(7) === 0,
+    completed: () => scroll(7) !== 0,
     ...action(() => {
       if (itemAmount($item`Mer-kin worktea`) === 0) {
         abort("On track for a god run, eat a sushi for the dreadscroll clue");
@@ -600,7 +597,7 @@ const priestTasks: UtsTask[] = [
   },
   {
     name: "Tainted: abyss",
-    ready: () => priestReady() && tainted() && prop("questS02Monkees") === "step12",
+    ready: () => priestReady() && tainted() && get("questS02Monkees") === "step12",
     completed: () => !tainted(),
     ...finishCaliginous(),
   },
@@ -630,7 +627,7 @@ const yogWanted = () =>
 const disguised = () =>
   tamed() && (tailpiece() !== $item.none || availableAmount($item`crappy Mer-kin tailpiece`) > 0);
 
-const skateCleanup: UtsTask[] = [
+const skateCleanup: SebTask[] = [
   {
     name: "Skate park war",
     ready: skateWar,
@@ -680,7 +677,7 @@ function prayerbeadNow(): void {
   adv($location`The Mer-Kin Outpost`);
 }
 
-export const YogUrtQuest: UtsQuest = {
+export const YogUrtQuest: SebQuest = {
   name: "Yog-Urt",
   ready: () => disguised() && yogWanted(),
   tasks: [
@@ -784,14 +781,14 @@ export const YogUrtQuest: UtsQuest = {
   ],
 };
 
-const finishAbyss: UtsTask = {
+const finishAbyss: SebTask = {
   name: "Finish the abyss",
-  ready: () => inSeaPath() && prop("questS02Monkees") === "step12",
-  completed: () => prop("questS02Monkees") !== "step12",
+  ready: () => inSeaPath() && get("questS02Monkees") === "step12",
+  completed: () => get("questS02Monkees") !== "step12",
   ...finishCaliginous(),
 };
 
-export const AfterYogUrtQuest: UtsQuest = {
+export const AfterYogUrtQuest: SebQuest = {
   name: "After Yog-Urt",
   ready: () => disguised() && (!inSeaPath() || get("yogUrtDefeated")),
   tasks: [
@@ -820,7 +817,7 @@ export const AfterYogUrtQuest: UtsQuest = {
     },
     {
       ...finishAbyss,
-      ready: () => finishAbyss.ready!() && prop("spookyVHSTapeMonster") === "",
+      ready: () => finishAbyss.ready!() && get("spookyVHSTapeMonster") === null,
     },
   ],
 };
@@ -833,24 +830,24 @@ export const AfterYogUrtQuest: UtsQuest = {
  * or no higher than one that already failed today.
  */
 function championCheck(): void {
-  const won = toInt(prop("lastColosseumRoundWon"));
+  const won = toInt(get("lastColosseumRoundWon"));
   if (won < 12 || won > 14 || !haveSkill($skill`Saucegeyser`) || get("isMerkinGladiatorChampion")) {
     return;
   }
   const weakest = monsterHp($monster`Georgepaul, the Balldodger`);
-  const ranEst = prop("_utsChampionRanEst");
+  const ranEst = get("_sebChampionRanEst");
   let why = "";
   if (ranEst !== "" && geyserLowRoll() <= toInt(ranEst)) {
     why =
-      `UTS: one Saucegeyser estimated at ${ranEst} failed to kill a Colosseum champion today, ` +
+      `SEB: one Saucegeyser estimated at ${ranEst} failed to kill a Colosseum champion today, ` +
       `and the estimate here is ${geyserLowRoll()}. Raise Mysticality or spell damage past that, or fight it by hand, then rerun.`;
   } else if (geyserLowRoll() < weakest) {
     why =
-      `UTS: the Colosseum champions (${weakest} HP and up) must die to one Saucegeyser, estimated at ` +
+      `SEB: the Colosseum champions (${weakest} HP and up) must die to one Saucegeyser, estimated at ` +
       `${geyserLowRoll()} here. Raise Mysticality or spell damage, or fight them by hand, then rerun.`;
   }
   if (why === "") {
-    setProperty("_utsChampionRanEst", "");
+    setProperty("_sebChampionRanEst", "");
     return;
   }
   print(why, "red");
@@ -860,10 +857,10 @@ function championCheck(): void {
 const gladiatorGear = () =>
   availableAmount($item`Mer-kin gladiator mask`) > 0 &&
   availableAmount($item`Mer-kin gladiator tailpiece`) > 0;
-const roundsWon = () => toInt(prop("lastColosseumRoundWon"));
+const roundsWon = () => toInt(get("lastColosseumRoundWon"));
 const shubWanted = () => inSeaPath() || (inAftercore() && aftercoreBoss() === "Shub");
 
-export const ShubQuest: UtsQuest = {
+export const ShubQuest: SebQuest = {
   name: "Shub-Jigguwatt",
   ready: () => disguised() && (!inSeaPath() || get("yogUrtDefeated")) && shubWanted(),
   completed: () => get("shubJigguwattDefeated"),
@@ -959,7 +956,7 @@ export const ShubQuest: UtsQuest = {
       },
       do: colosseum,
       post: () => {
-        if (prop("lastEncounter") === "Been There, Won That") {
+        if (get("lastEncounter") === "Been There, Won That") {
           setProperty("lastColosseumRoundWon", "15");
           setProperty("isMerkinGladiatorChampion", "true");
         }
@@ -1023,13 +1020,13 @@ const finalBossGear = (): Gear => {
   return gear.ifEquip($item`Congressional Medal of Insanity`).bathysphere($item`toy Cupid bow`);
 };
 
-export const FinalBossQuest: UtsQuest = {
+export const FinalBossQuest: SebQuest = {
   name: "Final boss",
   tasks: [
     {
       name: "Naughty Sorceress",
       ready: () => inSeaPath() && get("shubJigguwattDefeated"),
-      completed: () => prop("questL13Final") !== "unstarted",
+      completed: () => get("questL13Final") !== "unstarted",
       outfit: () => finalBossGear().outfit(),
       do: () => {
         adv(center);
@@ -1040,25 +1037,25 @@ export const FinalBossQuest: UtsQuest = {
     {
       name: "Dad",
       ready: () => inAftercore() && aftercoreBoss() === "Dad",
-      completed: () => prop("_utsDadFought") === "true",
+      completed: () => get("_sebDadFought") === "true",
       before: () =>
         cliExecute("acquire 3 warbear whosit; acquire 3 volcanic ash; recover mp; tempura air"),
       outfit: () =>
         new Gear("spell damage percent,sea", center)
           .fam($familiar`Tiny Plastic Santa Claus Skeleton`)
           .need(
-            $item`goggles of loathing`,
-            $item`stick-knife of loathing`,
-            $item`scepter of loathing`,
-            $item`jeans of loathing`,
-            $item`treads of loathing`,
-            $item`belt of loathing`,
+            $item`Goggles of Loathing`,
+            $item`Stick-Knife of Loathing`,
+            $item`Scepter of Loathing`,
+            $item`Jeans of Loathing`,
+            $item`Treads of Loathing`,
+            $item`Belt of Loathing`,
             $item`little bitty bathysphere`,
           )
           .outfit(),
       prepare: () => setProperty("mpAutoRecoveryTarget", "1"),
       do: () => {
-        setProperty("_utsDadFought", "true");
+        setProperty("_sebDadFought", "true");
         return center;
       },
       limit: { tries: 1 },

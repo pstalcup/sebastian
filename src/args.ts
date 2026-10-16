@@ -1,7 +1,7 @@
 import { Args } from "grimoire-kolmafia";
 
-// Commands. The original's per-account settings (uts_godRunGuard,
-// uts_usePilsners, uts_postloopCommand and the uts_postLoop* switches) are
+// Commands. The original's per-account settings (seb_godRunGuard,
+// seb_usePilsners, seb_postloopCommand and the seb_postLoop* switches) are
 // still read straight from those preferences, so set them with the mafia CLI
 // as before; see the README.
 export const args = Args.create(

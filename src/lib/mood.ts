@@ -1,7 +1,6 @@
 import {
   cliExecute,
   Effect,
-  getProperty,
   haveEffect,
   haveSkill,
   Item,
@@ -14,6 +13,7 @@ import {
   totalTurnsPlayed,
 } from "kolmafia";
 import { $effect, $effects, $item, $skill, get } from "libram";
+
 import { briefcase, sourceEnhance } from "./resources";
 import { haveItem, highShiny, lowShiny } from "./state";
 
@@ -47,13 +47,12 @@ function needsMissingSkill(effect: Effect): boolean {
 }
 
 function photoBoothSpent(): boolean {
-  return toInt(getProperty("_photoBoothEffects")) >= 3 || !haveItem($item`Clan VIP Lounge key`);
+  return toInt(get("_photoBoothEffects")) >= 3 || !haveItem($item`Clan VIP Lounge key`);
 }
 
 function aprilBandWaiting(): boolean {
   return (
-    !haveItem($item`Apriling band helmet`) ||
-    totalTurnsPlayed() < toInt(getProperty("nextAprilBandTurn"))
+    !haveItem($item`Apriling band helmet`) || totalTurnsPlayed() < toInt(get("nextAprilBandTurn"))
   );
 }
 
@@ -167,7 +166,7 @@ export function mood(mode: Mood): void {
         if (needsMissingSkill(effect)) continue;
         const item = effectToItem(effect);
         if (item !== $item.none && itemAmount(item) === 0) continue;
-        if (effect === $effect`Starry-Eyed` && getProperty("telescopeUpgrades") === "0") continue;
+        if (effect === $effect`Starry-Eyed` && get("telescopeUpgrades") === 0) continue;
         if (haveEffect(effect) === 0) getEffect(effect);
       }
       return;

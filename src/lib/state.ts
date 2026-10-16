@@ -30,9 +30,9 @@ export function inAftercore(): boolean {
   return myPath().id === 0;
 }
 
-/** Progress tracker, printed in the same "UTS:" style as the original. */
+/** Progress tracker, printed with a "SEB:" prefix as the original did with "UTS:". */
 export function step(message: string): void {
-  print(`UTS: ${message}`, "blue");
+  print(`SEB: ${message}`, "blue");
 }
 
 /** Owned anywhere: inventory, closet, storage, or worn by a familiar. */

@@ -9,7 +9,6 @@ import {
   currentRound,
   familiarWeight,
   getCampground,
-  getProperty,
   handlingChoice,
   haveEffect,
   haveEquipped,
@@ -58,6 +57,7 @@ import {
   $stat,
   get,
 } from "libram";
+
 import {
   cheatsheetsNeeded,
   diverForceReady,
@@ -169,7 +169,7 @@ export function codpiece(input: string): void {
 // ─── ANEMONE MINE ─────────────────────────────────────────────────────────────
 
 function squareImage(n: number): string {
-  const match = new RegExp(`#${n}<img src="[^"]*/([^"]+)\\.gif"`).exec(getProperty("mineLayout3"));
+  const match = new RegExp(`#${n}<img src="[^"]*/([^"]+)\\.gif"`).exec(get("mineLayout3"));
   return match ? match[1] : "";
 }
 
@@ -214,10 +214,9 @@ export function mineNum(): number {
   for (const [x, y] of chunks) {
     if (y < 4) return 8 * y + x;
   }
-  abort(
+  return abort(
     "Generic mining did not find teflon ore, mine manually. TIP: the ores show up in adjacent veins of 5.",
   );
-  return 0;
 }
 
 // ─── SUSHI AND THE AUTUMN-ATON ────────────────────────────────────────────────
@@ -254,7 +253,7 @@ export function useAutumnaton(): void {
     cliExecute("autumnaton send Shadow Rift");
     return;
   }
-  const upgrades = getProperty("autumnatonUpgrades");
+  const upgrades = get("autumnatonUpgrades");
   for (const zone of zones) {
     const upgrade = AUTUMNATON_UPGRADES[`${zone.difficultyLevel} ${zone.environment}`];
     if (upgrade && !upgrades.includes(upgrade)) {
@@ -402,7 +401,7 @@ const BANISH_SOURCES: [Item, string, Skill][] = [
 /** The monster a banisher (by its recorded name prefix) is holding. */
 export function banished(banisher: string): Monster {
   const escaped = banisher.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const match = new RegExp(`([^:]+):${escaped}`).exec(getProperty("banishedMonsters"));
+  const match = new RegExp(`([^:]+):${escaped}`).exec(get("banishedMonsters"));
   return match ? toMonster(match[1]) : $monster.none;
 }
 
@@ -449,13 +448,13 @@ export function combatBan(): Skill {
 
 export function candy(action: "fight" | "treat"): void {
   if (action === "fight") {
-    const house = getProperty("_trickOrTreatBlock").indexOf("D");
+    const house = get("_trickOrTreatBlock").indexOf("D");
     visitUrl("place.php?whichplace=town&action=town_trickortreat");
     visitUrl(`choice.php?whichchoice=804&pwd=${myHash()}&option=3&whichhouse=${house}`);
     runCombat();
   } else {
-    while (getProperty("_trickOrTreatBlock").includes("L")) {
-      const house = getProperty("_trickOrTreatBlock").indexOf("L");
+    while (get("_trickOrTreatBlock").includes("L")) {
+      const house = get("_trickOrTreatBlock").indexOf("L");
       visitUrl("place.php?whichplace=town&action=town_trickortreat");
       visitUrl(`choice.php?whichchoice=804&pwd=${myHash()}&option=3&whichhouse=${house}`);
     }
@@ -466,7 +465,7 @@ export function candy(action: "fight" | "treat"): void {
 export function useMapIfAvailable(): void {
   if (highShiny()) return;
   if (!haveEquipped($item`backup camera`)) return;
-  if (freeMonster(toMonster(getProperty("lastCopyableMonster")))) return;
+  if (freeMonster(get("lastCopyableMonster") ?? $monster.none)) return;
   if (!get("_mapToACandyRichBlockUsed") && itemAmount($item`map to a candy-rich block`) > 0) {
     use($item`map to a candy-rich block`);
   }
@@ -481,8 +480,8 @@ export function darts(): void {
     haveEquipped($item`Everfull Dart Holster`) &&
     currentRound() > 0
   ) {
-    if (getProperty("everfullDartPerks").includes("Butt")) {
-      const match = /(\d+):butt/.exec(getProperty("_currentDartboard"));
+    if (get("everfullDartPerks").includes("Butt")) {
+      const match = /(\d+):butt/.exec(get("_currentDartboard"));
       if (!match) break;
       useSkill(toSkill(Number(match[1])));
     } else {
@@ -540,7 +539,7 @@ const LEPRECONDO_FURNITURE: Record<number, string> = {
 export function leprecondo(input: string): void {
   if (get("_leprecondoRearrangements") >= 3) return;
   const discovered = new Set(
-    getProperty("leprecondoDiscovered")
+    get("leprecondoDiscovered")
       .split(",")
       .filter((s) => s !== "")
       .map(Number)
@@ -575,7 +574,7 @@ export function leprecondo(input: string): void {
  * kill pitchers as late as their slots allow, each with two lead-up pitches.
  */
 export function baseballD(): void {
-  const lineup = getProperty("baseballTeam").split(",");
+  const lineup = get("baseballTeam").split(",");
   if (lineup.length !== 9) return;
   const pitches = new Map<number, number>();
   const fillPrereqs = (slot: number, pitch: number) => {
@@ -637,10 +636,10 @@ export function baseballD(): void {
 export function sourceEducate(): void {
   if (!getCampground()[$item`Source terminal`.name]) return;
   if (get("_sourceTerminalDuplicateUses") >= 1) return;
-  if (!getProperty("sourceTerminalEducateKnown").includes("duplicate.edu")) return;
+  if (!get("sourceTerminalEducateKnown").includes("duplicate.edu")) return;
   if (
-    getProperty("sourceTerminalEducate1") === "duplicate.edu" ||
-    getProperty("sourceTerminalEducate2") === "duplicate.edu"
+    get("sourceTerminalEducate1") === "duplicate.edu" ||
+    get("sourceTerminalEducate2") === "duplicate.edu"
   ) {
     return;
   }

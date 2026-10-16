@@ -1,9 +1,10 @@
-import { Location } from "kolmafia";
 import { Engine, Outfit, Quest, Task } from "grimoire-kolmafia";
+import { Location } from "kolmafia";
 import { get, PropertiesManager } from "libram";
+
 import { postAdventure, refreshMPRecovery } from "./lib/postAdventure";
 
-export type UtsTask = Task & {
+export type SebTask = Task & {
   /**
    * Setup that has to happen before the outfit is chosen, like spending a
    * noncombat forcer that equips its own gear.
@@ -16,14 +17,14 @@ export type UtsTask = Task & {
   postAdventure?: boolean;
 };
 
-export type UtsQuest = Quest<UtsTask>;
+export type SebQuest = Quest<SebTask>;
 
 /**
  * How a task acts, without when: the outfit, setup and turn. Several tasks
  * farm the same zone the same way under different conditions, so they share
  * a body and differ only in ready() and completed().
  */
-export type TaskBody = Pick<UtsTask, "before" | "outfit" | "prepare" | "do" | "post" | "choices">;
+export type TaskBody = Pick<SebTask, "before" | "outfit" | "prepare" | "do" | "post" | "choices">;
 
 function resolve<T>(value: T | (() => T)): T {
   return typeof value === "function" ? (value as () => T)() : value;
@@ -50,13 +51,13 @@ export function branch(pick: () => boolean, yes: TaskBody, no: TaskBody): TaskBo
 }
 
 /** The CCS the run fights with. It consults the combat script. */
-export const UTS_CCS = "uts_grimoire";
+export const SEB_CCS = "seb_grimoire";
 /** The bundled combat consult script, built from src/combat.ts. */
 export const COMBAT_SCRIPT = "sebastian_combat.js";
 /** The bundled choice adventure script, built from src/choice.ts. */
 export const CHOICE_SCRIPT = "sebastian_choice.js";
 
-export class UtsEngine extends Engine<never, UtsTask> {
+export class SebEngine extends Engine<never, SebTask> {
   private adventured = false;
 
   /** Public so postloop mode can set its own properties for the engine to restore. */
@@ -64,12 +65,12 @@ export class UtsEngine extends Engine<never, UtsTask> {
     return this.propertyManager;
   }
 
-  createOutfit(task: UtsTask): Outfit {
+  createOutfit(task: SebTask): Outfit {
     task.before?.();
     return super.createOutfit(task);
   }
 
-  do(task: UtsTask): void {
+  do(task: SebTask): void {
     // Resolve the target once, so a task's do() is never called twice.
     const target = typeof task.do === "function" ? task.do() : task.do;
     this.adventured = target instanceof Location;
@@ -81,7 +82,7 @@ export class UtsEngine extends Engine<never, UtsTask> {
     }
   }
 
-  post(task: UtsTask): void {
+  post(task: SebTask): void {
     if (task.postAdventure ?? this.adventured) postAdventure();
     super.post(task);
   }

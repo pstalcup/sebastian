@@ -8,7 +8,6 @@ import {
   drink,
   eat,
   getFuel,
-  getProperty,
   getWorkshed,
   haveEffect,
   haveSkill,
@@ -34,30 +33,20 @@ import {
   setProperty,
   spleenLimit,
   toInt,
-  toItem,
   totalTurnsPlayed,
   use,
   useSkill,
   equip,
   visitUrl,
 } from "kolmafia";
-import {
-  $coinmaster,
-  $effect,
-  $familiar,
-  $item,
-  $items,
-  $location,
-  $skill,
-  get,
-  have,
-} from "libram";
-import { eatSushi, trainset, useAutumnaton } from "./iotm";
-import { dreadSeedCheck } from "./seedfinder";
-import { doSWord } from "./familiar";
+import { $coinmaster, $effect, $item, $items, $location, $skill, get, have, set } from "libram";
+
+import { doSWord, swordOfSWords } from "./familiar";
 import { Gear } from "./gear";
+import { eatSushi, trainset, useAutumnaton } from "./iotm";
 import { diverHuntActive, seaCowNeeded, tailpiece } from "./progress";
 import { pulledToday, pullSequence } from "./pulls";
+import { dreadSeedCheck } from "./seedfinder";
 import {
   haveItem,
   highShiny,
@@ -98,30 +87,30 @@ function affordableMP(goal: number): number {
   const fight = Math.min(goal, fightMP());
   const afford = Math.floor(myMeat() / price) * 9;
   if (afford < fight && myMp() < fight && (!restoreMp(fight) || myMp() < fight)) {
-    const why = `UTS: ${myMp()} MP and ${myMeat()} meat can't cover the ${fight} MP of the next fight. Get MP or meat, then rerun.`;
+    const why = `SEB: ${myMp()} MP and ${myMeat()} meat can't cover the ${fight} MP of the next fight. Get MP or meat, then rerun.`;
     print(why, "red");
     abort(why);
   }
   return Math.min(goal, Math.max(fight, Math.floor(myMeat() / price) * 9));
 }
 
-const round4 = (n: number) => `${Math.round(n * 10000) / 10000}`;
+const round4 = (n: number) => Math.round(n * 10000) / 10000;
 
 /** The MP recovery target setMPRecovery() last wrote. */
-let mpTargetSet = "";
+let mpTargetSet = -1;
 
 /** MP recovery up to 250 or what meat buys, starting before a fight's kill runs short. */
 export function setMPRecovery(): void {
   const target = Math.min(1, affordableMP(250) / myMaxmp());
   const low = Math.min(target, Math.max(target * 0.5, fightMP() / myMaxmp()));
-  setProperty("mpAutoRecovery", round4(low));
-  setProperty("mpAutoRecoveryTarget", round4(target));
+  set("mpAutoRecovery", round4(low));
+  set("mpAutoRecoveryTarget", round4(target));
   mpTargetSet = round4(target);
 }
 
 /** Re-cap MP recovery at the meat on hand, unless a phase has set its own target since. */
 export function refreshMPRecovery(): void {
-  if (getProperty("mpAutoRecoveryTarget") === mpTargetSet) setMPRecovery();
+  if (get("mpAutoRecoveryTarget") === mpTargetSet) setMPRecovery();
 }
 
 // ─── DOLPHINS ─────────────────────────────────────────────────────────────────
@@ -141,7 +130,7 @@ function stillWanted(item: Item): boolean {
       return seaCowNeeded();
     case $item`Mer-kin cheatsheet`:
       // One is spent per wordquiz, and each quiz is ten of the ninety wanted.
-      return itemAmount(item) * 10 < 90 - toInt(getProperty("merkinVocabularyMastery"));
+      return itemAmount(item) * 10 < 90 - toInt(get("merkinVocabularyMastery"));
     case $item`Mer-kin prayerbeads`:
       return !have(item, 3);
     case $item`Mer-kin bunwig`:
@@ -153,7 +142,7 @@ function stillWanted(item: Item): boolean {
 function durableWhistleReady(): boolean {
   return (
     itemAmount($item`durable dolphin whistle`) > 0 &&
-    toInt(getProperty("_durableDolphinWhistleUsed")) < toInt(getProperty("seaPoints"))
+    toInt(get("_durableDolphinWhistleUsed")) < toInt(get("seaPoints"))
   );
 }
 
@@ -161,7 +150,7 @@ function durableWhistleReady(): boolean {
 function sandDollarsOwed(): number {
   let owed = 0;
   if (!have($item`black glass`)) owed += 13;
-  if (getProperty("dampOldBootPurchased") !== "true") owed += 50;
+  if (!get("dampOldBootPurchased")) owed += 50;
   if (tailpiece() === $item.none && !have($item`waterlogged bootstraps`)) owed += 10;
   return owed;
 }
@@ -170,7 +159,7 @@ let dolphinSaid = "";
 
 function dolphinWhistle(): void {
   // The buffer holds one item and the next theft overwrites it.
-  const stolen = toItem(getProperty("dolphinItem"));
+  const stolen = get("dolphinItem") ?? $item.none;
   if (
     !WHISTLE_WORTHY.has(stolen) ||
     !stillWanted(stolen) ||
@@ -195,7 +184,7 @@ function dolphinWhistle(): void {
       : $item.none;
   if (whistle !== $item.none) use(whistle);
   // use() reports success mid-fight too, so the emptied buffer is what says it blew.
-  const blew = getProperty("dolphinItem") === "";
+  const blew = get("dolphinItem") === null;
   const why = blew
     ? `blew the ${whistle}`
     : whistle !== $item.none
@@ -300,15 +289,15 @@ function aftercoreUpkeep(): void {
 
 /** Item familiar, or the Sword when it is still collecting lassos. */
 function copyFightFamiliar(gear: Gear): Gear {
-  return doSWord() ? gear.fam($familiar`Sword of S Words`) : gear.forRole("itdrop");
+  return doSWord() ? gear.fam(swordOfSWords) : gear.forRole("itdrop");
 }
 
 function copiedMonsterFollowUps(): void {
   const pearlZone = pearlLoc();
   // VHS tape monster, eight turns after it was recorded.
   if (
-    getProperty("spookyVHSTapeMonster") !== "" &&
-    totalTurnsPlayed() >= toInt(getProperty("spookyVHSTapeMonsterTurn")) + 8
+    get("spookyVHSTapeMonster") !== null &&
+    totalTurnsPlayed() >= toInt(get("spookyVHSTapeMonsterTurn")) + 8
   ) {
     copyFightFamiliar(new Gear(`${pearlRes()},sea`, pearlZone))
       .ifEquip($item`legendary seal-clubbing club`)
@@ -320,10 +309,10 @@ function copiedMonsterFollowUps(): void {
   }
 
   // VHS tape recording window, in the Caliginous Abyss.
-  const momProgress = toInt(getProperty("momSeaMonkeeProgress"));
+  const momProgress = toInt(get("momSeaMonkeeProgress"));
   if (
-    itemAmount($item`spooky VHS tape`) > 0 &&
-    getProperty("spookyVHSTapeMonster") === "" &&
+    itemAmount($item`Spooky VHS Tape`) > 0 &&
+    get("spookyVHSTapeMonster") === null &&
     momProgress > 22 &&
     momProgress < 33
   ) {
@@ -334,7 +323,7 @@ function copiedMonsterFollowUps(): void {
       .ifEquip($item`Peridot of Peril`)
       .freeKill()
       .bathysphere($item`toy Cupid bow`);
-    if (!getProperty("banishedMonsters").includes("school of many")) {
+    if (!get("banishedMonsters").includes("school of many")) {
       gear.need($item`Monodent of the Sea`);
     }
     gear.outfit().dress();
@@ -343,8 +332,8 @@ function copiedMonsterFollowUps(): void {
 
   // Club 'Em Into Next Week monster.
   if (
-    getProperty("clubEmNextWeekMonster") !== "" &&
-    totalTurnsPlayed() >= toInt(getProperty("clubEmNextWeekMonsterTurn")) + 8 &&
+    get("clubEmNextWeekMonster") !== null &&
+    totalTurnsPlayed() >= toInt(get("clubEmNextWeekMonsterTurn")) + 8 &&
     myLocation() !== $location`Mer-kin Elementary School` &&
     myLocation() !== $location`Mer-kin Library`
   ) {
@@ -373,12 +362,12 @@ export function postAdventure(): void {
   if (have($effect`Marked by the Don`) && haveSkill($skill`Disco Nap`)) {
     useSkill($skill`Disco Nap`);
   }
-  if (getProperty("NCtoC") === "true") setProperty("NCtoC", "false");
+  if (get("NCtoC") === "true") setProperty("NCtoC", "false");
 
-  if (!get("isMerkinHighPriest") && getProperty("seahorseName") !== "") {
+  if (!get("isMerkinHighPriest") && get("seahorseName") !== "") {
     dreadSeedCheck();
   }
-  if (getProperty("autumnatonQuestLocation") === "" && itemAmount($item`autumn-aton`) > 0) {
+  if (get("autumnatonQuestLocation") === null && itemAmount($item`autumn-aton`) > 0) {
     useAutumnaton();
   }
   if (
@@ -425,8 +414,8 @@ export function postAdventure(): void {
   let hpTarget = Math.min(1, 570 / myMaxhp());
   if (myLocation() === $location`Mer-kin Colosseum`) hpTarget = 1;
   else if (myLocation() === $location`Mer-kin Gymnasium`) hpTarget = Math.min(1, 800 / myMaxhp());
-  setProperty("hpAutoRecovery", round4(hpTarget * 0.75));
-  setProperty("hpAutoRecoveryTarget", round4(hpTarget));
+  set("hpAutoRecovery", round4(hpTarget * 0.75));
+  set("hpAutoRecoveryTarget", round4(hpTarget));
   setMPRecovery();
 }
 

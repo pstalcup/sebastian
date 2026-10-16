@@ -6,7 +6,6 @@ import {
   equippedAmount,
   expectedDamage,
   familiarWeight,
-  getProperty,
   haveEffect,
   haveEquipped,
   haveFamiliar,
@@ -31,8 +30,6 @@ import {
   print,
   setProperty,
   Skill,
-  toInt,
-  toMonster,
   visitUrl,
   weightAdjustment,
 } from "kolmafia";
@@ -52,6 +49,8 @@ import {
   get,
   Macro,
 } from "libram";
+
+import { swordOfSWords } from "./lib/familiar";
 import {
   banishUsedAtYourLocation,
   cloakeReady,
@@ -95,12 +94,10 @@ import { haveItem, highShiny, lowShiny, step } from "./lib/state";
 // and Shub's deleveling react to HP and stats round by round, so those submit
 // one round's macro at a time.
 
-const prop = (name: string) => getProperty(name);
-const num = (name: string) => toInt(getProperty(name));
 const saber = $item`Fourth of May Cosplay Saber`;
-const curveballOn = (monster: Monster | string) =>
-  prop("_curveballMonster") === `${monster}` && num("_curveballFightsLeft") > 0;
-const someFishCurveball = () => curveballOn("some fish");
+const curveballOn = (monster: Monster) =>
+  get("_curveballMonster") === monster && get("_curveballFightsLeft", 0) > 0;
+const someFishCurveball = () => curveballOn($monster`some fish`);
 
 /** The monster the pass is planning for. */
 let foe: Monster = $monster.none;
@@ -124,8 +121,8 @@ function darts(): Macro {
   const macro = new Macro();
   if (!haveEquipped($item`Everfull Dart Holster`)) return macro;
   let skill = $skill`Darts: Throw at %part1`;
-  if (prop("everfullDartPerks").includes("Butt")) {
-    const match = /(\d+):butt/.exec(prop("_currentDartboard"));
+  if (get("everfullDartPerks").includes("Butt")) {
+    const match = /(\d+):butt/.exec(get("_currentDartboard"));
     if (!match) return macro;
     skill = Skill.get(Number(match[1]));
   }
@@ -192,10 +189,10 @@ function freeRunAny(banish: boolean): Macro {
     macro.runaway();
   }
 
-  const banishers = $skills`snokebomb, Bowl a Curveball, Feel Hatred, Throw Latte on Opponent`;
-  for (const skill of $skills`Spring Away, Bowl a Curveball, Creepy Grin, Throw Latte on Opponent, Release the Boots, Feel Hatred, snokebomb`) {
+  const banishers = $skills`Snokebomb, Bowl a Curveball, Feel Hatred, Throw Latte on Opponent`;
+  for (const skill of $skills`Spring Away, Bowl a Curveball, Creepy Grin, Throw Latte on Opponent, Release the Boots, Feel Hatred, Snokebomb`) {
     if (!banish && banishers.includes(skill)) continue;
-    const snokebomb = skill === $skill`snokebomb`;
+    const snokebomb = skill === $skill`Snokebomb`;
     if (banish && snokebomb && banishUsedAtYourLocation("snokebomb")) continue;
     if (
       snokebomb &&
@@ -217,7 +214,7 @@ function freeRunAny(banish: boolean): Macro {
   for (const item of $items`glob of Blank-Out, peppermint parasol, anchor bomb, stuffed yam stinkbomb, handful of split pea soup, Mer-kin pinkslip, ink bladder`) {
     if (itemAmount(item) === 0) continue;
     if (!banish && banishItems.includes(item)) continue;
-    if (item === $item`peppermint parasol` && num("parasolUsed") >= 3) continue;
+    if (item === $item`peppermint parasol` && get("parasolUsed") >= 3) continue;
     if (item === $item`Mer-kin pinkslip` && foe.phylum !== $phylum`mer-kin`) continue;
     macro.tryItem(item);
   }
@@ -230,7 +227,7 @@ function freeRun(banish: boolean): Macro {
 }
 
 function bczGazeReady(): boolean {
-  if (prop("NCtoC") === "true") return false;
+  if (get("NCtoC") === "true") return false;
   return myBasestat($stat`submysticality`) - 40000 > bczCost("RefractedGazeCasts");
 }
 
@@ -398,12 +395,12 @@ function feelNostalgic(): Macro {
   if (!haveSkill($skill`Feel Nostalgic`) || get("_feelNostalgicUsed") >= 3) return new Macro();
   // A Force would forfeit the win and the charge with it.
   if (saberForcesFree() > 0 && haveEquipped(saber)) return new Macro();
-  const copied = prop("lastCopyableMonster");
+  const copied = get("lastCopyableMonster");
   const wanted =
-    (copied === "unholy diver" && !diverPartsComplete()) ||
-    (copied === "sea cow" && seaCowNeeded()) ||
-    (copied === "Mer-kin monitor" && cheatsheetsNeeded());
-  if (!wanted || `${foe}` === copied) return new Macro();
+    (copied === $monster`unholy diver` && !diverPartsComplete()) ||
+    (copied === $monster`sea cow` && seaCowNeeded()) ||
+    (copied === $monster`Mer-kin monitor` && cheatsheetsNeeded());
+  if (!wanted || foe === copied) return new Macro();
   return Macro.trySkill($skill`Feel Nostalgic`);
 }
 
@@ -416,7 +413,7 @@ const unguent = $item`Doc Galaktik's Pungent Unguent`;
 
 /** _lastCombatActions lists throws as "it<id>;". */
 function itemUsedThisCombat(item: Item): boolean {
-  return prop("_lastCombatActions").includes(`it${item.id};`);
+  return get("_lastCombatActions").includes(`it${item.id};`);
 }
 
 /** None when no deleveler is needed; aborts when one is needed and none is left. */
@@ -455,10 +452,9 @@ function yogSuckramentRound(needHeal: boolean): Macro {
   if (!needHeal && yogDeleveler() !== $item.none) return Macro.item(yogDeleveler());
   if (yogDocPair()) return Macro.item([elixir, unguent]);
   if (heal !== $item.none) return Macro.item(heal);
-  abort(
+  return abort(
     "Yog-Urt: nothing harmless left to throw under More Like a Suckrament. Finish the fight by hand.",
   );
-  return new Macro();
 }
 
 /** Heal through More Like a Suckrament without touching Yog-Urt, then kill her. One round per macro. */
@@ -541,6 +537,8 @@ function shubFight(): void {
 
 // ─── ZONES ────────────────────────────────────────────────────────────────────
 
+// The Sword of S Words skill, newer than eslint-plugin-libram's data.
+// eslint-disable-next-line libram/verify-constants
 const killALot = $skill`%fn, kill a lot of these guys`;
 const talkToFish = $skill`Sea *dent: Talk to Some Fish`;
 const lightningBolt = $skill`Sea *dent: Throw a Lightning Bolt`;
@@ -556,12 +554,12 @@ const someFish = $monster`some fish`;
 /** The scroll hints the dreadscroll wants, thrown at mer-kin. */
 function throwScrollHints(): Macro {
   const macro = new Macro();
-  if (prop("dreadScroll2") === "0") {
+  if (get("dreadScroll2") === 0) {
     for (let i = 0; i < itemAmount($item`Mer-kin healscroll`); i++) {
       macro.tryItem($item`Mer-kin healscroll`);
     }
   }
-  if (prop("dreadScroll5") === "0" && foe.phylum === $phylum`mer-kin`) {
+  if (get("dreadScroll5") === 0 && foe.phylum === $phylum`mer-kin`) {
     for (let i = 0; i < itemAmount($item`Mer-kin killscroll`); i++) {
       macro.tryItem($item`Mer-kin killscroll`);
     }
@@ -629,12 +627,12 @@ function octopusGarden(plan: Plan): void {
     if (haveEffect($effect`Everything Looks Red, White and Blue`) === 0 && myFamiliar() === eagle) {
       plan.trySkill($skill`%fn, fire a Red, White and Blue Blast`);
     }
-    if (myFamiliar() === $familiar`Sword of S Words`) plan.trySkill(killALot);
+    if (myFamiliar() === swordOfSWords) plan.trySkill(killALot);
     plan.step(darts());
     if (
       (haveEquipped($item`McHugeLarge left pole`) ||
         availableAmount($item`McHugeLarge left pole`) === 0) &&
-      !prop("trackedMonsters").includes("Neptune flytrap")
+      !get("trackedMonsters").includes("Neptune flytrap")
     ) {
       plan.trySkill(...sniffs);
     }
@@ -665,7 +663,7 @@ function wreck(plan: Plan): void {
     if (foe === $monster`mine crab`) plan.trySkill($skill`Heartstone: %banish`, lightningBolt);
   }
   if (foe === diver) {
-    if (get("beGregariousCharges") > 0 && prop("beGregariousMonster") !== "745") {
+    if (get("beGregariousCharges") > 0 && get("beGregariousMonster") !== $monster`unholy diver`) {
       plan.trySkill($skill`Be Gregarious`);
     }
     if (myFamiliar() === $familiar`Melodramedary`) plan.trySkill($skill`%fn, spit on them!`);
@@ -685,7 +683,7 @@ function pearlZone(plan: Plan): void {
   const tippler = $monster`Mer-kin tippler`;
   if (foe === miner) plan.step("pickpocket").trySkill($skill`Swoop like a Bat`);
   // Sniffing feeds the step-4 pearl hunt, which is over once the corral has started.
-  const tracked = prop("trackedMonsters");
+  const tracked = get("trackedMonsters");
   if (
     ((foe === squid && !tracked.includes("giant squid")) ||
       (foe === tippler && !tracked.includes("Mer-kin tippler"))) &&
@@ -694,7 +692,7 @@ function pearlZone(plan: Plan): void {
     plan.trySkill(...sniffs);
   }
   if (freeMonster(foe)) plan.trySkill(gaze).step(cleanUp());
-  if (highShiny() && foe === $monster`anemone combatant`) plan.trySkill(lightningBolt);
+  if (highShiny() && foe === $monster`Anemone combatant`) plan.trySkill(lightningBolt);
   if (someFishCurveball()) plan.trySkill(talkToFish).step(cleanUp());
   if (
     (foe !== squid || itemAmount($item`comb jelly`) > 0) &&
@@ -715,26 +713,22 @@ function outpost(plan: Plan): void {
     plan.step(darts()).step(cleanUp());
     return;
   }
-  const fightsLeft = prop("_monsterHabitatsFightsLeft");
-  const recalled = num("_monsterHabitatsRecalled");
+  const fightsLeft = get("_monsterHabitatsFightsLeft");
+  const recalled = get("_monsterHabitatsRecalled");
   if (foe === $monster`Black Crayon Golem`) {
-    if (
-      fightsLeft === "0" &&
-      haveEffect($effect`Everything Looks Purple`) === 0 &&
-      recalled === 2
-    ) {
+    if (fightsLeft === 0 && haveEffect($effect`Everything Looks Purple`) === 0 && recalled === 2) {
       plan.trySkill($skill`Blow the Purple Candle!`);
-    } else if (fightsLeft === "0" && recalled < 2) {
+    } else if (fightsLeft === 0 && recalled < 2) {
       plan.trySkill(recallHabitats);
     }
-    if (fightsLeft === "0" && recalled >= 2 && myFamiliar() === $familiar`Patriotic Eagle`) {
+    if (fightsLeft === 0 && recalled >= 2 && myFamiliar() === $familiar`Patriotic Eagle`) {
       plan.trySkill(screech);
     }
     plan.step(darts()).step(cleanUp());
     return;
   }
   const scaleHunt =
-    myFamiliar() !== $familiar`Sword of S Words` &&
+    myFamiliar() !== swordOfSWords &&
     (highShiny() || !haveItem($item`closed-circuit pay phone`) || lowShiny()) &&
     availableAmount($item`pristine fish scale`) < 6 &&
     !freeMonster(foe);
@@ -742,20 +736,20 @@ function outpost(plan: Plan): void {
   const thief = foe === $monster`Mer-kin burglar` || foe === $monster`Mer-kin raider`;
   const backupReady = get("_backUpUses") < 7 && haveEquipped($item`backup camera`);
 
-  if ($location`The Mer-Kin Outpost`.turnsSpent < 24 || prop("merkinLockkeyMonster") !== "") {
+  if ($location`The Mer-Kin Outpost`.turnsSpent < 24 || get("merkinLockkeyMonster") !== null) {
     // Back up to the Black Crayon Golem if available; the next pass fights it.
     if (
-      fightsLeft === "0" &&
+      fightsLeft === 0 &&
       recalled >= 2 &&
       backupReady &&
-      prop("lastCopyableMonster") === "Black Crayon Golem"
+      get("lastCopyableMonster") === $monster`Black Crayon Golem`
     ) {
       plan.swap(Macro.skill(backUp));
       return;
     }
     if (scaleHunt) plan.trySkill(talkToFish).step(freeKill(true)).step(cleanUp());
     if (foe === healer && itemAmount($item`Mer-kin prayerbeads`) < 2) {
-      if (haveEquipped($item`baseball diamond`) || someFishCurveball()) plan.trySkill(talkToFish);
+      if (haveEquipped($item`Baseball Diamond`) || someFishCurveball()) plan.trySkill(talkToFish);
       plan.step(freeKill(true));
       if (backupReady) {
         plan.swap(Macro.skill(backUp));
@@ -765,7 +759,7 @@ function outpost(plan: Plan): void {
     } else if (thief) {
       if (
         (highShiny() || !haveItem($item`closed-circuit pay phone`)) &&
-        myFamiliar() === $familiar`Sword of S Words` &&
+        myFamiliar() === swordOfSWords &&
         !banishUsedAtYourLocation("Sea *dent")
       ) {
         plan.trySkill(lightningBolt);
@@ -812,8 +806,8 @@ function corral(plan: Plan): void {
   }
   if (
     highShiny() &&
-    prop("swordOfSWordsMonster") !== "775" &&
-    myFamiliar() === $familiar`Sword of S Words` &&
+    get("swordOfSWordsMonster") !== $monster`sea cow` &&
+    myFamiliar() === swordOfSWords &&
     foe === cow
   ) {
     plan.trySkill(killALot).step(cleanUp());
@@ -830,15 +824,15 @@ function corral(plan: Plan): void {
     } else if (itemAmount($item`software glitch`) > 0) {
       plan
         .item($item`software glitch`)
-        .ifNot($monster`Bugged bugbear`, Macro.abortWithWarning("Software glitch failed"))
+        .ifNot($monster`bugged bugbear`, Macro.abortWithWarning("Software glitch failed"))
         .trySkill(gaze, mcTwist)
         .tryItem($item`pulled yellow taffy`);
     }
     plan.step(freeKill(true)).step(cleanUp());
   } else if (readyToTame) {
     if (foe.phylum === $phylum`plant`) plan.trySkill($skill`Tear Away your Pants!`);
-    if (prop("seahorseName") === "") {
-      const banished = prop("banishedMonsters");
+    if (get("seahorseName") === "") {
+      const banished = get("banishedMonsters");
       const cowGone = banished.includes("sea cow:");
       const cowboyGone = banished.includes("sea cowboy");
       const rustlerGone = banished.includes("Mer-kin rustler");
@@ -861,7 +855,7 @@ function corral(plan: Plan): void {
         }
       }
     }
-    if (itemAmount($item`waffle`) > 0 && !prop("_lastCombatActions").includes("it11311")) {
+    if (itemAmount($item`waffle`) > 0 && !get("_lastCombatActions").includes("it11311")) {
       // The waffle swaps the monster; the next pass plans for the new one.
       plan.swap(Macro.item($item`waffle`));
       return;
@@ -881,7 +875,7 @@ function corral(plan: Plan): void {
     if (
       haveEquipped($item`legendary seal-clubbing club`) &&
       get("_clubEmBattlefieldUsed") < 5 &&
-      prop("NCtoC") !== "true"
+      get("NCtoC") !== "true"
     ) {
       plan.trySkill(clubBattlefield);
     }
@@ -898,14 +892,14 @@ function abyss(plan: Plan): void {
   ) {
     plan.tryItem($item`sea lasso`);
   }
-  if (foe === $monster`peanut` && num("lastColosseumRoundWon") < 15) {
+  if (foe === $monster`Peanut` && get("lastColosseumRoundWon") < 15) {
     const waffles = availableAmount($item`waffle`);
     if (
       haveItem($item`august scepter`) &&
       haveItem($item`2002 Mr. Store Catalog`) &&
       haveSkill($skill`Just the Facts`) &&
       haveFamiliar($familiar`Patriotic Eagle`) &&
-      (waffles > 1 || (waffles === 1 && prop("seahorseName") !== ""))
+      (waffles > 1 || (waffles === 1 && get("seahorseName") !== ""))
     ) {
       plan.swap(Macro.item($item`waffle`));
     } else {
@@ -919,16 +913,16 @@ function abyss(plan: Plan): void {
   }
   const habitats = $monsters`slithering thing, eye in the darkness`;
   if (
-    itemAmount($item`spooky VHS tape`) > 0 &&
-    prop("spookyVHSTapeMonster") === "" &&
-    num("momSeaMonkeeProgress") < 36 &&
+    itemAmount($item`Spooky VHS Tape`) > 0 &&
+    get("spookyVHSTapeMonster") === null &&
+    get("momSeaMonkeeProgress") < 36 &&
     [...habitats, $monster`school of many`].includes(foe)
   ) {
-    plan.tryItem($item`spooky VHS tape`);
+    plan.tryItem($item`Spooky VHS Tape`);
   }
   if (
-    prop("_monsterHabitatsRecalled") !== "3" &&
-    prop("_monsterHabitatsFightsLeft") === "0" &&
+    get("_monsterHabitatsRecalled") !== 3 &&
+    get("_monsterHabitatsFightsLeft") === 0 &&
     !highShiny() &&
     (haveItem($item`server room key`) || $location`The Mer-Kin Outpost`.turnsSpent < 29) &&
     habitats.includes(foe)
@@ -945,7 +939,7 @@ function abyss(plan: Plan): void {
 function school(plan: Plan): void {
   const club =
     haveEquipped($item`legendary seal-clubbing club`) && get("_clubEmBattlefieldUsed") < 5;
-  const forced = prop("NCtoC") === "true";
+  const forced = get("NCtoC") === "true";
   if (freeMonster(foe)) {
     if (!forced) plan.trySkill(gaze);
     if (club && !forced) plan.trySkill(clubBattlefield);
@@ -960,7 +954,7 @@ function school(plan: Plan): void {
       plan.trySkill($skill`Spring Kick`);
     }
     if (
-      freeMonster(toMonster(prop("lastCopyableMonster"))) &&
+      freeMonster(get("lastCopyableMonster") ?? $monster.none) &&
       get("_backUpUses") < 11 &&
       haveEquipped($item`backup camera`)
     ) {
@@ -986,7 +980,7 @@ function library(plan: Plan): void {
     plan.step(cleanUp());
   }
   const short = (item: Item) => itemAmount(item) === 0;
-  if (num("merkinVocabularyMastery") >= 90) {
+  if (get("merkinVocabularyMastery") >= 90) {
     plan.step(throwScrollHints());
     if (freeMonster(foe)) {
       if (bczGazeReady()) plan.trySkill(gaze);
@@ -1001,7 +995,7 @@ function library(plan: Plan): void {
       plan.step(freeKill(true)).step(cleanUp());
     }
   } else if (
-    freeMonster(toMonster(prop("lastCopyableMonster"))) &&
+    freeMonster(get("lastCopyableMonster") ?? $monster.none) &&
     get("_backUpUses") < 11 &&
     haveEquipped($item`backup camera`)
   ) {
@@ -1023,7 +1017,7 @@ function library(plan: Plan): void {
 
 function gymnasium(plan: Plan): void {
   plan.step(throwScrollHints());
-  if (prop("skateParkStatus") === "war") {
+  if (get("skateParkStatus") === "war") {
     plan.trySkill($skill`Launch spikolodon spikes`, $skill`McHugeLarge Avalanche`);
   }
   if (freeMonster(foe)) {
@@ -1041,11 +1035,11 @@ function gymnasium(plan: Plan): void {
  */
 function colosseum(plan: Plan): void {
   if (foe.boss && haveSkill($skill`Saucegeyser`)) {
-    // championCheck() reads _utsChampionRanEst to stop a rerun before the turn.
+    // championCheck() reads _sebChampionRanEst to stop a rerun before the turn.
     if (geyserLowRoll() < monsterHp()) {
-      setProperty("_utsChampionRanEst", `${geyserLowRoll()}`);
+      setProperty("_sebChampionRanEst", `${geyserLowRoll()}`);
       let why =
-        `UTS: ${foe} has ${monsterHp()} HP and one Saucegeyser is estimated at ` +
+        `SEB: ${foe} has ${monsterHp()} HP and one Saucegeyser is estimated at ` +
         `${geyserLowRoll()}. Raise Mysticality or spell damage, or fight it by hand, then rerun.`;
       freeRunAny(false).runaway().submit();
       if (currentRound() > 0) why += " The fight is still in progress: finish it by hand.";
@@ -1053,12 +1047,12 @@ function colosseum(plan: Plan): void {
       abort(why);
     }
     // Recorded before the cast: a kill ends the fight and the run moves on.
-    setProperty("_utsChampionRanEst", `${geyserLowRoll()}`);
+    setProperty("_sebChampionRanEst", `${geyserLowRoll()}`);
     plan.skill($skill`Saucegeyser`);
   } else {
     plan.step(freeKill(false));
   }
-  if (num("lastColosseumRoundWon") < 15) plan.step(cleanUp());
+  if (get("lastColosseumRoundWon") < 15) plan.step(cleanUp());
 }
 
 /** The old single-door temple, for aftercore bosses. */
@@ -1140,11 +1134,11 @@ function byLocation(plan: Plan): void {
 
 function byMonster(plan: Plan): void {
   if (foe === $monster`Black Crayon Golem`) {
-    if (prop("_monsterHabitatsFightsLeft") === "0" && num("_monsterHabitatsRecalled") < 3) {
+    if (get("_monsterHabitatsFightsLeft") === 0 && get("_monsterHabitatsRecalled") < 3) {
       plan.trySkill(recallHabitats);
     }
     // trackedMonsters records mafia's own capitalisation, so compare lowercased.
-    if (!prop("trackedMonsters").toLowerCase().includes("black crayon golem:mchugelarge slash")) {
+    if (!get("trackedMonsters").toLowerCase().includes("black crayon golem:mchugelarge slash")) {
       plan.trySkill(
         $skill`Gallapagosian Mating Call`,
         $skill`McHugeLarge Slash`,
@@ -1200,7 +1194,7 @@ function noteScreechReady(page: string): string {
   const stop = page.indexOf("</select>", start);
   if (stop < 0) return "";
   const ready = page.slice(start, stop).includes('value="7451"') ? "true" : "false";
-  setProperty("_utsScreechReady", ready);
+  setProperty("_sebScreechReady", ready);
   return ready;
 }
 
@@ -1209,13 +1203,13 @@ function screechReaim(page: string, plan: Plan): void {
   // Only the zone's natives are safe to banish. A result left unset tells
   // the caller no cast was attempted.
   const orc = foe.phylum === $phylum`orc`;
-  if (prop("_utsScreechFired") === "" && orc && noteScreechReady(page) === "false") {
-    setProperty("_utsScreechFired", "unready");
-  } else if (prop("_utsScreechFired") === "" && orc) {
+  if (get("_sebScreechFired") === "" && orc && noteScreechReady(page) === "false") {
+    setProperty("_sebScreechFired", "unready");
+  } else if (get("_sebScreechFired") === "" && orc) {
     const result = Macro.skill(screech).submit();
     // The line mafia itself reads to register the banish.
     setProperty(
-      "_utsScreechFired",
+      "_sebScreechFired",
       result.includes("releases an ear shattering screech") ? "true" : "false",
     );
   }
@@ -1228,11 +1222,11 @@ function screechReaim(page: string, plan: Plan): void {
 function plan(page: string): Plan {
   foe = lastMonster();
   const plan = new Plan();
-  if (prop("_utsScreechReaim") === "true") {
+  if (get("_sebScreechReaim") === "true") {
     screechReaim(page, plan);
     return plan;
   }
-  if (prop("_utsPearlFarm") === "true") {
+  if (get("_sebPearlFarm") === "true") {
     noteScreechReady(page);
     return plan.step(freeKill(false)).step(cleanUp());
   }
