@@ -21,9 +21,12 @@ import {
   $item,
   $location,
   $monster,
+  $phylum,
   $skill,
+  CursedMonkeyPaw,
   get,
   have,
+  Snapper,
 } from "libram";
 
 import { SebQuest } from "../engine";
@@ -157,7 +160,7 @@ export const OutpostQuest: SebQuest = {
           .bathysphere($item`toy Cupid bow`)
           .outfit(),
       prepare: () => {
-        if (myFamiliar() === $familiar`Red-Nosed Snapper`) cliExecute("snapper construct");
+        if (myFamiliar() === $familiar`Red-Nosed Snapper`) Snapper.trackPhylum($phylum`construct`);
       },
       do: () => {
         summon($monster`Black Crayon Golem`, () =>
@@ -260,16 +263,15 @@ export const OutpostQuest: SebQuest = {
       ready: () =>
         ncForceEstimate() < 4 &&
         haveItem($item`cursed monkey's paw`) &&
-        get("_monkeyPawWishesUsed") < 5,
+        CursedMonkeyPaw.wishes() > 0,
       completed: () => availableAmount($item`Mer-kin prayerbeads`) >= 2,
-      do: () => cliExecute("monkeypaw wish mer-kin prayerbeads"),
+      do: () => CursedMonkeyPaw.wishFor($item`Mer-kin prayerbeads`),
       limit: { tries: 5 },
     },
     {
       name: "Farm prayerbeads",
       ready: () =>
-        ncForceEstimate() < 4 &&
-        !(haveItem($item`cursed monkey's paw`) && get("_monkeyPawWishesUsed") < 5),
+        ncForceEstimate() < 4 && !(CursedMonkeyPaw.have() && CursedMonkeyPaw.wishes() > 0),
       completed: () => availableAmount($item`Mer-kin prayerbeads`) >= 2,
       outfit: () => prayerbeadGear().outfit(),
       prepare: () => mood("-combat"),

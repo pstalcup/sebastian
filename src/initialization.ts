@@ -31,7 +31,23 @@ import {
   useSkill,
   visitUrl,
 } from "kolmafia";
-import { $class, $familiar, $item, $items, $skill, $skills, get, have } from "libram";
+import {
+  $class,
+  $familiar,
+  $item,
+  $items,
+  $skill,
+  $skills,
+  AprilingBandHelmet,
+  AsdonMartin,
+  Clan,
+  get,
+  have,
+  Leprecondo,
+  MayamCalendar,
+  SongBoom,
+  TakerSpace,
+} from "libram";
 
 import { iotmChecklist, pullChecklist, skillChecklist } from "./lib/checklists";
 import { chosenFamiliar, pickFamiliar, swordOfSWords } from "./lib/familiar";
@@ -81,7 +97,7 @@ function checkChosenFamiliar(): void {
 function borrowSheriffProps(): void {
   // The borrow counter can fall behind what is in inventory, so possession decides.
   if (!sheriffOutfit() && haveItem($item`Clan VIP Lounge key`)) {
-    visitUrl(`showclan.php?whichclan=${PHOTO_BOOTH_CLAN}&action=joinclan&confirm=on`);
+    Clan.join(PHOTO_BOOTH_CLAN);
     for (const item of $items`Sheriff pistol, Sheriff moustache, Sheriff badge`) {
       if (!have(item) && !cliExecute(`photobooth item ${item}`)) {
         print(`Couldn't borrow the ${item} from the photo booth.`, "red");
@@ -108,8 +124,8 @@ function dailies(): void {
     if (itemAmount(item) > 0) use(itemAmount(item), item);
   }
   if (haveItem($item`wardrobe-o-matic`)) use($item`wardrobe-o-matic`);
-  if (haveItem($item`SongBoom™ BoomBox`) && get("boomBoxSong") !== "Total Eclipse of Your Meat") {
-    use($item`SongBoom™ BoomBox`);
+  if (SongBoom.have() && SongBoom.song() !== "Total Eclipse of Your Meat") {
+    SongBoom.setSong("Total Eclipse of Your Meat");
   }
 
   for (const skill of $skills`Aug. 24th: Waffle Day!, Summon Kokomo Resort Pass`) {
@@ -158,29 +174,28 @@ function dailies(): void {
   }
 
   step("initialization: Mayam rings");
-  if (get("_mayamSymbolsUsed") === "" && haveItem($item`Mayam Calendar`)) {
+  if (MayamCalendar.have() && MayamCalendar.symbolsUsed().length === 0) {
     if (haveFamiliar($familiar`Chest Mimic`)) useFamiliar($familiar`Chest Mimic`);
     else switchFamiliar(pickFamiliar("itdrop"));
-    cliExecute(
-      "mayam rings vessel yam cheese explosion; mayam rings fur lightning eyepatch yam; mayam rings eye meat yam clock",
-    );
+    MayamCalendar.submit("vessel yam2 cheese explosion");
+    MayamCalendar.submit("fur lightning eyepatch yam4");
+    MayamCalendar.submit("eye meat yam3 clock");
   }
-  if (get("leprecondoInstalled") === "0,0,0,0" && itemAmount($item`Leprecondo`) > 0) {
+  if (Leprecondo.have() && Leprecondo.installedFurniture().every((piece) => piece === "empty")) {
     leprecondo(highShiny() ? "10,11,12,24,4,5,6" : "22,24,12,11,10,4,5,6");
   }
   visitUrl("campground.php?preaction=leaves");
   if (itemAmount($item`S.I.T. Course Completion Certificate`) > 0 && !get("_sitCourseCompleted")) {
     use($item`S.I.T. Course Completion Certificate`);
   }
-  if (get("_aprilBandInstruments") === 0 && haveItem($item`Apriling band helmet`)) {
-    cliExecute("aprilband item tuba");
+  if (get("_aprilBandInstruments") === 0 && AprilingBandHelmet.have()) {
+    AprilingBandHelmet.joinSection($item`Apriling band tuba`);
     if (highShiny()) {
-      cliExecute("aprilband item quad tom");
+      AprilingBandHelmet.joinSection($item`Apriling band quad tom`);
     } else if (haveFamiliar($familiar`Chest Mimic`)) {
       useFamiliar($familiar`Chest Mimic`);
-      cliExecute(
-        "aprilband item piccolo; aprilband play piccolo; aprilband play piccolo; aprilband play piccolo",
-      );
+      AprilingBandHelmet.joinSection($item`Apriling band piccolo`);
+      for (let i = 0; i < 3; i++) AprilingBandHelmet.play($item`Apriling band piccolo`);
     }
   }
   if (haveItem($item`McHugeLarge duffel bag`)) visitUrl("inventory.php?action=skiduffel");
@@ -199,20 +214,16 @@ function dailies(): void {
       use($item`portable Mayo Clinic`);
       retrieveItem($item`Mayo Minder™`);
     }
-    if (have($item`Asdon Martin keyfob (on ring)`)) {
+    if (AsdonMartin.have()) {
       use($item`Asdon Martin keyfob (on ring)`);
     } else if (itemAmount($item`portable Mayo Clinic`) > 0) {
       use($item`portable Mayo Clinic`);
     } else if (itemAmount($item`model train set`) === 1) {
       use($item`model train set`);
-    } else if (haveItem($item`TakerSpace letter of Marque`)) {
+    } else if (TakerSpace.have()) {
       use($item`TakerSpace letter of Marque`);
-      if (
-        (!get("_takerSpaceSuppliesDelivered") || get("takerSpaceGold") === 1) &&
-        getWorkshed() === $item`TakerSpace letter of Marque`
-      ) {
-        create(1, $item`anchor bomb`);
-      }
+      TakerSpace.collect();
+      TakerSpace.make($item`anchor bomb`);
     }
   }
 
@@ -271,13 +282,13 @@ export function initialization(): void {
   // Refuel the Asdon Martin with soda bread, only after the prism breaks.
   if (
     inAftercore() &&
-    getWorkshed() === $item`Asdon Martin keyfob (on ring)` &&
+    AsdonMartin.installed() &&
     !highShiny() &&
     !get("_missileLauncherUsed") &&
     get("_sebMissileFailed") !== "true" &&
     getFuel() < 100 &&
     retrieveItem(17, $item`loaf of soda bread`)
   ) {
-    cliExecute("asdonmartin fuel 17 loaf of soda bread");
+    AsdonMartin.insertFuel($item`loaf of soda bread`, 17);
   }
 }

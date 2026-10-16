@@ -6,9 +6,6 @@ import {
   cliExecute,
   combatRateModifier,
   create,
-  currentRound,
-  familiarWeight,
-  getCampground,
   handlingChoice,
   haveEffect,
   haveEquipped,
@@ -29,23 +26,20 @@ import {
   setProperty,
   Skill,
   toInt,
-  toLocation,
   toMonster,
-  toSkill,
   toSlot,
   turnsUntilForcedNoncombat,
   use,
-  useSkill,
   visitUrl,
-  weightAdjustment,
   myAdventures,
   getLocationMonsters,
   equip,
+  equippedItem,
   buy,
+  Slot,
 } from "kolmafia";
 import {
   $coinmaster,
-  $slot,
   $effect,
   $familiar,
   $item,
@@ -54,8 +48,17 @@ import {
   $monster,
   $monsters,
   $skill,
+  $slot,
   $stat,
+  AutumnAton,
+  EternityCodpiece,
   get,
+  getBanishedMonsters,
+  Leprecondo,
+  Mining,
+  PocketProfessor,
+  SourceTerminal,
+  TrainSet,
 } from "libram";
 
 import {
@@ -136,34 +139,29 @@ export function yellowRayPrep(): void {
 
 /** Empty the codpiece ("none"), or mount a comma list of gems in slots 1 to 5. */
 export function codpiece(input: string): void {
-  if (!haveItem($item`The Eternity Codpiece`)) return;
+  if (!EternityCodpiece.have()) return;
   if (input === "none") {
-    const page = visitUrl("inventory.php?action=docodpiece");
-    if (!page.includes(" mounted in slot #")) return;
-    for (let slot = 1; slot <= 5; slot++) {
-      if (page.includes(` Empty slot #${slot}`)) continue;
-      visitUrl(`choice.php?whichchoice=1588&option=2&which=${slot}`);
-    }
-  } else {
-    const gems = input.split(",").map((s) => s.trim());
-    const mounted: (Item | undefined)[] = gems.map((name, i) => {
-      const gem = Item.get(name);
-      if (haveEquipped(gem)) cliExecute(`unequip ${gem}`);
-      if (itemAmount(gem) === 0) return undefined;
-      print(`Inserting ${gem} into Codpiece`);
-      visitUrl("inventory.php?action=docodpiece");
-      visitUrl(`choice.php?whichchoice=1588&option=1&which=${i + 1}&iid=${toInt(gem)}`);
-      visitUrl("main.php");
-      return gem;
-    });
-    const page = visitUrl("inventory.php?action=docodpiece");
-    mounted.forEach((gem, i) => {
-      if (gem && !page.includes(`${gem} mounted in slot #${i + 1}`)) {
-        abort("Codpiece slot incorrect");
-      }
-    });
+    for (const slot of EternityCodpiece.SLOTS) equip(slot, $item.none);
+    return;
   }
-  cliExecute("refresh inv");
+  const wanted = input.split(",").map((s) => Item.get(s.trim()));
+  const placed = wanted.map((gem, i) => {
+    const slot = EternityCodpiece.SLOTS[i];
+    if (equippedItem(slot) === gem) return true;
+    // A gem worn elsewhere (the Peridot as an accessory) comes off first.
+    const worn = Slot.all().find(
+      (s) => !EternityCodpiece.SLOTS.includes(s) && equippedItem(s) === gem,
+    );
+    if (worn) equip(worn, $item.none);
+    if (itemAmount(gem) === 0) return false;
+    print(`Inserting ${gem} into Codpiece`);
+    equip(slot, gem);
+    return true;
+  });
+  const mounted = EternityCodpiece.currentGems();
+  wanted.forEach((gem, i) => {
+    if (placed[i] && mounted[i] !== gem) abort("Codpiece slot incorrect");
+  });
 }
 
 // ─── ANEMONE MINE ─────────────────────────────────────────────────────────────
@@ -179,9 +177,10 @@ function adjacentCaverns(x: number, y: number): string {
     .join("");
 }
 
-/** The mine square to dig for teflon ore. */
-export function mineNum(): number {
-  const page = visitUrl("mining.php?mine=3");
+/** The mine square (column, row) to dig for teflon ore. */
+export function mineNum(): Mining.MiningCoordinate {
+  const at = (x: number, y: number) => [x, y] as Mining.MiningCoordinate;
+  const page = Mining.visit(Mining.Mine.ANEMONE);
   const chunks = [...page.matchAll(/Promising Chunk of Wall \((\d+),(\d+)\)/g)].map((m) => [
     Number(m[1]),
     Number(m[2]),
@@ -197,22 +196,22 @@ export function mineNum(): number {
     [4, 2],
     [5, 2],
   ]) {
-    if (!page.includes(`Open Cavern (${x},${y})`)) return 8 * y + x;
+    if (!page.includes(`Open Cavern (${x},${y})`)) return at(x, y);
   }
   // Promising chunks away from the bad ores.
   for (const [x, y] of chunks) {
     const adjacent = adjacentCaverns(x, y);
     if (y >= 4 || adjacent.includes("velcroore") || adjacent.includes("vinylore")) continue;
-    return 8 * y + x;
+    return at(x, y);
   }
   // The edge chunks beside a matching pair.
   for (const [x, y] of chunks) {
-    if (x === 1 && y === 2 && squareImage(18) === squareImage(19)) return 8 * y + x;
-    if (x === 6 && y === 2 && squareImage(21) === squareImage(20)) return 8 * y + x;
+    if (x === 1 && y === 2 && squareImage(18) === squareImage(19)) return at(x, y);
+    if (x === 6 && y === 2 && squareImage(21) === squareImage(20)) return at(x, y);
   }
   // Any chunk not too deep.
   for (const [x, y] of chunks) {
-    if (y < 4) return 8 * y + x;
+    if (y < 4) return at(x, y);
   }
   return abort(
     "Generic mining did not find teflon ore, mine manually. TIP: the ores show up in adjacent veins of 5.",
@@ -231,6 +230,7 @@ export function eatSushi(): void {
   if (found) cliExecute(`make ${found[1]}`);
 }
 
+// collectionprow1 is newer than libram's Upgrade list.
 const AUTUMNATON_UPGRADES: Record<string, string> = {
   "mid indoor": "rightleg1",
   "low underground": "leftleg1",
@@ -240,28 +240,19 @@ const AUTUMNATON_UPGRADES: Record<string, string> = {
 };
 
 export function useAutumnaton(): void {
-  use($item`autumn-aton`);
-  const page = visitUrl(`inv_use.php?${myHash()}&which=3&whichitem=10954`);
-  const zones = [...page.matchAll(/<option\s+value="([0-9]+)">\s*([^<]+?)\s*<\/option>/g)].map(
-    (m) => toLocation(Number(m[1])),
-  );
-  if (zones.includes($location`Anemone Mine`) && availableAmount($item`Mer-kin digpick`) === 0) {
-    cliExecute("autumnaton send anemone mine");
-    return;
-  }
-  if (zones.includes($location`Shadow Rift (The Misspelled Cemetary)`)) {
-    cliExecute("autumnaton send Shadow Rift");
-    return;
-  }
-  const upgrades = get("autumnatonUpgrades");
-  for (const zone of zones) {
-    const upgrade = AUTUMNATON_UPGRADES[`${zone.difficultyLevel} ${zone.environment}`];
-    if (upgrade && !upgrades.includes(upgrade)) {
-      cliExecute(`autumnaton send ${zone}`);
-      return;
+  AutumnAton.sendTo((zones) => {
+    if (zones.includes($location`Anemone Mine`) && availableAmount($item`Mer-kin digpick`) === 0) {
+      return $location`Anemone Mine`;
     }
-  }
-  cliExecute("autumnaton send noob cave");
+    const rift = $location`Shadow Rift (The Misspelled Cemetary)`;
+    if (zones.includes(rift)) return rift;
+    const upgrades: string[] = AutumnAton.currentUpgrades();
+    const upgrading = zones.find((zone) => {
+      const upgrade = AUTUMNATON_UPGRADES[`${zone.difficultyLevel} ${zone.environment}`];
+      return upgrade && !upgrades.includes(upgrade);
+    });
+    return upgrading ?? $location`Noob Cave`;
+  });
 }
 
 // ─── WANTED MONSTERS ──────────────────────────────────────────────────────────
@@ -368,18 +359,8 @@ export function macroReady(): boolean {
 
 // ─── POCKET PROFESSOR ─────────────────────────────────────────────────────────
 
-function professorLectureLimit(): number {
-  const weight = familiarWeight($familiar`Pocket Professor`) + weightAdjustment();
-  let n = 0;
-  while (n * n + 1 <= weight) n++;
-  return n;
-}
-
 export function professorReady(): boolean {
-  return (
-    haveFamiliar($familiar`Pocket Professor`) &&
-    get("_pocketProfessorLectures") < professorLectureLimit()
-  );
+  return PocketProfessor.have() && PocketProfessor.currentlyAvailableLectures() > 0;
 }
 
 /** Whether the Professor goes out, where lecture copies are the cheapest drop source. */
@@ -392,21 +373,24 @@ export function lectureNow(): boolean {
 
 // ─── BANISHES ─────────────────────────────────────────────────────────────────
 
-const BANISH_SOURCES: [Item, string, Skill][] = [
-  [$item`spring shoes`, "Spring Kick", $skill`Spring Kick`],
-  [$item`Monodent of the Sea`, "Sea *dent", $skill`Sea *dent: Throw a Lightning Bolt`],
-  [$item`Heartstone`, "Heartstone", $skill`Heartstone: %banish`],
+const BANISH_SOURCES: [Item, Skill][] = [
+  [$item`spring shoes`, $skill`Spring Kick`],
+  [$item`Monodent of the Sea`, $skill`Sea *dent: Throw a Lightning Bolt`],
+  [$item`Heartstone`, $skill`Heartstone: %banish`],
 ];
 
-/** The monster a banisher (by its recorded name prefix) is holding. */
-export function banished(banisher: string): Monster {
-  const escaped = banisher.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const match = new RegExp(`([^:]+):${escaped}`).exec(get("banishedMonsters"));
-  return match ? toMonster(match[1]) : $monster.none;
+/** The monster a banish skill is holding. */
+export function banished(banisher: Skill): Monster {
+  return getBanishedMonsters().get(banisher) ?? $monster.none;
+}
+
+/** Whether any banish is holding the monster. */
+export function isBanished(monster: Monster): boolean {
+  return [...getBanishedMonsters().values()].includes(monster);
 }
 
 /** Whether the banisher was spent on a monster that lives where you are. */
-export function banishUsedAtYourLocation(banisher: string): boolean {
+export function banishUsedAtYourLocation(banisher: Skill): boolean {
   const monster = banished(banisher);
   if (monster === $monster.none) return false;
   return monster.name in getLocationMonsters(myLocation());
@@ -417,9 +401,9 @@ export function banishUsedAtYourLocation(banisher: string): boolean {
  * slot's maximizer override, as the original did.
  */
 export function banishGear(location: Location): Item {
-  for (const [item, prefix] of BANISH_SOURCES) {
+  for (const [item, skill] of BANISH_SOURCES) {
     if (item === $item`Heartstone` && !get("heartstoneBanishUnlocked")) continue;
-    if ((appearanceRates(location)[banished(prefix).name] ?? 0) === 0 && haveItem(item)) {
+    if ((appearanceRates(location)[banished(skill).name] ?? 0) === 0 && haveItem(item)) {
       setProperty(`${toSlot(item)}Override`, `, equip ${item}`);
       print(`${toSlot(item)}Override`);
       return item;
@@ -430,14 +414,13 @@ export function banishGear(location: Location): Item {
 
 /** The banish skill of the first worn banish item whose target no longer shows up here. */
 export function combatBan(): Skill {
-  for (const [item, prefix, skill] of BANISH_SOURCES) {
+  for (const [item, skill] of BANISH_SOURCES) {
     if (item === $item`Heartstone` && !get("heartstoneBanishUnlocked")) continue;
-    const rate = appearanceRates(myLocation())[banished(prefix).name] ?? 0;
+    const rate = appearanceRates(myLocation())[banished(skill).name] ?? 0;
     if (haveEquipped(item) && rate === 0) {
       print(
-        `Banish item being considered ${item} parsed banished monster is ${banished(prefix)} and the calculated appearance rate at current location is ${rate}`,
+        `Banish item being considered ${item} parsed banished monster is ${banished(skill)} and the calculated appearance rate at current location is ${rate}`,
       );
-      cliExecute("get banishedMonsters");
       return skill;
     }
   }
@@ -472,99 +455,52 @@ export function useMapIfAvailable(): void {
   if (get("_mapToACandyRichBlockUsed")) candy("fight");
 }
 
-// ─── DARTS ────────────────────────────────────────────────────────────────────
-
-export function darts(): void {
-  while (
-    get("_dartsLeft") > 0 &&
-    haveEquipped($item`Everfull Dart Holster`) &&
-    currentRound() > 0
-  ) {
-    if (get("everfullDartPerks").includes("Butt")) {
-      const match = /(\d+):butt/.exec(get("_currentDartboard"));
-      if (!match) break;
-      useSkill(toSkill(Number(match[1])));
-    } else {
-      useSkill($skill`Darts: Throw at %part1`);
-    }
-  }
-}
-
 // ─── TRAIN SET ────────────────────────────────────────────────────────────────
 
 export function trainset(): void {
   const position = get("trainsetPosition") % 8;
-  // Next station first: meat, then the order the original used.
-  const order = [8, 1, 15, 20, 3, 7, 2, 19];
-  const slots: number[] = [];
-  order.forEach((station, i) => (slots[(position + i) % 8] = station));
-  visitUrl(
-    `choice.php?forceoption=0?whichchoice=1485&option=1${slots.map((s, i) => `&slot%5B${i}%5D=${s}`).join("")}`,
-  );
+  // The order the original used, starting at the next station.
+  const order = [
+    TrainSet.Station.COAL_HOPPER,
+    TrainSet.Station.GAIN_MEAT,
+    TrainSet.Station.GRAIN_SILO,
+    TrainSet.Station.ORE_HOPPER,
+    TrainSet.Station.VIEWING_PLATFORM,
+    TrainSet.Station.CANDY_FACTORY,
+    TrainSet.Station.TOWER_FIZZY,
+    TrainSet.Station.TRACKSIDE_DINER,
+  ];
+  const cycle = order.map((_, i) => order[(i - position + 8) % 8]) as TrainSet.Cycle;
+  TrainSet.setConfiguration(cycle);
 }
 
 // ─── LEPRECONDO ───────────────────────────────────────────────────────────────
 
-const LEPRECONDO_FURNITURE: Record<number, string> = {
-  1: "buckets of concrete",
-  2: "thrift store oil painting",
-  3: "boxes of old comic books",
-  4: "second-hand hot plate",
-  5: "beer cooler",
-  6: "free mattress",
-  7: "gigantic chess set",
-  8: "UltraDance karaoke machine",
-  9: "cupcake treadmill",
-  10: "beer pong table",
-  11: "padded weight bench",
-  12: "internet-connected laptop",
-  13: "sous vide laboratory",
-  14: "programmable blender",
-  15: "sensory deprivation tank",
-  16: "fruit-smashing robot",
-  17: "ManCave™ sports bar set",
-  18: "couch and flatscreen",
-  19: "kegerator",
-  20: "fine upholstered dining table set",
-  21: "whiskeybed",
-  22: "high-end home workout system",
-  23: "complete classics library",
-  24: "ultimate retro game console",
-  25: "Omnipot",
-  26: "fully-stocked wet bar",
-  27: "four-poster bed",
-};
-
-/** Furnish with the wanted pieces in order, topped up with anything else discovered. */
+/**
+ * Furnish with the wanted pieces (Leprecondo.FURNITURE_PIECES indices, most
+ * wanted first), topped up with anything else discovered.
+ */
 export function leprecondo(input: string): void {
-  if (get("_leprecondoRearrangements") >= 3) return;
-  const discovered = new Set(
-    get("leprecondoDiscovered")
-      .split(",")
-      .filter((s) => s !== "")
-      .map(Number)
-      .filter((n) => n in LEPRECONDO_FURNITURE),
+  if (Leprecondo.rearrangesRemaining() <= 0) return;
+  const discovered: Leprecondo.FurniturePiece[] = Leprecondo.discoveredFurniture().filter(
+    (piece) => piece !== undefined && piece !== "empty",
   );
-  const rooms: number[] = [];
-  for (const wanted of input.split(",").map(Number)) {
-    if (rooms.length < 4 && discovered.has(wanted)) {
-      rooms.push(wanted);
-      discovered.delete(wanted);
+  const rooms: Leprecondo.FurniturePiece[] = [];
+  for (const piece of input.split(",").map((n) => Leprecondo.FURNITURE_PIECES[Number(n)])) {
+    if (rooms.length < 4 && discovered.includes(piece) && !rooms.includes(piece)) {
+      rooms.push(piece);
     }
   }
   for (const piece of discovered) {
     if (rooms.length >= 4) break;
-    rooms.push(piece);
+    if (!rooms.includes(piece)) rooms.push(piece);
   }
   if (rooms.length < 4) {
     print(`Leprecondo skipped: only ${rooms.length} furniture pieces discovered.`, "red");
     return;
   }
-  const furnish = `leprecondo furnish ${[...rooms]
-    .reverse()
-    .map((n) => LEPRECONDO_FURNITURE[n])
-    .join(",")}`;
-  if (!cliExecute(furnish)) print(`Leprecondo furnish failed: ${furnish}`, "red");
+  const [a, b, c, d] = rooms;
+  if (!Leprecondo.setFurniture(a, b, c, d)) print(`Leprecondo furnish failed: ${rooms}`, "red");
 }
 
 // ─── BASEBALL DIAMOND ─────────────────────────────────────────────────────────
@@ -634,16 +570,11 @@ export function baseballD(): void {
 
 /** Keep duplicate.edu slotted so the CCS can cast Duplicate. */
 export function sourceEducate(): void {
-  if (!getCampground()[$item`Source terminal`.name]) return;
-  if (get("_sourceTerminalDuplicateUses") >= 1) return;
+  const duplicate = $skill`Duplicate`;
+  if (!SourceTerminal.have() || SourceTerminal.duplicateUsesRemaining() <= 0) return;
   if (!get("sourceTerminalEducateKnown").includes("duplicate.edu")) return;
-  if (
-    get("sourceTerminalEducate1") === "duplicate.edu" ||
-    get("sourceTerminalEducate2") === "duplicate.edu"
-  ) {
-    return;
-  }
-  cliExecute("terminal educate duplicate.edu");
+  if (SourceTerminal.getSkills().includes(duplicate)) return;
+  SourceTerminal.educate(duplicate);
 }
 
 /** The grandma shop scholar outfit, bought while wearing nothing in those slots. */

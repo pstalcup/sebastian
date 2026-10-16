@@ -3,7 +3,6 @@ import {
   availableAmount,
   cliExecute,
   Familiar,
-  familiarWeight,
   haveEffect,
   haveEquipped,
   Item,
@@ -13,9 +12,17 @@ import {
   toInt,
   totalTurnsPlayed,
   useFamiliar,
-  weightAdjustment,
 } from "kolmafia";
-import { $effect, $familiar, $item, $items, $location, have, get } from "libram";
+import {
+  $effect,
+  $familiar,
+  $item,
+  $items,
+  $location,
+  get,
+  EternityCodpiece,
+  StompingBoots,
+} from "libram";
 
 import { FamiliarRole, mummery, pickFamiliar, swordOfSWords } from "./familiar";
 import {
@@ -99,7 +106,7 @@ export class Gear {
   /** Wear the item if it is in hand, emptying the codpiece of it first. */
   ifEquip(...items: Item[]): this {
     for (const item of items) {
-      if (CODPIECE_GEMS.has(item) && haveItem($item`The Eternity Codpiece`)) {
+      if (CODPIECE_GEMS.has(item) && EternityCodpiece.have()) {
         codpiece("none");
       }
       if (item !== $item.none && availableAmount(item) > 0) this.items.push(item);
@@ -178,10 +185,7 @@ export class Gear {
       return this.ifEquip($item`latte lovers member's mug`);
     }
     const boots = $familiar`Pair of Stomping Boots`;
-    if (
-      have(boots) &&
-      Math.round(familiarWeight(boots) + weightAdjustment() / 5) > toInt(get("_banderRunaways"))
-    ) {
+    if (StompingBoots.have() && StompingBoots.couldRunaway()) {
       return this.fam(boots);
     }
     return this.freeKill();

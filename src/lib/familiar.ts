@@ -7,7 +7,7 @@ import {
   print,
   useFamiliar,
 } from "kolmafia";
-import { $effect, $familiar, $item, $monster, get, have } from "libram";
+import { $effect, $familiar, $item, $monster, get, have, MummingTrunk } from "libram";
 
 import { haveItem, highShiny } from "./state";
 
@@ -71,7 +71,8 @@ export function pickFamiliar(role: FamiliarRole): Familiar | undefined {
 /** Prince George on whichever familiar the item setup settled on, once a day. */
 export function mummery(): void {
   if (!haveItem($item`mumming trunk`)) return;
-  if (get("_mummeryMods").includes("Item Drop")) return;
+  const costumes = [...MummingTrunk.currentCostumes().values()];
+  if (costumes.some(([modifier]) => modifier === "Item Drop")) return;
   if (myFamiliar() === $familiar.none) return;
   cliExecute("mummery item");
 }

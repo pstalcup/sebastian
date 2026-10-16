@@ -18,7 +18,19 @@ import {
   useSkill,
   visitUrl,
 } from "kolmafia";
-import { $coinmaster, $effect, $familiar, $item, $location, $skill, get } from "libram";
+import {
+  $coinmaster,
+  $effect,
+  $familiar,
+  $item,
+  $location,
+  $monster,
+  $skill,
+  CursedMonkeyPaw,
+  get,
+  Mining,
+  PeridotOfPeril,
+} from "libram";
 
 import { branch, TaskBody } from "../engine";
 import { pickFamiliar } from "../lib/familiar";
@@ -27,8 +39,9 @@ import {
   banishGear,
   baseballD,
   codpiece,
-  leftSkiAvailable,
+  isBanished,
   lectureNow,
+  leftSkiAvailable,
   mineNum,
   parkaForceAvailable,
   timeSpinnerRefight,
@@ -70,8 +83,6 @@ const rift = $location`Shadow Rift (The Misspelled Cemetary)`;
 const gym = $location`Mer-kin Gymnasium`;
 const skatePark = $location`The Skate Park`;
 
-const banishedMonsters = () => get("banishedMonsters");
-
 /** A body that spends no turn. */
 export function action(run: () => void): TaskBody {
   return { do: run };
@@ -79,14 +90,13 @@ export function action(run: () => void): TaskBody {
 
 // ─── MONKEY'S PAW ─────────────────────────────────────────────────────────────
 
-export const pawWishReady = () =>
-  haveItem($item`cursed monkey's paw`) && get("_monkeyPawWishesUsed") < 5;
+export const pawWishReady = () => CursedMonkeyPaw.have() && CursedMonkeyPaw.wishes() > 0;
 
 /** A wish for the item, or a turn in the corral towards it. */
 export function monkeypaw(item: Item): TaskBody {
   return branch(
-    () => availableAmount($item`cursed monkey's paw`) > 0 && get("_monkeyPawWishesUsed") < 5,
-    action(() => cliExecute(`monkeypaw item ${item}`)),
+    () => CursedMonkeyPaw.have() && CursedMonkeyPaw.wishes() > 0,
+    action(() => CursedMonkeyPaw.wishFor(item)),
     corralFarm(),
   );
 }
@@ -108,7 +118,7 @@ export function prayerbeadGear(): Gear {
 export function farmPrayerbeads(): TaskBody {
   return branch(
     pawWishReady,
-    action(() => cliExecute("monkeypaw wish mer-kin prayerbeads")),
+    action(() => CursedMonkeyPaw.wishFor($item`Mer-kin prayerbeads`)),
     {
       outfit: () => prayerbeadGear().outfit(),
       prepare: () => mood("-combat"),
@@ -162,7 +172,7 @@ export function finishCaliginous(): TaskBody {
         .ifEquip($item`Congressional Medal of Insanity`)
         .bathysphere()
         .ifEquip($item`blood cubic zirconia`);
-      if (!banishedMonsters().includes("school of many")) gear.need($item`Monodent of the Sea`);
+      if (!isBanished($monster`school of many`)) gear.need($item`Monodent of the Sea`);
       return gear.outfit();
     },
     do: abyss,
@@ -185,9 +195,9 @@ export function corralFarm(): TaskBody {
       if (lectureNow()) gear.fam($familiar`Pocket Professor`);
       else gear.forRole("itdrop");
       if (
-        !banishedMonsters().includes("Mer-kin rustler") ||
-        (doneWithCowboy() && !banishedMonsters().includes("sea cowboy")) ||
-        (doneWithSeaCow() && !banishedMonsters().includes("sea cow:"))
+        !isBanished($monster`Mer-kin rustler`) ||
+        (doneWithCowboy() && !isBanished($monster`sea cowboy`)) ||
+        (doneWithSeaCow() && !isBanished($monster`sea cow`))
       ) {
         gear.ifEquip(banishGear(corral));
       }
@@ -343,18 +353,16 @@ export function shadowRift(): TaskBody {
 
 /** The peril zone a curveball fight goes to, or the Knob's outskirts if all are periled. */
 function curveballZone(): [Mood | undefined, string, Location] {
-  const periled = get("_perilLocations");
-  const zones: [string, Mood, string, Location][] = [
-    ["196", "spookyres", "spooky res,sea", $location`Anemone Mine`],
-    ["195", "hotres", "hot res,sea", $location`The Marinara Trench`],
-    ["197", "sleazeres", "sleaze res,sea", $location`The Dive Bar`],
+  const zones: [Mood, string, Location][] = [
+    ["spookyres", "spooky res,sea", $location`Anemone Mine`],
+    ["hotres", "hot res,sea", $location`The Marinara Trench`],
+    ["sleazeres", "sleaze res,sea", $location`The Dive Bar`],
   ];
   // The mine first only while the digpick is still wanted from it.
   const order =
     availableAmount($item`Mer-kin digpick`) === 0 ? zones : [...zones.slice(1), zones[0]];
-  const target = order.find(([id]) => !periled.includes(id));
-  if (!target) return [undefined, "item drop", $location`The Outskirts of Cobb's Knob`];
-  return [target[1], target[2], target[3]];
+  const target = order.find(([, , zone]) => !PeridotOfPeril.periledToday(zone));
+  return target ?? [undefined, "item drop", $location`The Outskirts of Cobb's Knob`];
 }
 
 /** Spend a baseball curveball fight in a peril zone not yet periled today. */
@@ -395,7 +403,7 @@ export function mineAnemone(): TaskBody {
     do: () => {
       equip($item`Mer-kin digpick`);
       equipSwimTrunks();
-      visitUrl(`mining.php?mine=3&which=${mineNum()}`);
+      Mining.mineCoordinate(Mining.Mine.ANEMONE, mineNum());
       if (myHp() === 0) cliExecute("restore HP");
       if (itemAmount($item`teflon ore`) > 0 && haveEffect($effect`Beaten Up`) > 0) {
         if (haveSkill($skill`Tongue of the Walrus`)) useSkill($skill`Tongue of the Walrus`);

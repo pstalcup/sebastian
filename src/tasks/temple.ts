@@ -40,7 +40,11 @@ import {
   $skill,
   $slot,
   $stat,
+  BatWings,
+  CursedMonkeyPaw,
   get,
+  Leprecondo,
+  uneffect,
 } from "libram";
 
 import { branch, TaskBody, SebQuest, SebTask } from "../engine";
@@ -155,7 +159,7 @@ function yogHpCheck(): boolean {
   if (haveEffect($effect`Gummiheart`) === 0) return false;
   const antidote = $item`soft green echo eyedrop antidote`;
   if (itemAmount(antidote) === 0 && pullsRemaining() > reservedPulls()) pullSequence(antidote);
-  if (itemAmount(antidote) > 0) cliExecute("uneffect gummiheart");
+  if (itemAmount(antidote) > 0) uneffect($effect`Gummiheart`);
   return haveEffect($effect`Gummiheart`) === 0;
 }
 
@@ -382,7 +386,7 @@ const loungeTasks: SebTask[] = [
     completed: loungePieces,
     before: () => {
       takeHallpasses();
-      cliExecute("uneffect the sonata of sneakiness");
+      uneffect($effect`The Sonata of Sneakiness`);
       if (availableAmount($item`Mer-kin hallpass`) === 0 && pullsRemaining() > reservedPulls()) {
         pullSequence($item`Mer-kin hallpass`);
       }
@@ -547,8 +551,8 @@ const priestTasks: SebTask[] = [
     name: "Leprecondo",
     ready: () =>
       priestReady() &&
-      get("leprecondoInstalled").includes("11") &&
-      itemAmount($item`Leprecondo`) > 0,
+      Leprecondo.have() &&
+      Leprecondo.installedFurniture().includes("padded weight bench"),
     completed: highPriest,
     ...action(() =>
       leprecondo(highShiny() ? "10,24,12,8,22,13,15,4,5,6" : "22,24,12,8,13,15,10,4,5,6"),
@@ -613,7 +617,7 @@ const priestTasks: SebTask[] = [
     name: "Read the dreadscroll",
     ready: () => priestReady() && !tainted(),
     completed: highPriest,
-    before: () => cliExecute("uneffect the sonata of sneakiness"),
+    before: () => uneffect($effect`The Sonata of Sneakiness`),
     ...action(() => use($item`Mer-kin dreadscroll`)),
     postAdventure: true,
     limit: { tries: 5 },
@@ -669,7 +673,7 @@ function yogBeadsAndHealing(): void {
 /** A prayerbead, while still in the Yog-Urt outfit: the healscroll a healer drops can fix the HP check. */
 function prayerbeadNow(): void {
   if (pawWishReady()) {
-    cliExecute("monkeypaw wish mer-kin prayerbeads");
+    CursedMonkeyPaw.wishFor($item`Mer-kin prayerbeads`);
     return;
   }
   prayerbeadGear().dress();
@@ -938,7 +942,7 @@ export const ShubQuest: SebQuest = {
         ) {
           gear.need($item`legendary seal-clubbing club`);
         }
-        if (get("_batWingsFreeFights") < 5 && availableAmount($item`bat wings`) > 0) {
+        if (BatWings.have() && BatWings.flapChance() > 0) {
           gear.ifEquip($item`bat wings`);
         } else if (haveItem($item`unwrapped knock-off retro superhero cape`)) {
           gear
@@ -979,7 +983,7 @@ export const ShubQuest: SebQuest = {
           else abort("Hit Shub without adequate delevers, this means something went wrong, sorry!");
         }
         for (const effect of $effects`Scarysauce`) {
-          if (haveEffect(effect) > 0 && !cliExecute(`uneffect ${effect}`)) {
+          if (haveEffect(effect) > 0 && !uneffect(effect)) {
             print(`Couldn't remove ${effect} before Shub-Jigguwatt.`, "red");
           }
         }
@@ -1010,7 +1014,7 @@ const finalBossGear = (): Gear => {
     $item`Mer-kin gladiator mask`,
     $item`Mer-kin gladiator tailpiece`,
   );
-  if (get("_batWingsFreeFights") < 5) {
+  if (BatWings.flapChance() > 0) {
     gear.ifEquip($item`bat wings`);
   } else if (haveItem($item`unwrapped knock-off retro superhero cape`)) {
     gear

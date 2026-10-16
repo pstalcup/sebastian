@@ -10,10 +10,17 @@ import {
   print,
   Stat,
   storageAmount,
-  toInt,
-  toLocation,
 } from "kolmafia";
-import { $familiar, $item, $location, $stat, get, have } from "libram";
+import {
+  $familiar,
+  $item,
+  $location,
+  $stat,
+  CombatLoversLocket,
+  get,
+  have,
+  PeridotOfPeril,
+} from "libram";
 
 // Account state and small lookups shared by the whole script. Ported from the
 // GLOBALS and "Account states" sections of UnderTheSeaGlobals.ash.
@@ -108,21 +115,12 @@ export function questLoc(stat: Stat = myPrimestat()): Location {
 export function countSummons(): number {
   let n = 0;
   if (!get("_photocopyUsed") && haveItem($item`Clan VIP Lounge key`)) n += 1;
-  if (availableAmount($item`combat lover's locket`) > 0) {
-    n +=
-      3 -
-      get("_locketMonstersFought")
-        .split(",")
-        .filter((s) => s !== "").length;
-  }
+  if (CombatLoversLocket.have()) n += CombatLoversLocket.reminiscesLeft();
   if (have($familiar`Chest Mimic`)) n += Math.floor($familiar`Chest Mimic`.experience / 200);
   return n;
 }
 
 /** Whether the Peridot of Peril has already been spent in this zone today. */
 export function gotPeriled(location: Location): boolean {
-  return get("_perilLocations")
-    .split(",")
-    .filter((s) => s !== "")
-    .some((id) => toLocation(toInt(id)) === location);
+  return PeridotOfPeril.periledToday(location);
 }

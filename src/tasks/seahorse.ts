@@ -44,17 +44,30 @@ import {
   $item,
   $location,
   $monster,
+  $monsters,
+  $phylum,
   $skill,
   $slot,
   $stat,
   ChestMimic,
+  CrystalBall,
+  CursedMonkeyPaw,
   get,
+  PeridotOfPeril,
+  Snapper,
 } from "libram";
 
 import { branch, TaskBody, SebQuest, SebTask } from "../engine";
 import { swordOfSWords } from "../lib/familiar";
 import { dropsItems, Gear } from "../lib/gear";
-import { banishGear, baseballD, codpiece, timeSpinnerFight, yellowRayPrep } from "../lib/iotm";
+import {
+  banishGear,
+  baseballD,
+  codpiece,
+  isBanished,
+  timeSpinnerFight,
+  yellowRayPrep,
+} from "../lib/iotm";
 import { mood } from "../lib/mood";
 import { getSandDollar } from "../lib/oldGuy";
 import { diverForceReady, diverPartsComplete, divingHelmet, tailpiece } from "../lib/progress";
@@ -366,7 +379,7 @@ const diverTasks: SebTask[] = [
       pawWishReady() &&
       availableAmount($item`cursed monkey's paw`) > 0,
     completed: () => itemAmount($item`rusty rivet`) >= 8 || diverPartsComplete() || helmetOn(),
-    ...action(() => cliExecute("monkeypaw wish rusty rivet")),
+    ...action(() => CursedMonkeyPaw.wishFor($item`rusty rivet`)),
     limit: { tries: 3 },
   },
   {
@@ -428,7 +441,7 @@ const abyssTasks: SebTask[] = [
       );
       if (availableAmount($item`sea cowbell`) < 3 && haveFamiliar(sword)) gear.fam(sword);
       else gear.forRole("itdrop");
-      if (!get("banishedMonsters").includes("school of many")) {
+      if (!isBanished($monster`school of many`)) {
         gear.need($item`Monodent of the Sea`);
       }
       if (get("lassoTrainingCount") < 20 && availableAmount($item`sea cowboy hat`) > 0) {
@@ -441,7 +454,7 @@ const abyssTasks: SebTask[] = [
       return gear.bathysphere($item`toy Cupid bow`).outfit();
     },
     prepare: () => {
-      if (myFamiliar() === $familiar`Red-Nosed Snapper`) cliExecute("snapper horror");
+      if (myFamiliar() === $familiar`Red-Nosed Snapper`) Snapper.trackPhylum($phylum`horror`);
       combJelly();
       mood("itdrop");
     },
@@ -563,7 +576,7 @@ const corralTasks: SebTask[] = [
         .outfit();
     },
     prepare: () => {
-      if (myFamiliar() === $familiar`Red-Nosed Snapper`) cliExecute("snapper mer-kin");
+      if (myFamiliar() === $familiar`Red-Nosed Snapper`) Snapper.trackPhylum($phylum`mer-kin`);
       if (!get("_steelyEyedSquintUsed")) mood("superitdrop");
       mood("itdrop");
     },
@@ -800,15 +813,13 @@ export const BackupLassoQuest: SebQuest = {
 
 /** Cowbells to farm before taming, leaving the rest to the monkey's paw. */
 function cowbellsWanted(): number {
-  const wishes = get("_monkeyPawWishesUsed");
-  if (availableAmount($item`cursed monkey's paw`) === 0 || highShiny()) return 2;
-  if (wishes > 3) return 2 - (5 - wishes);
-  return 0;
+  if (!CursedMonkeyPaw.have() || highShiny()) return 2;
+  return Math.max(0, 2 - CursedMonkeyPaw.wishes());
 }
 
-const predictions = () => get("crystalBallPredictions").toLowerCase();
-const seahorseNext = () => predictions().includes("the coral corral:wild seahorse");
-const crystalBall = () => availableAmount($item`miniature crystal ball`) > 0;
+const seahorseNext = () =>
+  CrystalBall.getPrediction().get($location`The Coral Corral`) === $monster`wild seahorse`;
+const crystalBall = () => CrystalBall.have();
 
 export const TamingQuest: SebQuest = {
   name: "Taming",
@@ -844,7 +855,7 @@ export const TamingQuest: SebQuest = {
     },
     {
       name: "Wish for cowbells",
-      ready: () => get("_monkeyPawWishesUsed") < 5,
+      ready: () => CursedMonkeyPaw.wishes() > 0,
       completed: () => itemAmount($item`sea cowbell`) >= 3,
       ...monkeypaw($item`sea cowbell`),
     },
@@ -854,7 +865,8 @@ export const TamingQuest: SebQuest = {
       ready: () =>
         crystalBall() &&
         !seahorseNext() &&
-        (predictions().includes("the coral corral") || itemAmount($item`shadow brick`) === 0),
+        (CrystalBall.getPrediction().has($location`The Coral Corral`) ||
+          itemAmount($item`shadow brick`) === 0),
       completed: () => haveEffect($effect`Shadow Affinity`) === 0,
       ...shadowRift(),
       limit: { tries: 20 },
@@ -868,7 +880,7 @@ export const TamingQuest: SebQuest = {
       },
       outfit: () => {
         const gear = new Gear(dropsItems, corral).forRole("itdrop");
-        if (!get("_perilLocations").includes("199")) gear.ifEquip($item`Peridot of Peril`);
+        if (!PeridotOfPeril.periledToday(corral)) gear.ifEquip($item`Peridot of Peril`);
         if (!haveItem($item`august scepter`)) {
           gear.need($item`Monodent of the Sea`).ifEquip($item`Heartstone`);
         } else if (haveItem($item`miniature crystal ball`)) {
@@ -876,11 +888,8 @@ export const TamingQuest: SebQuest = {
         }
         if (curveballLive()) gear.need($item`Monodent of the Sea`);
         // All three non-seahorse monsters banished: the tearaway pants.
-        const banished = get("banishedMonsters");
         if (
-          banished.includes("Mer-kin rustler") &&
-          banished.includes("sea cowboy") &&
-          banished.includes("sea cow:") &&
+          $monsters`Mer-kin rustler, sea cowboy, sea cow`.every(isBanished) &&
           haveItem($item`tearaway pants`)
         ) {
           gear.need($item`tearaway pants`);

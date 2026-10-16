@@ -1,5 +1,5 @@
-import { equip, itemAmount, myFamiliar, myPrimestat, cliExecute, visitUrl } from "kolmafia";
-import { $familiar, $item, $stat, have, get } from "libram";
+import { equip, itemAmount, myFamiliar, myPrimestat, visitUrl } from "kolmafia";
+import { $familiar, $item, $phylum, $stat, get, have, Snapper } from "libram";
 
 import { SebQuest } from "../engine";
 import { doSWord, swordOfSWords } from "../lib/familiar";
@@ -70,7 +70,7 @@ export const GuildQuest: SebQuest = {
       },
       outfit: () => testGear().outfit(),
       prepare: () => {
-        if (myFamiliar() === $familiar`Red-Nosed Snapper`) cliExecute("snapper fish");
+        if (myFamiliar() === $familiar`Red-Nosed Snapper`) Snapper.trackPhylum($phylum`fish`);
         mood("itdrop");
       },
       do: () => questLoc(),

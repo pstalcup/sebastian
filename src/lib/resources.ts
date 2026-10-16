@@ -5,8 +5,6 @@ import {
   cliExecute,
   equip,
   faxbot,
-  getCampground,
-  getLocketMonsters,
   handlingChoice,
   haveEffect,
   haveFamiliar,
@@ -36,9 +34,15 @@ import {
   $skill,
   $slot,
   $stat,
+  AprilingBandHelmet,
+  BloodCubicZirconia,
+  Cartography,
   ChestMimic,
+  CinchoDeMayo,
+  CombatLoversLocket,
   get,
   have,
+  SourceTerminal,
 } from "libram";
 
 import { pickFamiliar } from "./familiar";
@@ -50,10 +54,9 @@ import { gotPeriled, haveItem, inAftercore, inSeaPath, step } from "./state";
 
 /** Source Terminal items.enh, re-upped wherever +item setup happens. */
 export function sourceEnhance(): void {
-  if (!getCampground()[$item`Source terminal`.name]) return;
-  if (haveEffect($effect`items.enh`) > 0) return;
-  if (get("_sourceTerminalEnhanceUses") >= 3) return;
-  cliExecute("terminal enhance items.enh");
+  if (!SourceTerminal.have() || haveEffect($effect`items.enh`) > 0) return;
+  if (SourceTerminal.enhanceUsesRemaining() <= 0) return;
+  SourceTerminal.enhance($effect`items.enh`);
 }
 
 /** Kremlin's Greatest Briefcase +item tab buff, through Ezandora's Briefcase script. */
@@ -119,8 +122,8 @@ export function ncForceEstimate(): number {
   if (haveItem($item`McHugeLarge left ski`)) {
     force += Math.max(0, 3 - get("_mcHugeLargeAvalancheUses"));
   }
-  if (haveItem($item`Cincho de Mayo`)) {
-    force += Math.min(3, 1 + Math.floor(Math.max(0, totalFreeRests() - get("timesRested")) / 2));
+  if (CinchoDeMayo.have()) {
+    force += Math.min(3, Math.floor(CinchoDeMayo.totalAvailableCinch() / 60));
   }
   if (haveItem($item`Jurassic Parka`)) force += Math.max(0, 5 - get("_spikolodonSpikeUses"));
   return force;
@@ -129,24 +132,18 @@ export function ncForceEstimate(): number {
 /** Spend the cheapest available noncombat forcer charge. */
 export function ncForce(): void {
   if (get("noncombatForcerActive")) return;
-  if (
-    haveItem($item`Apriling band helmet`) &&
-    get("_aprilBandTubaUses") < 3 &&
-    haveItem($item`Apriling band tuba`)
-  ) {
-    cliExecute("aprilband play tuba");
+  if (AprilingBandHelmet.canPlay($item`Apriling band tuba`)) {
+    AprilingBandHelmet.play($item`Apriling band tuba`);
   } else if (
-    haveItem($item`Cincho de Mayo`) &&
-    (get("_cinchUsed") <= 40 || get("timesRested") < totalFreeRests())
+    CinchoDeMayo.have() &&
+    (CinchoDeMayo.currentCinch() >= 60 || get("timesRested") < totalFreeRests())
   ) {
-    while (get("_cinchUsed") > 40 && get("timesRested") < totalFreeRests()) {
+    while (CinchoDeMayo.currentCinch() < 60 && get("timesRested") < totalFreeRests()) {
       // The helmet sweetens the rest but is optional.
-      if (haveItem($item`Apriling band helmet`)) {
-        cliExecute("unequip hat; equip apriling band helmet");
-      }
+      if (AprilingBandHelmet.have()) equip($slot`hat`, $item`Apriling band helmet`);
       cliExecute("camp rest free");
     }
-    if (get("_cinchUsed") <= 40) {
+    if (CinchoDeMayo.currentCinch() >= 60) {
       equip($slot`acc3`, $item`Cincho de Mayo`);
       useSkill($skill`Cincho: Fiesta Exit`);
     }
@@ -172,9 +169,7 @@ export function ncForce(): void {
 }
 
 export function mapReady(): boolean {
-  return (
-    haveSkill($skill`Map the Monsters`) && get("_monstersMapped") < 3 && !get("mappingMonsters")
-  );
+  return Cartography.have() && Cartography.availableMaps() > 0 && !Cartography.currentlyMapping();
 }
 
 /** Map the Monsters, but only once the Peridot is spent in this zone. */
@@ -198,19 +193,10 @@ export function baseballPlayers(): number {
     .filter((s) => s !== "").length;
 }
 
-/** Substats a Blood Cubic Zirconia skill's next cast costs. */
-export function bczCost(skill: string): number {
-  let cast = toInt(get(`_bcz${skill}`));
-  if (cast === 12) return 420000;
-  if (cast > 12) cast -= 1;
-  const floor = Math.floor(cast / 3);
-  const modulo = cast % 3;
-  const base = [11, 23, 37][modulo];
-  return base * 10 ** (cast < 12 || (cast > 12 && modulo === 0) ? floor : floor + 1);
-}
-
 export function bczSweatReady(): boolean {
-  return myBasestat($stat`submoxie`) - 22500 > bczCost("SweatBulletsCasts");
+  return (
+    myBasestat($stat`submoxie`) - 22500 > BloodCubicZirconia.skillCost($skill`BCZ: Sweat Bullets`)
+  );
 }
 
 /** The Mom quest and CyberRealm route: eagle, server room key and both skills. */
@@ -240,15 +226,13 @@ export function equipSwimTrunks(): void {
  * that order. False when none of them is available.
  */
 export function summon(monster: Monster, wishGear?: () => void): boolean {
-  const fought = get("_locketMonstersFought");
   if (
-    getLocketMonsters()[monster.name] &&
-    !fought.split(",").includes(`${monster.id}`) &&
-    fought.split(",").filter((s) => s !== "").length < 3
+    CombatLoversLocket.canReminisce(monster) &&
+    !CombatLoversLocket.monstersReminisced().includes(monster)
   ) {
-    return cliExecute(`reminisce ${monster}`);
+    return CombatLoversLocket.reminisce(monster);
   }
-  if (haveItem($item`combat lover's locket`)) equip($slot`acc3`, $item`combat lover's locket`);
+  if (CombatLoversLocket.have()) equip($slot`acc3`, $item`combat lover's locket`);
   if (
     !get("_photocopyUsed") &&
     haveItem($item`Clan VIP Lounge key`) &&

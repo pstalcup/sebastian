@@ -5,7 +5,6 @@ import {
   currentRound,
   equippedAmount,
   expectedDamage,
-  familiarWeight,
   haveEffect,
   haveEquipped,
   haveFamiliar,
@@ -31,7 +30,6 @@ import {
   setProperty,
   Skill,
   visitUrl,
-  weightAdjustment,
 } from "kolmafia";
 import {
   $effect,
@@ -46,13 +44,17 @@ import {
   $skill,
   $skills,
   $stat,
+  BloodCubicZirconia,
+  EverfullDarts,
   get,
   Macro,
+  StompingBoots,
 } from "libram";
 
 import { swordOfSWords } from "./lib/familiar";
 import {
   banishUsedAtYourLocation,
+  isBanished,
   cloakeReady,
   cloakeZone,
   combatBan,
@@ -77,7 +79,7 @@ import {
   seaCowNeeded,
   YOG_HEALINGS_NEEDED,
 } from "./lib/progress";
-import { bczCost } from "./lib/resources";
+import { bczSweatReady } from "./lib/resources";
 import { haveItem, highShiny, lowShiny, step } from "./lib/state";
 
 // The combat consult script. Ported from UnderTheSeaCCS.ash and the fight
@@ -121,7 +123,7 @@ function darts(): Macro {
   const macro = new Macro();
   if (!haveEquipped($item`Everfull Dart Holster`)) return macro;
   let skill = $skill`Darts: Throw at %part1`;
-  if (get("everfullDartPerks").includes("Butt")) {
+  if (EverfullDarts.currentPerks().includes("Butt awareness")) {
     const match = /(\d+):butt/.exec(get("_currentDartboard"));
     if (!match) return macro;
     skill = Skill.get(Number(match[1]));
@@ -150,10 +152,7 @@ function freeKill(drop: boolean): Macro {
     const club = skill === $skill`Club 'Em Back in Time`;
     if (colosseum && !club) continue;
     if (club && ((!colosseum && !lowShiny()) || drop || get("_clubEmTimeUsed") >= 5)) continue;
-    if (
-      skill === $skill`BCZ: Sweat Bullets` &&
-      myBasestat($stat`submoxie`) - 22500 < bczCost("SweatBulletsCasts")
-    ) {
+    if (skill === $skill`BCZ: Sweat Bullets` && !bczSweatReady()) {
       continue;
     }
     macro.trySkill(skill);
@@ -181,11 +180,7 @@ function freeRunAny(banish: boolean): Macro {
   if (haveEquipped($item`Greatest American Pants`) && (navel < 3 || (navel < 10 && highShiny()))) {
     macro.runaway();
   }
-  const boots = $familiar`Pair of Stomping Boots`;
-  if (
-    myFamiliar() === boots &&
-    Math.round(familiarWeight(boots) + weightAdjustment() / 5) > get("_banderRunaways")
-  ) {
+  if (myFamiliar() === $familiar`Pair of Stomping Boots` && StompingBoots.couldRunaway()) {
     macro.runaway();
   }
 
@@ -193,7 +188,7 @@ function freeRunAny(banish: boolean): Macro {
   for (const skill of $skills`Spring Away, Bowl a Curveball, Creepy Grin, Throw Latte on Opponent, Release the Boots, Feel Hatred, Snokebomb`) {
     if (!banish && banishers.includes(skill)) continue;
     const snokebomb = skill === $skill`Snokebomb`;
-    if (banish && snokebomb && banishUsedAtYourLocation("snokebomb")) continue;
+    if (banish && snokebomb && banishUsedAtYourLocation($skill`Snokebomb`)) continue;
     if (
       snokebomb &&
       $locations`The Outskirts of Cobb's Knob, The Sleazy Back Alley, The Haunted Pantry`.includes(
@@ -228,7 +223,10 @@ function freeRun(banish: boolean): Macro {
 
 function bczGazeReady(): boolean {
   if (get("NCtoC") === "true") return false;
-  return myBasestat($stat`submysticality`) - 40000 > bczCost("RefractedGazeCasts");
+  return (
+    myBasestat($stat`submysticality`) - 40000 >
+    BloodCubicZirconia.skillCost($skill`BCZ: Refracted Gaze`)
+  );
 }
 
 // ─── FINISHING ────────────────────────────────────────────────────────────────
@@ -640,7 +638,7 @@ function octopusGarden(plan: Plan): void {
   } else if (!freeMonster(foe)) {
     if (
       haveEquipped($item`spring shoes`) &&
-      !banishUsedAtYourLocation("Spring Kick") &&
+      !banishUsedAtYourLocation($skill`Spring Kick`) &&
       highShiny()
     ) {
       plan.trySkill($skill`Spring Kick`, talkToFish);
@@ -760,7 +758,7 @@ function outpost(plan: Plan): void {
       if (
         (highShiny() || !haveItem($item`closed-circuit pay phone`)) &&
         myFamiliar() === swordOfSWords &&
-        !banishUsedAtYourLocation("Sea *dent")
+        !banishUsedAtYourLocation($skill`Sea *dent: Throw a Lightning Bolt`)
       ) {
         plan.trySkill(lightningBolt);
       }
@@ -832,10 +830,9 @@ function corral(plan: Plan): void {
   } else if (readyToTame) {
     if (foe.phylum === $phylum`plant`) plan.trySkill($skill`Tear Away your Pants!`);
     if (get("seahorseName") === "") {
-      const banished = get("banishedMonsters");
-      const cowGone = banished.includes("sea cow:");
-      const cowboyGone = banished.includes("sea cowboy");
-      const rustlerGone = banished.includes("Mer-kin rustler");
+      const cowGone = isBanished($monster`sea cow`);
+      const cowboyGone = isBanished($monster`sea cowboy`);
+      const rustlerGone = isBanished($monster`Mer-kin rustler`);
       // Fewer than two of the three banished: run from or banish this one.
       if (
         (!cowGone && !cowboyGone) ||
@@ -947,7 +944,7 @@ function school(plan: Plan): void {
   } else if ($monsters`Mer-kin teacher, Mer-kin punisher, Mer-kin monitor`.includes(foe)) {
     if (
       haveEquipped($item`spring shoes`) &&
-      !banishUsedAtYourLocation("Spring Kick") &&
+      !banishUsedAtYourLocation($skill`Spring Kick`) &&
       ((foe === $monster`Mer-kin teacher` && itemAmount($item`Mer-kin bunwig`) > 0) ||
         (foe === $monster`Mer-kin punisher` && itemAmount($item`Mer-kin mouthsoap`) > 0))
     ) {

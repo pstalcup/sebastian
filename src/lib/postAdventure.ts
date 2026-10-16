@@ -8,7 +8,6 @@ import {
   drink,
   eat,
   getFuel,
-  getWorkshed,
   haveEffect,
   haveSkill,
   inebrietyLimit,
@@ -37,13 +36,29 @@ import {
   use,
   useSkill,
   equip,
-  visitUrl,
 } from "kolmafia";
-import { $coinmaster, $effect, $item, $items, $location, $skill, get, have, set } from "libram";
+import {
+  $coinmaster,
+  $effect,
+  $item,
+  $items,
+  $location,
+  $monster,
+  $skill,
+  get,
+  have,
+  AsdonMartin,
+  AutumnAton,
+  BatWings,
+  LegendarySealClubbingClub,
+  set,
+  TrainSet,
+  uneffect,
+} from "libram";
 
 import { doSWord, swordOfSWords } from "./familiar";
 import { Gear } from "./gear";
-import { eatSushi, trainset, useAutumnaton } from "./iotm";
+import { eatSushi, isBanished, trainset, useAutumnaton } from "./iotm";
 import { diverHuntActive, seaCowNeeded, tailpiece } from "./progress";
 import { pulledToday, pullSequence } from "./pulls";
 import { dreadSeedCheck } from "./seedfinder";
@@ -246,24 +261,21 @@ function seaPathUpkeep(): void {
   if (myAdventures() === 0) {
     if (itemAmount($item`astral six-pack`) > 0) use($item`astral six-pack`);
     if (itemAmount($item`astral pilsner`) === 0) abort("no more easy diet");
-    cliExecute("shrug Donho's Bubbly Ballad");
+    uneffect($effect`Donho's Bubbly Ballad`);
     if (haveSkill($skill`The Ode to Booze`)) useSkill($skill`The Ode to Booze`);
     drink($item`astral pilsner`);
   }
-  if (
-    haveEffect($effect`Driving Waterproofly`) === 0 &&
-    getWorkshed() === $item`Asdon Martin keyfob (on ring)`
-  ) {
+  if (haveEffect($effect`Driving Waterproofly`) === 0 && AsdonMartin.installed()) {
     if (getFuel() === 0 && !pulledToday($item`pie man was not meant to eat`)) {
       pullSequence($item`pie man was not meant to eat`);
-      cliExecute("asdonmartin fuel 1 pie man was not meant to eat");
+      AsdonMartin.insertFuel($item`pie man was not meant to eat`);
     }
     if (getFuel() < 37) {
       abort(
         "Asdon Martin owners, fuel car manually until I can get some guidance on which foods are best",
       );
     }
-    cliExecute("asdonmartin drive Waterproofly");
+    AsdonMartin.drive($effect`Driving Waterproofly`, 1, true);
   }
   if (haveEffect($effect`Fishy`) === 0) {
     seaPathFishy();
@@ -323,7 +335,7 @@ function copiedMonsterFollowUps(): void {
       .ifEquip($item`Peridot of Peril`)
       .freeKill()
       .bathysphere($item`toy Cupid bow`);
-    if (!get("banishedMonsters").includes("school of many")) {
+    if (!isBanished($monster`school of many`)) {
       gear.need($item`Monodent of the Sea`);
     }
     gear.outfit().dress();
@@ -332,8 +344,8 @@ function copiedMonsterFollowUps(): void {
 
   // Club 'Em Into Next Week monster.
   if (
-    get("clubEmNextWeekMonster") !== null &&
-    totalTurnsPlayed() >= toInt(get("clubEmNextWeekMonsterTurn")) + 8 &&
+    LegendarySealClubbingClub.clubIntoNextWeekMonster() !== null &&
+    LegendarySealClubbingClub.turnsUntilNextWeekFight() <= 0 &&
     myLocation() !== $location`Mer-kin Elementary School` &&
     myLocation() !== $location`Mer-kin Library`
   ) {
@@ -358,7 +370,7 @@ export function postAdventure(): void {
     setProperty("_lastCombatLost", "false");
     abort("It appears you lost the last combat, look into that");
   }
-  if (have($effect`Really Quite Poisoned`)) cliExecute("uneffect really quite poisoned");
+  if (have($effect`Really Quite Poisoned`)) uneffect($effect`Really Quite Poisoned`);
   if (have($effect`Marked by the Don`) && haveSkill($skill`Disco Nap`)) {
     useSkill($skill`Disco Nap`);
   }
@@ -367,20 +379,14 @@ export function postAdventure(): void {
   if (!get("isMerkinHighPriest") && get("seahorseName") !== "") {
     dreadSeedCheck();
   }
-  if (get("autumnatonQuestLocation") === null && itemAmount($item`autumn-aton`) > 0) {
-    useAutumnaton();
-  }
+  if (AutumnAton.available()) useAutumnaton();
   if (
     get("_universeCalculated") < Math.min(2, get("skillLevel144")) &&
     Object.values(reverseNumberology()).includes(69)
   ) {
     cliExecute("numberology 69");
   }
-  if (get("trainsetPosition") >= get("lastTrainsetConfiguration") + 42) {
-    // Visit the workshed first so mafia re-reads the train.
-    visitUrl("campground.php?action=workshed");
-    trainset();
-  }
+  if (TrainSet.canConfigure()) trainset();
   if (haveEffect($effect`Resined`) === 0 && itemAmount($item`inflammable leaf`) > 50) {
     use($item`distilled resin`);
   }
@@ -396,7 +402,7 @@ export function postAdventure(): void {
   if (inSeaPath()) seaPathUpkeep();
   else if (inAftercore()) aftercoreUpkeep();
 
-  if (haveItem($item`bat wings`) && (myMp() < myMaxmp() - 1000 || myMp() < 150)) {
+  if (BatWings.restUpsideDownRemaining() > 0 && (myMp() < myMaxmp() - 1000 || myMp() < 150)) {
     equip($item`bat wings`);
     useSkill($skill`Rest upside down`);
   }

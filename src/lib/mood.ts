@@ -10,9 +10,8 @@ import {
   toInt,
   toItem,
   toSkill,
-  totalTurnsPlayed,
 } from "kolmafia";
-import { $effect, $effects, $item, $skill, get } from "libram";
+import { $effect, $effects, $item, $skill, AprilingBandHelmet, get } from "libram";
 
 import { briefcase, sourceEnhance } from "./resources";
 import { haveItem, highShiny, lowShiny } from "./state";
@@ -51,13 +50,15 @@ function photoBoothSpent(): boolean {
 }
 
 function aprilBandWaiting(): boolean {
-  return (
-    !haveItem($item`Apriling band helmet`) || totalTurnsPlayed() < toInt(get("nextAprilBandTurn"))
-  );
+  return !AprilingBandHelmet.canChangeSong();
 }
 
 function getEffect(effect: Effect): void {
-  cliExecute(effect.default);
+  if (AprilingBandHelmet.MARCHING_SONG_EFFECTS.includes(effect)) {
+    AprilingBandHelmet.changeSong(effect);
+  } else {
+    cliExecute(effect.default);
+  }
 }
 
 /** The pearl-zone resistance mood for a "hot res" style modifier name. */

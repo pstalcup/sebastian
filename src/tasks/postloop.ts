@@ -28,7 +28,17 @@ import {
   use,
   useSkill,
 } from "kolmafia";
-import { $coinmaster, $effect, $familiar, $familiars, $item, $location, $skill, get } from "libram";
+import {
+  $coinmaster,
+  $effect,
+  $familiar,
+  $familiars,
+  $item,
+  $location,
+  $skill,
+  get,
+  uneffect,
+} from "libram";
 
 import { SebQuest } from "../engine";
 import { Gear } from "../lib/gear";
@@ -240,7 +250,7 @@ function pilsnerForAdventures(): void {
   if (itemAmount($item`astral pilsner`) === 0) {
     abort("seb_runOutEagleBanish: out of adventures and no astral pilsner left to drink.");
   }
-  cliExecute("shrug Donho's Bubbly Ballad");
+  uneffect($effect`Donho's Bubbly Ballad`);
   if (haveSkill($skill`The Ode to Booze`)) useSkill($skill`The Ode to Booze`);
   drink($item`astral pilsner`);
 }
@@ -283,7 +293,7 @@ function usePilsners(): void {
     const before = itemAmount($item`astral pilsner`);
     if (before === 0) break;
     if (haveEffect($effect`Ode to Booze`) === 0 && haveSkill($skill`The Ode to Booze`)) {
-      if (!cliExecute("shrug Donho's Bubbly Ballad")) {
+      if (!uneffect($effect`Donho's Bubbly Ballad`)) {
         print("seb_usePilsners: Donho's Bubbly Ballad wouldn't shrug.", "blue");
       }
       if (!useSkill(1, $skill`The Ode to Booze`) && !odeWarned) {

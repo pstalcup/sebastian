@@ -1,6 +1,6 @@
 import { Args, getTasks } from "grimoire-kolmafia";
-import { getClanId, maximize, print, visitUrl, writeCcs } from "kolmafia";
-import { get } from "libram";
+import { maximize, print, writeCcs } from "kolmafia";
+import { Clan, get } from "libram";
 
 import { args } from "./args";
 import { COMBAT_SCRIPT, SEB_CCS, SebEngine } from "./engine";
@@ -58,7 +58,7 @@ export function main(command?: string): void {
     return;
   }
 
-  const clan = getClanId();
+  const home = Clan.get();
   // In seaMonkees() order: the early lasso, the guild, the quest, the outpost,
   // the seahorse, the temple, then past the prism. Every task reads its state
   // from the game, so a rerun picks up where the last one stopped.
@@ -99,8 +99,8 @@ export function main(command?: string): void {
   } finally {
     engine.destruct();
     // The Sheriff props come from a photo booth in another clan.
-    if (getClanId() !== clan) {
-      visitUrl(`showclan.php?whichclan=${clan}&action=joinclan&confirm=on`);
+    if (Clan.get().id !== home.id) {
+      home.join();
     }
     print("Ending UnderTheSea");
   }
