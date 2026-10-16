@@ -26,6 +26,7 @@ import {
   CursedMonkeyPaw,
   get,
   have,
+  questStep,
   Snapper,
 } from "libram";
 
@@ -47,7 +48,6 @@ import {
 } from "../lib/resources";
 import { haveItem, highShiny, inAftercore, inSeaPath, lowShiny } from "../lib/state";
 
-import { monkeesStep } from "./monkees";
 import { abyssRecallGear, prayerbeadGear } from "./zones";
 
 // From the golem recall through the Old Guy. Ported from golemRecall(),
@@ -68,7 +68,7 @@ const scaleHunt = () =>
 
 /** The outpost loop runs until the stashbox turns up or the corral opens, and through steps 6 to 8. */
 export function outpostActive(): boolean {
-  const step = monkeesStep();
+  const step = questStep("questS02Monkees");
   return (
     (itemAmount($item`Mer-kin stashbox`) === 0 && !get("corralUnlocked")) ||
     (step >= 6 && step <= 8)
@@ -77,7 +77,7 @@ export function outpostActive(): boolean {
 
 /** Kits without the CyberRealm route Back-to-the-Future the abyss from the outpost. */
 function bofaCaliginous(): boolean {
-  const step = monkeesStep();
+  const step = questStep("questS02Monkees");
   return (
     outpostActive() &&
     inSeaPath() &&
@@ -151,8 +151,11 @@ export const OutpostQuest: SebQuest = {
     {
       name: "Golem recall",
       ready: () =>
-        monkeesStep() === 6 && inSeaPath() && !highShiny() && haveSkill($skill`Just the Facts`),
-      completed: () => get("_monsterHabitatsMonster") !== null || monkeesStep() > 6,
+        questStep("questS02Monkees") === 6 &&
+        inSeaPath() &&
+        !highShiny() &&
+        haveSkill($skill`Just the Facts`),
+      completed: () => get("_monsterHabitatsMonster") !== null || questStep("questS02Monkees") > 6,
       outfit: () =>
         new Gear("item drop")
           .forRole(have($familiar`Red-Nosed Snapper`) ? "itdrop" : "-combat")
@@ -279,8 +282,8 @@ export const OutpostQuest: SebQuest = {
     },
     {
       name: "Old Guy",
-      ready: () => get("questS01OldGuy") === "started",
-      completed: () => get("questS01OldGuy") !== "started",
+      ready: () => questStep("questS01OldGuy") === 0,
+      completed: () => questStep("questS01OldGuy") !== 0,
       do: () => oldGuy(),
       limit: { tries: 1 },
     },

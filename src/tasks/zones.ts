@@ -30,6 +30,7 @@ import {
   get,
   Mining,
   PeridotOfPeril,
+  questStep,
 } from "libram";
 
 import { branch, TaskBody } from "../engine";
@@ -257,15 +258,15 @@ function shadowRiftGear(): Gear {
     .baseball();
 }
 
-const riftQuest = () => get("questRufus");
+const riftQuest = () => questStep("questRufus");
 
 /** Shadow Waters: the pay phone, the quest's noncombat, then one rift fight. */
 function shadowWaters(): TaskBody {
   return {
     outfit: () => shadowRiftGear().outfit(),
     do: () => {
-      if (riftQuest() === "unstarted") use($item`closed-circuit pay phone`);
-      if (riftQuest() === "started") {
+      if (riftQuest() === -1) use($item`closed-circuit pay phone`);
+      if (riftQuest() === 0) {
         ncForce();
         adv1Rift();
       }
@@ -284,7 +285,7 @@ function shadowAffinity(): TaskBody {
     before: () => {
       if (
         get("encountersUntilSRChoice") > 9 &&
-        riftQuest() === "unstarted" &&
+        riftQuest() === -1 &&
         itemAmount($item`closed-circuit pay phone`) > 0
       ) {
         new Gear("item drop", rift)
@@ -295,7 +296,7 @@ function shadowAffinity(): TaskBody {
           .dress();
         use($item`closed-circuit pay phone`);
       }
-      if (riftQuest() === "unstarted") use($item`closed-circuit pay phone`);
+      if (riftQuest() === -1) use($item`closed-circuit pay phone`);
     },
     outfit: () => {
       const gear = shadowRiftGear();

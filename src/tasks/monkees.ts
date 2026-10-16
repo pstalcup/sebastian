@@ -7,11 +7,20 @@ import {
   myLocation,
   myPrimestat,
   print,
-  toInt,
   use,
   visitUrl,
 } from "kolmafia";
-import { $effect, $familiar, $item, $location, $monster, $stat, get, have } from "libram";
+import {
+  $effect,
+  $familiar,
+  $item,
+  $location,
+  $monster,
+  $stat,
+  get,
+  have,
+  questStep,
+} from "libram";
 
 import { SebQuest } from "../engine";
 import { doSWord, swordOfSWords } from "../lib/familiar";
@@ -44,22 +53,11 @@ import {
 // SWordLasso(), flytrap(), fitzsimmons(), grandpa() and the steps between them
 // in seaMonkees() in UnderTheSea.ash.
 
-const MONKEES_STEPS = ["unstarted", "started"];
-
-/** questS02Monkees as a number: -1 unstarted, 0 started, N for stepN, 999 finished. */
-export function monkeesStep(): number {
-  const value = get("questS02Monkees");
-  if (value === "finished") return 999;
-  const index = MONKEES_STEPS.indexOf(value);
-  if (index >= 0) return index - 1;
-  return toInt(value.replace("step", ""));
-}
-
 const garden = $location`An Octopus's Garden`;
 const pellet = $item`wriggling flytrap pellet`;
 const sword = swordOfSWords;
 const havePellet = () => itemAmount(pellet) > 0;
-const flytrapPending = () => monkeesStep() === -1 && !havePellet();
+const flytrapPending = () => questStep("questS02Monkees") === -1 && !havePellet();
 
 /** The sword and spade route to the skeleton store, for saberless kits. */
 const skeletonRoute = () =>
@@ -177,15 +175,15 @@ export const MonkeesQuest: SebQuest = {
     },
     {
       name: "Flytrap: use pellet",
-      ready: () => monkeesStep() === -1 && havePellet(),
-      completed: () => monkeesStep() >= 0,
+      ready: () => questStep("questS02Monkees") === -1 && havePellet(),
+      completed: () => questStep("questS02Monkees") >= 0,
       do: () => use(pellet),
       limit: { tries: 1 },
     },
     {
       name: "Little Brother",
-      ready: () => monkeesStep() === 0,
-      completed: () => monkeesStep() >= 1,
+      ready: () => questStep("questS02Monkees") === 0,
+      completed: () => questStep("questS02Monkees") >= 1,
       do: () => {
         equipSwimTrunks();
         visitUrl("monkeycastle.php?who=1");
@@ -194,8 +192,8 @@ export const MonkeesQuest: SebQuest = {
     },
     {
       name: "Wreck of the Edgar Fitzsimmons",
-      ready: () => monkeesStep() === 1,
-      completed: () => monkeesStep() >= 2,
+      ready: () => questStep("questS02Monkees") === 1,
+      completed: () => questStep("questS02Monkees") >= 2,
       before: () => {
         forcingFitzsimmons = ncForceEstimate() >= 4;
         if (forcingFitzsimmons) ncForce();
@@ -222,8 +220,8 @@ export const MonkeesQuest: SebQuest = {
     },
     {
       name: "Big Brother",
-      ready: () => monkeesStep() === 2,
-      completed: () => monkeesStep() >= 3,
+      ready: () => questStep("questS02Monkees") === 2,
+      completed: () => questStep("questS02Monkees") >= 3,
       do: () => {
         equipSwimTrunks();
         visitUrl("monkeycastle.php?who=2");
@@ -233,8 +231,8 @@ export const MonkeesQuest: SebQuest = {
     },
     {
       name: "Grandpa",
-      ready: () => monkeesStep() === 4,
-      completed: () => monkeesStep() >= 5,
+      ready: () => questStep("questS02Monkees") === 4,
+      completed: () => questStep("questS02Monkees") >= 5,
       before: () => {
         if (!have($effect`Colorfully Concealed`) && !lowShiny()) {
           pullSequence($item`Mer-kin hidepaint`);
@@ -273,8 +271,8 @@ export const MonkeesQuest: SebQuest = {
     },
     {
       name: "Ask Grandpa about Grandma",
-      ready: () => monkeesStep() === 5,
-      completed: () => monkeesStep() >= 6,
+      ready: () => questStep("questS02Monkees") === 5,
+      completed: () => questStep("questS02Monkees") >= 6,
       do: () => cliExecute("grandpa grandma"),
       limit: { tries: 1 },
     },
