@@ -45,6 +45,8 @@ import {
   have,
   Leprecondo,
   MayamCalendar,
+  questStep,
+  set,
   SongBoom,
   TakerSpace,
 } from "libram";
@@ -113,7 +115,7 @@ function borrowSheriffProps(): void {
 }
 
 function dailies(): void {
-  if (get("questM05Toot") === "started") {
+  if (questStep("questM05Toot") === 0) {
     council();
     visitUrl("tutorial.php?action=toot");
     council();
@@ -258,8 +260,8 @@ export function initialization(): void {
   if (getRevision() < 29057) abort("Please update mafia to newer than 29057");
   // A pearl farm or screech re-aim that aborted mid-loop leaves these set,
   // and the CCS reads them.
-  setProperty("_sebPearlFarm", "false");
-  setProperty("_sebScreechReaim", "false");
+  set("_sebPearlFarm", false);
+  set("_sebScreechReaim", false);
 
   checkChosenFamiliar();
   if (!get("autoSatisfyWithNPCs")) {
@@ -270,7 +272,7 @@ export function initialization(): void {
   skillChecklist();
   if (inSeaPath()) pullChecklist();
 
-  if (get("questS01OldGuy") === "unstarted") {
+  if (questStep("questS01OldGuy") === -1) {
     visitUrl("place.php?whichplace=sea_oldman&action=oldman_oldman");
   }
   if (!have($item`black glass`) && itemAmount($item`sand dollar`) > 13) blackGlass();
@@ -285,7 +287,7 @@ export function initialization(): void {
     AsdonMartin.installed() &&
     !highShiny() &&
     !get("_missileLauncherUsed") &&
-    get("_sebMissileFailed") !== "true" &&
+    !get("_sebMissileFailed", false) &&
     getFuel() < 100 &&
     retrieveItem(17, $item`loaf of soda bread`)
   ) {

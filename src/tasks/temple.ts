@@ -44,6 +44,8 @@ import {
   CursedMonkeyPaw,
   get,
   Leprecondo,
+  questStep,
+  set,
   uneffect,
 } from "libram";
 
@@ -601,7 +603,7 @@ const priestTasks: SebTask[] = [
   },
   {
     name: "Tainted: abyss",
-    ready: () => priestReady() && tainted() && get("questS02Monkees") === "step12",
+    ready: () => priestReady() && tainted() && questStep("questS02Monkees") === 12,
     completed: () => !tainted(),
     ...finishCaliginous(),
   },
@@ -787,8 +789,8 @@ export const YogUrtQuest: SebQuest = {
 
 const finishAbyss: SebTask = {
   name: "Finish the abyss",
-  ready: () => inSeaPath() && get("questS02Monkees") === "step12",
-  completed: () => get("questS02Monkees") !== "step12",
+  ready: () => inSeaPath() && questStep("questS02Monkees") === 12,
+  completed: () => questStep("questS02Monkees") !== 12,
   ...finishCaliginous(),
 };
 
@@ -1030,7 +1032,7 @@ export const FinalBossQuest: SebQuest = {
     {
       name: "Naughty Sorceress",
       ready: () => inSeaPath() && get("shubJigguwattDefeated"),
-      completed: () => get("questL13Final") !== "unstarted",
+      completed: () => questStep("questL13Final") >= 0,
       outfit: () => finalBossGear().outfit(),
       do: () => {
         adv(center);
@@ -1041,7 +1043,7 @@ export const FinalBossQuest: SebQuest = {
     {
       name: "Dad",
       ready: () => inAftercore() && aftercoreBoss() === "Dad",
-      completed: () => get("_sebDadFought") === "true",
+      completed: () => get("_sebDadFought", false),
       before: () =>
         cliExecute("acquire 3 warbear whosit; acquire 3 volcanic ash; recover mp; tempura air"),
       outfit: () =>
@@ -1059,7 +1061,7 @@ export const FinalBossQuest: SebQuest = {
           .outfit(),
       prepare: () => setProperty("mpAutoRecoveryTarget", "1"),
       do: () => {
-        setProperty("_sebDadFought", "true");
+        set("_sebDadFought", true);
         return center;
       },
       limit: { tries: 1 },

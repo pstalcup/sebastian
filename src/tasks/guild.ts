@@ -1,5 +1,5 @@
 import { equip, itemAmount, myFamiliar, myPrimestat, visitUrl } from "kolmafia";
-import { $familiar, $item, $phylum, $stat, get, have, Snapper } from "libram";
+import { $familiar, $item, $phylum, $stat, have, questStep, Snapper } from "libram";
 
 import { SebQuest } from "../engine";
 import { doSWord, swordOfSWords } from "../lib/familiar";
@@ -13,14 +13,14 @@ import { haveItem, highShiny, inSeaPath, questLoc, questProp } from "../lib/stat
 
 function guildWanted(): boolean {
   return (
-    get("questG03Ego") === "unstarted" &&
+    questStep("questG03Ego") === -1 &&
     itemAmount($item`closed-circuit pay phone`) > 0 &&
     inSeaPath() &&
     !highShiny()
   );
 }
 
-const testState = () => get(questProp());
+const testStep = () => questStep(questProp());
 const tearawayShortcut = () => myPrimestat() === $stat`Moxie` && haveItem($item`tearaway pants`);
 
 function testGear(): Gear {
@@ -47,8 +47,8 @@ export const GuildQuest: SebQuest = {
   tasks: [
     {
       name: "Challenge",
-      ready: () => guildWanted() && testState() !== "started",
-      completed: () => testState() === "finished",
+      ready: () => guildWanted() && testStep() !== 0,
+      completed: () => testStep() === 999,
       do: () => {
         // Moxie can skip the grind in tearaway pants.
         if (tearawayShortcut()) equip($item`tearaway pants`);
@@ -58,8 +58,8 @@ export const GuildQuest: SebQuest = {
     },
     {
       name: "Test",
-      ready: () => guildWanted() && testState() === "started" && !tearawayShortcut(),
-      completed: () => testState() !== "started",
+      ready: () => guildWanted() && testStep() === 0 && !tearawayShortcut(),
+      completed: () => testStep() !== 0,
       before: () => {
         if (
           haveItem($item`Greatest American Pants`) &&
@@ -79,8 +79,8 @@ export const GuildQuest: SebQuest = {
     },
     {
       name: "Open the Ego quest",
-      ready: () => guildWanted() && testState() === "finished",
-      completed: () => get("questG03Ego") !== "unstarted",
+      ready: () => guildWanted() && testStep() === 999,
+      completed: () => questStep("questG03Ego") >= 0,
       do: () => {
         visitUrl("guild.php?place=ocg");
         visitUrl("guild.php?place=ocg");

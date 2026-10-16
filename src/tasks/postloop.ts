@@ -37,6 +37,8 @@ import {
   $location,
   $skill,
   get,
+  questStep,
+  set,
   uneffect,
 } from "libram";
 
@@ -335,7 +337,7 @@ function prepCodpiece(): void {
 /** After the prism: spend the sand pennies and see the council. */
 export const PathCleanupQuest: SebQuest = {
   name: "Path cleanup",
-  ready: () => inSeaPath() && get("questL13Final") === "finished",
+  ready: () => inSeaPath() && questStep("questL13Final") === 999,
   tasks: [
     {
       name: "Sand pennies",
@@ -353,11 +355,11 @@ export const PathCleanupQuest: SebQuest = {
     {
       // The storage pull pilsners may need is refused before the prism breaks.
       name: "Council",
-      completed: () => get("_sebCouncilVisited") === "true",
+      completed: () => get("_sebCouncilVisited", false),
       ...action(() => {
         council();
         council();
-        setProperty("_sebCouncilVisited", "true");
+        set("_sebCouncilVisited", true);
       }),
       limit: { tries: 1 },
     },
@@ -422,12 +424,12 @@ export const PostloopQuest: SebQuest = {
       outfit: { familiar: $familiar`Patriotic Eagle` },
       prepare: () => {
         setProperty("_sebScreechFired", "");
-        setProperty("_sebScreechReaim", "true");
+        set("_sebScreechReaim", true);
       },
       do: $location`The Smut Orc Logging Camp`,
       postAdventure: false,
       post: () => {
-        setProperty("_sebScreechReaim", "false");
+        set("_sebScreechReaim", false);
         setCounter("_sebPearlSpent", spent() + 1);
         readScreech();
       },
@@ -518,31 +520,31 @@ export const PostloopQuest: SebQuest = {
           );
         }
         pearlResCheck(currentZone() ?? $location.none);
-        setProperty("_sebPearlFarm", "true");
+        set("_sebPearlFarm", true);
       },
       do: () => currentZone() ?? $location.none,
       postAdventure: false,
       post: () => {
-        setProperty("_sebPearlFarm", "false");
+        set("_sebPearlFarm", false);
         setCounter("_sebPearlSpent", spent() + 1);
       },
     },
     {
       name: "Load the codpiece",
       ready: () => flag("seb_postLoopPrepCodpiece") && !walking(),
-      completed: () => get("_sebCodpieceLoaded") === "true",
+      completed: () => get("_sebCodpieceLoaded", false),
       ...action(() => {
         prepCodpiece();
-        setProperty("_sebCodpieceLoaded", "true");
+        set("_sebCodpieceLoaded", true);
       }),
       limit: { tries: 1 },
     },
     {
       name: "Postloop command",
       ready: () => get("seb_postloopCommand") !== "" && !walking(),
-      completed: () => get("_sebPostloopCommandRan") === "true",
+      completed: () => get("_sebPostloopCommandRan", false),
       ...action(() => {
-        setProperty("_sebPostloopCommandRan", "true");
+        set("_sebPostloopCommandRan", true);
         cliExecute(get("seb_postloopCommand"));
       }),
       limit: { tries: 1 },

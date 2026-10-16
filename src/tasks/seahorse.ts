@@ -54,6 +54,7 @@ import {
   CursedMonkeyPaw,
   get,
   PeridotOfPeril,
+  questStep,
   Snapper,
 } from "libram";
 
@@ -642,7 +643,7 @@ export const TeflonQuest: SebQuest = {
         !highShiny() &&
         get("encountersUntilSRChoice") > 9 &&
         itemAmount($item`closed-circuit pay phone`) > 0,
-      completed: () => get("questRufus") !== "unstarted",
+      completed: () => questStep("questRufus") >= 0,
       before: () => {
         retrieveItem($item`oversized sparkler`);
         if (itemAmount($item`lump of loyal latite`) > 0) use($item`lump of loyal latite`);
@@ -951,7 +952,7 @@ export const PostSeahorseQuest: SebQuest = {
     },
     {
       name: "Rufus",
-      completed: () => get("questRufus") !== "step1",
+      completed: () => questStep("questRufus") !== 1,
       do: () => {
         use($item`closed-circuit pay phone`);
         return rift;

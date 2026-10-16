@@ -1,6 +1,6 @@
 import { Args, getTasks } from "grimoire-kolmafia";
 import { maximize, print, writeCcs } from "kolmafia";
-import { Clan, get } from "libram";
+import { Clan, get, questStep } from "libram";
 
 import { args } from "./args";
 import { COMBAT_SCRIPT, SEB_CCS, SebEngine } from "./engine";
@@ -79,7 +79,7 @@ export function main(command?: string): void {
       FinalBossQuest,
       PathCleanupQuest,
       // The postloop steps wait for the council visit that closes the path.
-      { ...PostloopQuest, ready: () => get("_sebCouncilVisited") === "true" },
+      { ...PostloopQuest, ready: () => get("_sebCouncilVisited", false) },
     ]),
     { ccs: SEB_CCS },
   );
@@ -90,7 +90,7 @@ export function main(command?: string): void {
     // Priming, in case the last run aborted mid-combat.
     postAdventure();
     engine.run();
-    if (inSeaPath() && get("questL13Final") !== "finished") {
+    if (inSeaPath() && questStep("questL13Final") < 999) {
       print(
         "SEB: no task is ready to run, but the prism isn't broken yet. Check the log above.",
         "red",
