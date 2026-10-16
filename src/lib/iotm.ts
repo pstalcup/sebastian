@@ -71,10 +71,16 @@ import { haveItem, highShiny, step } from "./state";
 
 // ─── SMALL CHECKS ─────────────────────────────────────────────────────────────
 
-/** Monsters that give a free fight. */
+/**
+ * Monsters that give a free fight: the original's list, plus anything mafia's
+ * monster data tags FREE (Witchess pieces, Eldritch Tentacles, God Lobster...),
+ * so a free wanderer the list misses is still killed rather than run from.
+ */
 export function freeMonster(monster: Monster): boolean {
-  return $monsters`Black Crayon Golem, Black Crayon Beetle, Black Crayon Man, Black Crayon Goblin, Black Crayon Undead Thing, Black Crayon Slime, time cop, sausage goblin, kid who is too old to be Trick-or-Treating, suburban security civilian, vandal kid`.includes(
-    monster,
+  return (
+    $monsters`Black Crayon Golem, Black Crayon Beetle, Black Crayon Man, Black Crayon Goblin, Black Crayon Undead Thing, Black Crayon Slime, time cop, sausage goblin, kid who is too old to be Trick-or-Treating, suburban security civilian, vandal kid`.includes(
+      monster,
+    ) || /(^|\s)FREE(\s|$)/.test(monster.attributes)
   );
 }
 

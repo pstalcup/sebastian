@@ -241,8 +241,10 @@ function bczGazeReady(): boolean {
 // ─── FINISHING ────────────────────────────────────────────────────────────────
 
 /**
- * Ends a live free fight: Saucestorm while affordable, attacks while HP is
- * safe, then a non-banishing run. Aborts if the fight is still live.
+ * Ends a live free fight: Saucestorm while affordable, then attacks for as
+ * long as HP is safe. A free run source is the last resort only, since
+ * spending one on a fight that costs no turn buys nothing. Aborts if the
+ * fight is still live.
  */
 function finishFreeFight(): Macro {
   const saucestorm = $skill`Saucestorm`;
@@ -254,7 +256,9 @@ function finishFreeFight(): Macro {
       Macro.skill(saucestorm),
     );
   }
-  for (let i = 0; i < 3; i++) macro.if_(`!hpbelow ${safeHp}`, Macro.attack());
+  // Out of MP is the usual way here, and a free fight dies to the weapon
+  // fine; the old three swings left most of them for the free run below.
+  macro.while_(`!hpbelow ${safeHp} && !pastround 20`, Macro.attack());
   macro.step(freeRunAny(false));
   for (let i = 0; i < 3; i++) macro.if_(`!hpbelow ${safeHp}`, Macro.runaway());
   return macro.abortWithWarning(`Could not finish or escape ${foe}. Finish the fight by hand.`);
@@ -745,7 +749,11 @@ function outpost(plan: Plan): void {
 
   if ($location`The Mer-Kin Outpost`.turnsSpent < 24 || get("merkinLockkeyMonster") !== null) {
     // Back up to the Black Crayon Golem if available; the next pass fights it.
+    // Never over a fight that is already free, or over the lockkey monster
+    // whose drop the hunt is waiting for: neither swap saves a turn.
     if (
+      !freeMonster(foe) &&
+      foe !== get("merkinLockkeyMonster") &&
       fightsLeft === 0 &&
       recalled >= 2 &&
       backupReady &&
@@ -801,6 +809,12 @@ function corral(plan: Plan): void {
   const rustler = $monster`Mer-kin rustler`;
   const cow = $monster`sea cow`;
   const cowboy = $monster`sea cowboy`;
+  // A free wanderer (the Kramco's goblins burn delay here) is just killed:
+  // no run, banish, waffle, backup, McTwist or club charge spent on it.
+  if (freeMonster(foe)) {
+    plan.step(cleanUp());
+    return;
+  }
   const readyToTame =
     itemAmount($item`sea cowbell`) >= 3 &&
     itemAmount($item`sea lasso`) >= 1 &&
@@ -959,7 +973,15 @@ function school(plan: Plan): void {
     ) {
       plan.trySkill($skill`Spring Kick`);
     }
+    // Backing up throws this monster away, so only when its drop is no
+    // longer wanted: the same bunwig and mouthsoap test as the Spring Kick,
+    // and the monitor while cheatsheets are owed.
+    const wanted =
+      (foe === $monster`Mer-kin teacher` && itemAmount($item`Mer-kin bunwig`) === 0) ||
+      (foe === $monster`Mer-kin punisher` && itemAmount($item`Mer-kin mouthsoap`) === 0) ||
+      (foe === $monster`Mer-kin monitor` && cheatsheetsNeeded());
     if (
+      !wanted &&
       freeMonster(get("lastCopyableMonster") ?? $monster.none) &&
       get("_backUpUses") < 11 &&
       haveEquipped($item`backup camera`)
@@ -1001,6 +1023,8 @@ function library(plan: Plan): void {
       plan.step(freeKill(true)).step(cleanUp());
     }
   } else if (
+    // Not over a fight that is already free: that swap saves no turn.
+    !freeMonster(foe) &&
     freeMonster(get("lastCopyableMonster") ?? $monster.none) &&
     get("_backUpUses") < 11 &&
     haveEquipped($item`backup camera`)
