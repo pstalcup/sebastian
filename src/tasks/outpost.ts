@@ -43,7 +43,7 @@ import {
   summon,
 } from "../lib/resources";
 import { haveItem, highShiny, inAftercore, inSeaPath, lowShiny } from "../lib/state";
-import { abyssRecallGear, prayerbeadGear } from "../phases/shared";
+import { abyssRecallGear, prayerbeadGear } from "./zones";
 import { monkeesStep } from "./monkees";
 
 // From the golem recall through the Old Guy. Ported from golemRecall(),
@@ -140,8 +140,6 @@ function outpostGear(): Gear {
   if ((gear.familiar ?? myFamiliar()) !== sword) gear.need($item`Monodent of the Sea`);
   return lockkey ? gear.delay() : gear.freeKill();
 }
-
-let prayerbeadPullTried = false;
 
 export const OutpostQuest: UtsQuest = {
   name: "Outpost",
@@ -249,13 +247,11 @@ export const OutpostQuest: UtsQuest = {
       name: "Pull a prayerbead",
       ready: () => pullsRemaining() > 0,
       completed: () =>
-        prayerbeadPullTried ||
-        availableAmount($item`Mer-kin prayerbeads`) >= 3 ||
-        pulledToday($item`Mer-kin prayerbeads`),
+        availableAmount($item`Mer-kin prayerbeads`) >= 3 || pulledToday($item`Mer-kin prayerbeads`),
       do: () => {
-        prayerbeadPullTried = true;
         pullSequence($item`Mer-kin prayerbeads`);
       },
+      limit: { skip: 1 },
     },
     {
       // Short on noncombat forcers, so get prayerbeads now while -combat is up.

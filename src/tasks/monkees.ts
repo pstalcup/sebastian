@@ -69,7 +69,6 @@ const skeletonRoute = () =>
   have(sword) &&
   availableAmount($item`Archaeologist's Spade`) > 0;
 
-let swordLassoTried = false;
 let forcingFitzsimmons = false;
 
 /** Sword of S Words, for runs that can't lasso-train in the shadow rift. */
@@ -82,17 +81,17 @@ export const LassoQuest: UtsQuest = {
         have(sword) &&
         countSummons() >= 3 &&
         (highShiny() || !haveItem($item`closed-circuit pay phone`)),
-      completed: () => swordLassoTried || toFloat(getProperty("swordOfSWordsMonster")) >= 10,
+      completed: () => toFloat(getProperty("swordOfSWordsMonster")) >= 10,
       outfit: () => new Gear("item drop").fam(sword).baseball().freeKill().outfit(),
       prepare: () => {
         mood("itdrop");
         cliExecute("recover hp");
       },
       do: () => {
-        swordLassoTried = true;
         summon($monster`sea cowboy`);
       },
       postAdventure: true,
+      limit: { skip: 1 },
     },
   ],
 };

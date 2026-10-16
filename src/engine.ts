@@ -18,6 +18,37 @@ export type UtsTask = Task & {
 
 export type UtsQuest = Quest<UtsTask>;
 
+/**
+ * How a task acts, without when: the outfit, setup and turn. Several tasks
+ * farm the same zone the same way under different conditions, so they share
+ * a body and differ only in ready() and completed().
+ */
+export type TaskBody = Pick<UtsTask, "before" | "outfit" | "prepare" | "do" | "post" | "choices">;
+
+function resolve<T>(value: T | (() => T)): T {
+  return typeof value === "function" ? (value as () => T)() : value;
+}
+
+/**
+ * One of two bodies, picked in before() and kept for the rest of the
+ * execution, so a turn that changes the condition can't switch bodies
+ * between the outfit and the post.
+ */
+export function branch(pick: () => boolean, yes: TaskBody, no: TaskBody): TaskBody {
+  let body = no;
+  return {
+    before: () => {
+      body = pick() ? yes : no;
+      body.before?.();
+    },
+    outfit: () => resolve(body.outfit) ?? {},
+    choices: () => resolve(body.choices) ?? {},
+    prepare: () => body.prepare?.(),
+    do: () => (body.do instanceof Location ? body.do : body.do()),
+    post: () => body.post?.(),
+  };
+}
+
 /** The CCS the run fights with. It consults the combat script. */
 export const UTS_CCS = "uts_grimoire";
 /** The bundled combat consult script, built from src/combat.ts. */

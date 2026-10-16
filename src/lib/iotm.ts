@@ -36,7 +36,6 @@ import {
   toSlot,
   turnsUntilForcedNoncombat,
   use,
-  useFamiliar,
   useSkill,
   visitUrl,
   weightAdjustment,
@@ -384,19 +383,12 @@ export function professorReady(): boolean {
   );
 }
 
-/** Put the Professor out where lecture copies are the cheapest drop source. */
-export function professorFamiliar(): void {
-  if (!professorReady()) return;
-  const professor = $familiar`Pocket Professor`;
-  if (diverHuntActive()) {
-    if (!diverForceReady()) useFamiliar(professor);
-    return;
-  }
-  if (seaCowNeeded() && forcesAfterHealer() <= 0) {
-    useFamiliar(professor);
-    return;
-  }
-  if (!haveFamiliar($familiar`Chest Mimic`)) useFamiliar(professor);
+/** Whether the Professor goes out, where lecture copies are the cheapest drop source. */
+export function lectureNow(): boolean {
+  if (!professorReady()) return false;
+  if (diverHuntActive()) return !diverForceReady();
+  if (seaCowNeeded() && forcesAfterHealer() <= 0) return true;
+  return !haveFamiliar($familiar`Chest Mimic`);
 }
 
 // ─── BANISHES ─────────────────────────────────────────────────────────────────
