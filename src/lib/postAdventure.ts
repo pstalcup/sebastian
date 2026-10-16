@@ -29,9 +29,7 @@ import {
   restoreMp,
   retrieveItem,
   reverseNumberology,
-  setProperty,
   spleenLimit,
-  toInt,
   totalTurnsPlayed,
   use,
   useSkill,
@@ -145,7 +143,7 @@ function stillWanted(item: Item): boolean {
       return seaCowNeeded();
     case $item`Mer-kin cheatsheet`:
       // One is spent per wordquiz, and each quiz is ten of the ninety wanted.
-      return itemAmount(item) * 10 < 90 - toInt(get("merkinVocabularyMastery"));
+      return itemAmount(item) * 10 < 90 - get("merkinVocabularyMastery");
     case $item`Mer-kin prayerbeads`:
       return !have(item, 3);
     case $item`Mer-kin bunwig`:
@@ -157,7 +155,7 @@ function stillWanted(item: Item): boolean {
 function durableWhistleReady(): boolean {
   return (
     itemAmount($item`durable dolphin whistle`) > 0 &&
-    toInt(get("_durableDolphinWhistleUsed")) < toInt(get("seaPoints"))
+    get("_durableDolphinWhistleUsed") < get("seaPoints")
   );
 }
 
@@ -309,7 +307,7 @@ function copiedMonsterFollowUps(): void {
   // VHS tape monster, eight turns after it was recorded.
   if (
     get("spookyVHSTapeMonster") !== null &&
-    totalTurnsPlayed() >= toInt(get("spookyVHSTapeMonsterTurn")) + 8
+    totalTurnsPlayed() >= get("spookyVHSTapeMonsterTurn") + 8
   ) {
     copyFightFamiliar(new Gear(`${pearlRes()},sea`, pearlZone))
       .ifEquip($item`legendary seal-clubbing club`)
@@ -321,7 +319,7 @@ function copiedMonsterFollowUps(): void {
   }
 
   // VHS tape recording window, in the Caliginous Abyss.
-  const momProgress = toInt(get("momSeaMonkeeProgress"));
+  const momProgress = get("momSeaMonkeeProgress");
   if (
     itemAmount($item`Spooky VHS Tape`) > 0 &&
     get("spookyVHSTapeMonster") === null &&
@@ -367,14 +365,14 @@ export function postAdventure(): void {
       if (haveSkill($skill`Tongue of the Walrus`)) useSkill($skill`Tongue of the Walrus`);
       else cliExecute("campground rest");
     }
-    setProperty("_lastCombatLost", "false");
+    set("_lastCombatLost", false);
     abort("It appears you lost the last combat, look into that");
   }
   if (have($effect`Really Quite Poisoned`)) uneffect($effect`Really Quite Poisoned`);
   if (have($effect`Marked by the Don`) && haveSkill($skill`Disco Nap`)) {
     useSkill($skill`Disco Nap`);
   }
-  if (get("NCtoC") === "true") setProperty("NCtoC", "false");
+  if (get("NCtoC", false)) set("NCtoC", false);
 
   if (!get("isMerkinHighPriest") && get("seahorseName") !== "") {
     dreadSeedCheck();

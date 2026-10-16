@@ -91,9 +91,3 @@ export function useRole(role: FamiliarRole): void {
   if (familiar) useFamiliar(familiar);
   if (role === "itdrop") mummery();
 }
-
-/** use_familiar(familiar): switch if owned, and say whether it worked. */
-export function useFam(familiar: Familiar): boolean {
-  if (!haveFamiliar(familiar)) return false;
-  return useFamiliar(familiar);
-}

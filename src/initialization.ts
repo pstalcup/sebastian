@@ -22,7 +22,6 @@ import {
   print,
   retrieveItem,
   runChoice,
-  setProperty,
   storageAmount,
   takeStorage,
   use,
@@ -152,7 +151,6 @@ function dailies(): void {
   // One free saber upgrade a day: the familiar weight chip.
   if (haveItem($item`Fourth of May Cosplay Saber`) && get("_saberMod") === 0) {
     step("initialization: saber daily upgrade (choice 1386)");
-    setProperty("choiceAdventure1386", "4");
     visitUrl("main.php?action=may4");
     // mafia may already have answered it; only answer a choice still open.
     if (handlingChoice() && lastChoice() === 1386) {

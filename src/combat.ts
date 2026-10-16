@@ -27,7 +27,6 @@ import {
   myPath,
   myPrimestat,
   print,
-  setProperty,
   Skill,
   visitUrl,
 } from "kolmafia";
@@ -49,6 +48,7 @@ import {
   get,
   Macro,
   StompingBoots,
+  set,
 } from "libram";
 
 import { swordOfSWords } from "./lib/familiar";
@@ -222,7 +222,7 @@ function freeRun(banish: boolean): Macro {
 }
 
 function bczGazeReady(): boolean {
-  if (get("NCtoC") === "true") return false;
+  if (get("NCtoC", false)) return false;
   return (
     myBasestat($stat`submysticality`) - 40000 >
     BloodCubicZirconia.skillCost($skill`BCZ: Refracted Gaze`)
@@ -872,7 +872,7 @@ function corral(plan: Plan): void {
     if (
       haveEquipped($item`legendary seal-clubbing club`) &&
       get("_clubEmBattlefieldUsed") < 5 &&
-      get("NCtoC") !== "true"
+      !get("NCtoC", false)
     ) {
       plan.trySkill(clubBattlefield);
     }
@@ -936,7 +936,7 @@ function abyss(plan: Plan): void {
 function school(plan: Plan): void {
   const club =
     haveEquipped($item`legendary seal-clubbing club`) && get("_clubEmBattlefieldUsed") < 5;
-  const forced = get("NCtoC") === "true";
+  const forced = get("NCtoC", false);
   if (freeMonster(foe)) {
     if (!forced) plan.trySkill(gaze);
     if (club && !forced) plan.trySkill(clubBattlefield);
@@ -1034,7 +1034,7 @@ function colosseum(plan: Plan): void {
   if (foe.boss && haveSkill($skill`Saucegeyser`)) {
     // championCheck() reads _sebChampionRanEst to stop a rerun before the turn.
     if (geyserLowRoll() < monsterHp()) {
-      setProperty("_sebChampionRanEst", `${geyserLowRoll()}`);
+      set("_sebChampionRanEst", geyserLowRoll());
       let why =
         `SEB: ${foe} has ${monsterHp()} HP and one Saucegeyser is estimated at ` +
         `${geyserLowRoll()}. Raise Mysticality or spell damage, or fight it by hand, then rerun.`;
@@ -1044,7 +1044,7 @@ function colosseum(plan: Plan): void {
       abort(why);
     }
     // Recorded before the cast: a kill ends the fight and the run moves on.
-    setProperty("_sebChampionRanEst", `${geyserLowRoll()}`);
+    set("_sebChampionRanEst", geyserLowRoll());
     plan.skill($skill`Saucegeyser`);
   } else {
     plan.step(freeKill(false));
@@ -1191,7 +1191,7 @@ function noteScreechReady(page: string): string {
   const stop = page.indexOf("</select>", start);
   if (stop < 0) return "";
   const ready = page.slice(start, stop).includes('value="7451"') ? "true" : "false";
-  setProperty("_sebScreechReady", ready);
+  set("_sebScreechReady", ready);
   return ready;
 }
 
@@ -1201,11 +1201,11 @@ function screechReaim(page: string, plan: Plan): void {
   // the caller no cast was attempted.
   const orc = foe.phylum === $phylum`orc`;
   if (get("_sebScreechFired") === "" && orc && noteScreechReady(page) === "false") {
-    setProperty("_sebScreechFired", "unready");
+    set("_sebScreechFired", "unready");
   } else if (get("_sebScreechFired") === "" && orc) {
     const result = Macro.skill(screech).submit();
     // The line mafia itself reads to register the banish.
-    setProperty(
+    set(
       "_sebScreechFired",
       result.includes("releases an ear shattering screech") ? "true" : "false",
     );

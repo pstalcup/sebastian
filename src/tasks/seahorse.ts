@@ -25,10 +25,8 @@ import {
   retrieveItem,
   runChoice,
   runCombat,
-  setProperty,
   storageAmount,
   takeStorage,
-  toInt,
   toSlot,
   totalTurnsPlayed,
   use,
@@ -56,6 +54,7 @@ import {
   PeridotOfPeril,
   questStep,
   Snapper,
+  set,
 } from "libram";
 
 import { branch, TaskBody, SebQuest, SebTask } from "../engine";
@@ -123,7 +122,7 @@ const sword = swordOfSWords;
 
 const helmetOn = () => toSlot(divingHelmet()) === $slot`hat`;
 export const tamed = () => get("seahorseName") !== "";
-const momProgress = () => toInt(get("momSeaMonkeeProgress"));
+const momProgress = () => get("momSeaMonkeeProgress");
 
 // ─── THE ROUTE ────────────────────────────────────────────────────────────────
 
@@ -158,7 +157,7 @@ function route(): Leg[] {
     } else {
       value = `corral:collect,diver:direct,abyss:${momNCyber() ? "cyberrealm" : "cheap"}`;
     }
-    setProperty("_sebSeahorseRoute", value);
+    set("_sebSeahorseRoute", value);
   }
   return value.split(",") as Leg[];
 }
@@ -291,7 +290,7 @@ function wreckTurn(): TaskBody {
       const habitat = get("_monsterHabitatsMonster");
       if (
         (habitat === $monster`eye in the darkness` || habitat === $monster`slithering thing`) &&
-        toInt(get("_monsterHabitatsFightsLeft")) > 0
+        get("_monsterHabitatsFightsLeft") > 0
       ) {
         gear.need($item`shark jumper`, $item`scale-mail underwear`);
       }
@@ -319,11 +318,7 @@ function wreckTurn(): TaskBody {
     },
     do: wreck,
   };
-  const body = branch(
-    () => totalTurnsPlayed() >= toInt(get("_lastFitzsimmonsHatch")) + 20,
-    hatch,
-    hunt,
-  );
+  const body = branch(() => totalTurnsPlayed() >= get("_lastFitzsimmonsHatch") + 20, hatch, hunt);
   return {
     ...body,
     before: () => {
@@ -481,14 +476,14 @@ const abyssTasks: SebTask[] = [
   {
     name: "Abyss: recall the habitat",
     ready: () =>
-      cyberLeg() && haveSkill($skill`Just the Facts`) && toInt(get("_monsterHabitatsRecalled")) < 3,
+      cyberLeg() && haveSkill($skill`Just the Facts`) && get("_monsterHabitatsRecalled") < 3,
     completed: abyssHabitat,
     ...recallCaliginous(),
   },
   {
     name: "Abyss: cyberzone",
     ready: () =>
-      cyberLeg() && toInt(get("_monsterHabitatsFightsLeft")) > 0 && get("_cyberFreeFights") < 10,
+      cyberLeg() && get("_monsterHabitatsFightsLeft") > 0 && get("_cyberFreeFights") < 10,
     completed: () => momProgress() >= 40,
     outfit: () =>
       new Gear("moxie", $location`Cyberzone 1`)
@@ -1042,7 +1037,7 @@ export const PostSeahorseQuest: SebQuest = {
           Abort: true,
         });
         if (boss === "Abort" || boss === "") abort();
-        setProperty("_sebAftercoreBoss", boss);
+        set("_sebAftercoreBoss", boss);
       }),
       limit: { tries: 1 },
     },

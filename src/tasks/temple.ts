@@ -20,7 +20,6 @@ import {
   pullsRemaining,
   refreshStatus,
   retrieveItem,
-  setProperty,
   takeCloset,
   toInt,
   turnsPlayed,
@@ -101,7 +100,7 @@ const leftDoor = $location`Mer-kin Temple (Left Door)`;
 const center = $location`Mer-kin Temple (Center Door)`;
 const colosseum = $location`Mer-kin Colosseum`;
 const scroll = (n: number) => get(`dreadScroll${n}`, 0);
-const vocabulary = () => toInt(get("merkinVocabularyMastery"));
+const vocabulary = () => get("merkinVocabularyMastery");
 const highPriest = () => get("isMerkinHighPriest");
 const beads = () => availableAmount($item`Mer-kin prayerbeads`);
 
@@ -176,7 +175,7 @@ function schoolRoute(): "vocabulary" | "lounge" {
   let value = get("_sebSchoolRoute");
   if (value === "") {
     value = !isKBandSushiEnough() || inAftercore() ? "vocabulary" : "lounge";
-    setProperty("_sebSchoolRoute", value);
+    set("_sebSchoolRoute", value);
   }
   return value as "vocabulary" | "lounge";
 }
@@ -564,7 +563,7 @@ const priestTasks: SebTask[] = [
   {
     name: "Sushi for a god run",
     ready: () =>
-      priestReady() && turnsPlayed() <= 17 && get("seb_godRunGuard") === "true" && scroll(7) === 0,
+      priestReady() && turnsPlayed() <= 17 && get("seb_godRunGuard", false) && scroll(7) === 0,
     completed: () => scroll(7) !== 0,
     ...action(() => {
       if (itemAmount($item`Mer-kin worktea`) === 0) {
@@ -836,7 +835,7 @@ export const AfterYogUrtQuest: SebQuest = {
  * or no higher than one that already failed today.
  */
 function championCheck(): void {
-  const won = toInt(get("lastColosseumRoundWon"));
+  const won = get("lastColosseumRoundWon");
   if (won < 12 || won > 14 || !haveSkill($skill`Saucegeyser`) || get("isMerkinGladiatorChampion")) {
     return;
   }
@@ -853,7 +852,7 @@ function championCheck(): void {
       `${geyserLowRoll()} here. Raise Mysticality or spell damage, or fight them by hand, then rerun.`;
   }
   if (why === "") {
-    setProperty("_sebChampionRanEst", "");
+    set("_sebChampionRanEst", "");
     return;
   }
   print(why, "red");
@@ -863,7 +862,7 @@ function championCheck(): void {
 const gladiatorGear = () =>
   availableAmount($item`Mer-kin gladiator mask`) > 0 &&
   availableAmount($item`Mer-kin gladiator tailpiece`) > 0;
-const roundsWon = () => toInt(get("lastColosseumRoundWon"));
+const roundsWon = () => get("lastColosseumRoundWon");
 const shubWanted = () => inSeaPath() || (inAftercore() && aftercoreBoss() === "Shub");
 
 export const ShubQuest: SebQuest = {
@@ -963,8 +962,8 @@ export const ShubQuest: SebQuest = {
       do: colosseum,
       post: () => {
         if (get("lastEncounter") === "Been There, Won That") {
-          setProperty("lastColosseumRoundWon", "15");
-          setProperty("isMerkinGladiatorChampion", "true");
+          set("lastColosseumRoundWon", 15);
+          set("isMerkinGladiatorChampion", true);
         }
       },
       limit: { tries: 30 },
@@ -997,9 +996,9 @@ export const ShubQuest: SebQuest = {
           .bathysphere($item`toy Cupid bow`)
           .outfit(),
       prepare: () => {
-        setProperty("hpAutoRecoveryTarget", "1");
-        setProperty("mpAutoRecovery", "-0.05");
-        setProperty("mpAutoRecoveryTarget", "-0.05");
+        set("hpAutoRecoveryTarget", 1);
+        set("mpAutoRecovery", -0.05);
+        set("mpAutoRecoveryTarget", -0.05);
         while (myHp() < myMaxhp()) useSkill($skill`Cannelloni Cocoon`);
         cliExecute("recover hp; cast * empathy");
       },
@@ -1059,7 +1058,7 @@ export const FinalBossQuest: SebQuest = {
             $item`little bitty bathysphere`,
           )
           .outfit(),
-      prepare: () => setProperty("mpAutoRecoveryTarget", "1"),
+      prepare: () => set("mpAutoRecoveryTarget", 1),
       do: () => {
         set("_sebDadFought", true);
         return center;

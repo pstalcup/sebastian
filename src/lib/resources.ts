@@ -19,7 +19,6 @@ import {
   runChoice,
   runCombat,
   storageAmount,
-  toInt,
   totalFreeRests,
   use,
   useFamiliar,
@@ -83,7 +82,7 @@ export function garbageTote(): void {
   if (haveItem($item`broken champagne bottle`)) return;
   if (get("garbageChampagneCharge") <= 0) return;
   step("Garbage tote: fetching the broken champagne bottle");
-  visitUrl(`inv_use.php?whichitem=${toInt($item`January's Garbage Tote`)}&pwd=${myHash()}`);
+  visitUrl(`inv_use.php?whichitem=${$item`January's Garbage Tote`.id}&pwd=${myHash()}`);
   // mafia may already have answered it; only answer a live choice.
   if (!handlingChoice()) {
     step("Tote choice was auto-resolved or never opened; skipping");

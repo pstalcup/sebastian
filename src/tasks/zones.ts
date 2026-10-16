@@ -96,7 +96,7 @@ export const pawWishReady = () => CursedMonkeyPaw.have() && CursedMonkeyPaw.wish
 /** A wish for the item, or a turn in the corral towards it. */
 export function monkeypaw(item: Item): TaskBody {
   return branch(
-    () => CursedMonkeyPaw.have() && CursedMonkeyPaw.wishes() > 0,
+    pawWishReady,
     action(() => CursedMonkeyPaw.wishFor(item)),
     corralFarm(),
   );
