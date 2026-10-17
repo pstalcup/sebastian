@@ -3306,8 +3306,10 @@ function gymnasium(plan) {
 function colosseum(plan) {
   if (foe.boss && kolmafia.haveSkill($skill(_templateObject257 || (_templateObject257 = _taggedTemplateLiteral(["Saucegeyser"]))))) {
     // championCheck() reads _sebChampionRanEst to stop a rerun before the turn.
+    // The round count lets it tell a cast that killed from one that didn't.
+    var ranEst = "".concat(geyserLowRoll(), ":").concat(get("lastColosseumRoundWon"));
     if (geyserLowRoll() < kolmafia.monsterHp()) {
-      _set("_sebChampionRanEst", geyserLowRoll());
+      _set("_sebChampionRanEst", ranEst);
       var why = "SEB: ".concat(foe, " has ").concat(kolmafia.monsterHp(), " HP and one Saucegeyser is estimated at ") + "".concat(geyserLowRoll(), ". Raise Mysticality or spell damage, or fight it by hand, then rerun.");
       freeRunAny(false).runaway().submit();
       if (kolmafia.currentRound() > 0) why += " The fight is still in progress: finish it by hand.";
@@ -3315,7 +3317,7 @@ function colosseum(plan) {
       stop(why);
     }
     // Recorded before the cast: a kill ends the fight and the run moves on.
-    _set("_sebChampionRanEst", geyserLowRoll());
+    _set("_sebChampionRanEst", ranEst);
     plan.skill($skill(_templateObject258 || (_templateObject258 = _taggedTemplateLiteral(["Saucegeyser"]))));
   } else {
     plan.step(freeKill(false));

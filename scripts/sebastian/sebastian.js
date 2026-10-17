@@ -16091,9 +16091,15 @@ function championCheck() {
     return;
   }
   var weakest = kolmafia.monsterHp($monster(_templateObject142 || (_templateObject142 = _taggedTemplateLiteral(["Georgepaul, the Balldodger"]))));
-  var ranEst = get$1("_sebChampionRanEst");
+  // "estimate:roundsWon", written by the combat script before each champion cast.
+  // A round won since then means that cast killed, so it isn't a failure.
+  var _get$split = get$1("_sebChampionRanEst", "").split(":"),
+    _get$split2 = _slicedToArray(_get$split, 2),
+    ranEst = _get$split2[0],
+    wonThen = _get$split2[1];
+  var failed = ranEst !== "" && won <= kolmafia.toInt(wonThen ?? "0");
   var why = "";
-  if (ranEst !== "" && geyserLowRoll() <= kolmafia.toInt(ranEst)) {
+  if (failed && geyserLowRoll() <= kolmafia.toInt(ranEst)) {
     why = "SEB: one Saucegeyser estimated at ".concat(ranEst, " failed to kill a Colosseum champion today, ") + "and the estimate here is ".concat(geyserLowRoll(), ". Raise Mysticality or spell damage past that, or fight it by hand, then rerun.");
   } else if (geyserLowRoll() < weakest) {
     why = "SEB: the Colosseum champions (".concat(weakest, " HP and up) must die to one Saucegeyser, estimated at ") + "".concat(geyserLowRoll(), " here. Raise Mysticality or spell damage, or fight them by hand, then rerun.");
