@@ -11158,9 +11158,18 @@ function inAftercore() {
   return kolmafia.myPath().id === 0;
 }
 
-/** Progress tracker, printed with a "SEB:" prefix as the original did with "UTS:". */
-function step(message) {
-  kolmafia.print("SEB: ".concat(message), "blue");
+/** Whether the seb_debug preference asks for the run's routine narration. */
+function debugMode() {
+  return get$1("seb_debug", false);
+}
+
+/**
+ * Routine narration (what the run is about to do, what it measured), with
+ * the "SEB:" prefix the original printed as "UTS:". Silent unless seb_debug
+ * is set: mafia already logs every turn, item and skill the run spends.
+ */
+function debug(message) {
+  if (debugMode()) kolmafia.print("SEB: ".concat(message), "blue");
 }
 
 /** Owned anywhere: inventory, closet, storage, or worn by a familiar. */
@@ -11469,7 +11478,7 @@ function briefcase() {
 function cargoPocket() {
   if (",".concat(get$1("cargoPocketsEmptied"), ",").includes(",494,")) return;
   if (!haveItem($item(_templateObject5$e || (_templateObject5$e = _taggedTemplateLiteral(["Cargo Cultist Shorts"]))))) return;
-  step("Cargo shorts: opening pocket 494");
+  debug("Cargo shorts: opening pocket 494");
   kolmafia.cliExecute("cargo pocket 494");
 }
 
@@ -11478,11 +11487,11 @@ function garbageTote() {
   if (!haveItem($item(_templateObject6$e || (_templateObject6$e = _taggedTemplateLiteral(["January's Garbage Tote"]))))) return;
   if (haveItem($item(_templateObject7$e || (_templateObject7$e = _taggedTemplateLiteral(["broken champagne bottle"]))))) return;
   if (get$1("garbageChampagneCharge") <= 0) return;
-  step("Garbage tote: fetching the broken champagne bottle");
+  debug("Garbage tote: fetching the broken champagne bottle");
   kolmafia.visitUrl("inv_use.php?whichitem=".concat($item(_templateObject8$e || (_templateObject8$e = _taggedTemplateLiteral(["January's Garbage Tote"]))).id, "&pwd=").concat(kolmafia.myHash()));
   // mafia may already have answered it; only answer a live choice.
   if (!kolmafia.handlingChoice()) {
-    step("Tote choice was auto-resolved or never opened; skipping");
+    debug("Tote choice was auto-resolved or never opened; skipping");
     return;
   }
   var options = Object.entries(kolmafia.availableChoiceOptions());
@@ -11511,7 +11520,7 @@ function censer() {
 function pillKeeper(pill) {
   if (!haveItem($item(_templateObject11$e || (_templateObject11$e = _taggedTemplateLiteral(["Eight Days a Week Pill Keeper"]))))) return;
   if (get$1("_freePillKeeperUsed")) return;
-  step("Pill keeper: ".concat(pill));
+  debug("Pill keeper: ".concat(pill));
   kolmafia.cliExecute("pillkeeper ".concat(pill));
 }
 
@@ -11567,7 +11576,7 @@ function mapReady() {
 function mapMonster(location) {
   if (!mapReady()) return;
   if (haveItem($item(_templateObject32$c || (_templateObject32$c = _taggedTemplateLiteral(["Peridot of Peril"])))) && !gotPeriled(location)) return;
-  step("Map the Monsters armed for ".concat(location));
+  debug("Map the Monsters armed for ".concat(location));
   kolmafia.useSkill($skill(_templateObject33$c || (_templateObject33$c = _taggedTemplateLiteral(["Map the Monsters"]))));
 }
 
@@ -11718,7 +11727,7 @@ function codpiece(input) {
     var worn = kolmafia.Slot.all().find(s => !SLOTS.includes(s) && kolmafia.equippedItem(s) === gem);
     if (worn) kolmafia.equip(worn, $item.none);
     if (kolmafia.itemAmount(gem) === 0) return false;
-    kolmafia.print("Inserting ".concat(gem, " into Codpiece"));
+    debug("Inserting ".concat(gem, " into Codpiece"));
     kolmafia.equip(slot, gem);
     return true;
   });
@@ -11855,10 +11864,10 @@ function timeSpinnerReady() {
 /** Re-fight the monster just fought, walking the Time-Spinner's choice chain by hand. */
 function timeSpinnerFight(monster) {
   if (!timeSpinnerReady() || kolmafia.lastMonster() !== monster) return false;
-  step("Time-Spinner: refighting ".concat(monster));
+  debug("Time-Spinner: refighting ".concat(monster));
   kolmafia.visitUrl("inv_use.php?whichitem=".concat($item(_templateObject35$a || (_templateObject35$a = _taggedTemplateLiteral(["Time-Spinner"]))).id, "&pwd=").concat(kolmafia.myHash()));
   if (!kolmafia.handlingChoice()) {
-    step("Time-Spinner choice was auto-resolved or never opened; skipping");
+    debug("Time-Spinner choice was auto-resolved or never opened; skipping");
     return false;
   }
   var options = Object.entries(kolmafia.availableChoiceOptions());
@@ -12436,7 +12445,7 @@ function seedfinder(statement) {
 
 /** Fill in every dreadscroll answer once the clues pin down a single seed. */
 function dreadSeedCheck() {
-  seedfinder("SeedData[int] s = find_seeds(); " + 'if (count(s) == 1) { foreach i, seed in s for x from 1 to 8 if (get_property("dreadScroll" + x) == "0") set_property("dreadScroll" + x, seed.dreadscroll[x - 1]); } ' + 'else print(count(s) + " possible seeds right now");');
+  seedfinder("SeedData[int] s = find_seeds(); " + "if (count(s) == 1) { foreach i, seed in s for x from 1 to 8 if (get_property(\"dreadScroll\" + x) == \"0\") set_property(\"dreadScroll\" + x, seed.dreadscroll[x - 1]); } ".concat(debugMode() ? 'else print(count(s) + " possible seeds right now");' : ""));
 }
 
 /**
@@ -12567,7 +12576,7 @@ function dolphinWhistle() {
   var why = blew ? "blew the ".concat(whistle) : whistle !== $item.none ? "the ".concat(whistle, " would not blow") : refused ? "Big Brother would not sell a whistle" : "no whistle, and ".concat(kolmafia.itemAmount($item(_templateObject22$9 || (_templateObject22$9 = _taggedTemplateLiteral(["sand dollar"])))), " sand dollars against ").concat(sandDollarsOwed(), " owed");
   var said = "".concat(stolen, ": ").concat(why);
   if (said !== dolphinSaid) {
-    step("a dolphin took ".concat(stolen, "; ").concat(why, "."));
+    debug("a dolphin took ".concat(stolen, "; ").concat(why, "."));
     dolphinSaid = said;
   }
   // A later theft of the same item is a new event.
@@ -12875,21 +12884,24 @@ var SebEngine = /*#__PURE__*/function (_Engine) {
 
 var _templateObject$a, _templateObject2$a, _templateObject3$a, _templateObject4$a, _templateObject5$a, _templateObject6$a, _templateObject7$a, _templateObject8$a, _templateObject9$a, _templateObject0$a, _templateObject1$a, _templateObject10$a, _templateObject11$a, _templateObject12$a, _templateObject13$9, _templateObject14$9, _templateObject15$9, _templateObject16$9, _templateObject17$9, _templateObject18$9, _templateObject19$9, _templateObject20$8, _templateObject21$8, _templateObject22$8, _templateObject23$8, _templateObject24$8, _templateObject25$8, _templateObject26$8, _templateObject27$8, _templateObject28$8, _templateObject29$8, _templateObject30$8, _templateObject31$8, _templateObject32$8, _templateObject33$8, _templateObject34$7, _templateObject35$7, _templateObject36$7, _templateObject37$7, _templateObject38$7, _templateObject39$7, _templateObject40$7, _templateObject41$7, _templateObject42$6, _templateObject43$6, _templateObject44$6, _templateObject45$6, _templateObject46$6, _templateObject47$6, _templateObject48$6, _templateObject49$6, _templateObject50$5, _templateObject51$5, _templateObject52$5, _templateObject53$5, _templateObject54$4, _templateObject55$3;
 
-// Run-start checklists, also printed by "sebastian sim". Ported from
-// iotmChecklist(), skillChecklist() and pullChecklist() in UnderTheSeaGlobals.ash.
-// Purely informational: every use in the run is ownership-guarded anyway.
+// Run-start checklists, printed in full by "sebastian sim" or with seb_debug
+// set. Ported from iotmChecklist(), skillChecklist() and pullChecklist() in
+// UnderTheSeaGlobals.ash. Purely informational: every use in the run is
+// ownership-guarded anyway. Without full, a run prints one line per list, plus
+// only the lines the player has to act on.
 
-function tick(have, label) {
-  kolmafia.print("".concat(have ? "✓" : "✗", " ").concat(label), have ? "blue" : "red");
-  return have;
-}
 function iotmChecklist() {
+  var full = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
+  var tick = (have, label) => {
+    if (full) kolmafia.print("".concat(have ? "✓" : "✗", " ").concat(label), have ? "blue" : "red");
+    return have;
+  };
   var items = $items(_templateObject$a || (_templateObject$a = _taggedTemplateLiteral(["Monodent of the Sea, The Eternity Codpiece, closed-circuit pay phone, 2002 Mr. Store Catalog, cursed monkey's paw, august scepter, Fourth of May Cosplay Saber, Peridot of Peril, blood cubic zirconia, Baseball Diamond, Heartstone, backup camera, Jurassic Parka, spring shoes, Everfull Dart Holster, Mayam Calendar, Leprecondo, Cincho de Mayo, McHugeLarge duffel bag, Apriling band helmet, April Shower Thoughts shield, bat wings, server room key, Time-Spinner, January's Garbage Tote, Powerful Glove, combat lover's locket, Lil' Doctor\u2122 bag, mumming trunk, Kremlin's Greatest Briefcase, Cargo Cultist Shorts, Eight Days a Week Pill Keeper, Sept-Ember Censer, vampyric cloake, unwrapped knock-off retro superhero cape, Roman Candelabra, miniature crystal ball, latte lovers member's mug, V for Vivala mask, designer sweatpants, tearaway pants, autumn-aton, cosmic bowling ball, Clan VIP Lounge key"])));
   // The passive, not its combat skills: mafia only learns those from a fight page.
   var skills = $skills(_templateObject2$a || (_templateObject2$a = _taggedTemplateLiteral(["Just the Facts, Map the Monsters, Meteor Lore, Feel Nostalgic"])));
   // eslint-disable-next-line libram/verify-constants -- Sword of S Words is newer than its data
   var familiars = $familiars(_templateObject3$a || (_templateObject3$a = _taggedTemplateLiteral(["Grouper Groupie, Red-Nosed Snapper, Jill-of-All-Trades, Chest Mimic, Patriotic Eagle, Sword of S Words, Peace Turkey, Disgeist, Jumpsuited Hound Dog, Glover, Foul Ball, Space Jellyfish, Pocket Professor, Tiny Plastic Santa Claus Skeleton"])));
-  kolmafia.print("IOTM check — supported IOTMs:");
+  if (full) kolmafia.print("IOTM check — supported IOTMs:");
   var results = [].concat(_toConsumableArray(items.map(item => tick(haveItem(item), "".concat(item)))), _toConsumableArray(skills.map(skill => tick(kolmafia.haveSkill(skill), "".concat(skill)))), _toConsumableArray(familiars.map(familiar => tick(kolmafia.haveFamiliar(familiar), "".concat(familiar)))), [tick(kolmafia.getWorkshed() !== $item.none || $items(_templateObject4$a || (_templateObject4$a = _taggedTemplateLiteral(["Asdon Martin keyfob (on ring), model train set, portable Mayo Clinic, TakerSpace letter of Marque"]))).some(item => haveItem(item)), "a workshed"), tick(!!kolmafia.getCampground()[$item(_templateObject5$a || (_templateObject5$a = _taggedTemplateLiteral(["Source terminal"]))).name], "Source Terminal")]);
   var owned = results.filter(r => r).length;
   kolmafia.print("IOTM check: ".concat(owned, " of ").concat(results.length, " supported IOTMs owned."));
@@ -12911,10 +12923,12 @@ var ROUTE_SKILLS = [[$skill(_templateObject6$a || (_templateObject6$a = _taggedT
  * owned but unpermed skill is flagged. The permed list is empty until a
  * charsheet parse fills it, and then nothing is flagged.
  */
-function printSkillTier(tier, label) {
+function printSkillTier(tier, label, full) {
+  // Short of the full list, only a missing required skill needs the player.
+  if (!full && tier !== 2) return;
   var permed = kolmafia.getPermedSkills();
   var anyPermed = Object.keys(permed).length > 0;
-  kolmafia.print("Skill check \u2014 ".concat(label, ":"));
+  if (full) kolmafia.print("Skill check \u2014 ".concat(label, ":"));
   var _iterator = _createForOfIteratorHelper(ROUTE_SKILLS),
     _step;
   try {
@@ -12924,7 +12938,7 @@ function printSkillTier(tier, label) {
         skillTier = _step$value[1],
         why = _step$value[2];
       if (skillTier !== tier) continue;
-      if (!kolmafia.haveSkill(skill)) kolmafia.print("\u2717 ".concat(skill, " \u2014 ").concat(why), "red");else if (anyPermed && !permed[skill.name]) kolmafia.print("\u2713 ".concat(skill, " (not permed) \u2014 ").concat(why), "blue");else kolmafia.print("\u2713 ".concat(skill, " \u2014 ").concat(why), "blue");
+      if (!kolmafia.haveSkill(skill)) kolmafia.print("\u2717 ".concat(skill, " \u2014 ").concat(why), "red");else if (!full) continue;else if (anyPermed && !permed[skill.name]) kolmafia.print("\u2713 ".concat(skill, " (not permed) \u2014 ").concat(why), "blue");else kolmafia.print("\u2713 ".concat(skill, " \u2014 ").concat(why), "blue");
     }
   } catch (err) {
     _iterator.e(err);
@@ -12933,6 +12947,7 @@ function printSkillTier(tier, label) {
   }
 }
 function skillChecklist() {
+  var full = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
   var owned = ROUTE_SKILLS.filter(_ref => {
     var _ref2 = _slicedToArray(_ref, 1),
       skill = _ref2[0];
@@ -12944,17 +12959,20 @@ function skillChecklist() {
       tier = _ref4[1];
     return tier === 2 && !kolmafia.haveSkill(skill);
   }).length;
-  printSkillTier(2, "required");
-  printSkillTier(1, "big turn savers");
-  printSkillTier(0, "optional");
+  printSkillTier(2, "required", full);
+  printSkillTier(1, "big turn savers", full);
+  printSkillTier(0, "optional", full);
   var missing = missingRequired > 0 ? ", ".concat(missingRequired, " REQUIRED missing") : "";
   kolmafia.print("Skill check: ".concat(owned, " of ").concat(ROUTE_SKILLS.length, " permable skills owned").concat(missing, "."));
 }
 function pullChecklist() {
+  var full = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
   var pulls = $items(_templateObject52$5 || (_templateObject52$5 = _taggedTemplateLiteral(["Mer-kin sneakmask, sea lasso, shark jumper, scale-mail underwear, Congressional Medal of Insanity, Flash Liquidizer Ultra Dousing Accessory, Mer-kin digpick, lodestone, comb jelly, Elf Guard SCUBA tank, rusty rivet, sea cowbell, Mer-kin prayerbeads, Mer-kin healscroll, Mer-kin killscroll, Mer-kin worktea, Mer-kin knucklebone, Mer-kin cheatsheet, Mer-kin hallpass, Mer-kin hidepaint, pro skateboard, software glitch, pulled yellow taffy, stuffed yam stinkbomb, waffle, skate blade, null-day exploit, New Age healing crystal, soggy used band-aid, damp old wallet, fish sauce, Aldebaran sardines, pie man was not meant to eat, handheld Allied radio, Clara's bell, stench jelly, peppermint parasol, ink bladder, Mer-kin pinkslip, Louder Than Bomb, anchor bomb"])));
   var inventory = kolmafia.getInventory();
   var catalogMakes = $items(_templateObject53$5 || (_templateObject53$5 = _taggedTemplateLiteral(["pro skateboard, software glitch"])));
-  kolmafia.print("Pull check — Hagnk's stock:");
+  if (full) kolmafia.print("Pull check — Hagnk's stock:");
+  var stockedCount = 0;
+  var checked = 0;
   var _iterator2 = _createForOfIteratorHelper(pulls),
     _step2;
   try {
@@ -12963,12 +12981,14 @@ function pullChecklist() {
       // Catalog credits make these in-run; only worth stocking without it.
       if (haveItem($item(_templateObject54$4 || (_templateObject54$4 = _taggedTemplateLiteral(["2002 Mr. Store Catalog"])))) && catalogMakes.includes(item)) continue;
       var stocked = kolmafia.storageAmount(item) > 0 || (inventory[item.name] ?? 0) > 0;
+      checked++;
+      if (stocked) stockedCount++;
       if (item === $item(_templateObject55$3 || (_templateObject55$3 = _taggedTemplateLiteral(["Congressional Medal of Insanity"]))) && !stocked) {
         kolmafia.print("\u2717 ".concat(item, " \u2014 Currently not optional, just too expensive to have the script buy on its own"), "red");
       } else if (stocked) {
-        kolmafia.print("\u2713 ".concat(item), "blue");
+        if (full) kolmafia.print("\u2713 ".concat(item), "blue");
       } else if (kolmafia.isTradeable(item)) {
-        kolmafia.print("\u2717 ".concat(item, " \u2014 will be mall-bought if the route needs it"), "red");
+        if (full) kolmafia.print("\u2717 ".concat(item, " \u2014 will be mall-bought if the route needs it"), "red");
       } else {
         kolmafia.print("\u2717 ".concat(item, " \u2014 NOT mall-buyable, acquire before it's needed"), "red");
       }
@@ -12978,6 +12998,7 @@ function pullChecklist() {
   } finally {
     _iterator2.f();
   }
+  kolmafia.print("Pull check: ".concat(stockedCount, " of ").concat(checked, " pulls in stock; the rest are mall-bought as needed."));
 }
 
 var _templateObject$9, _templateObject2$9, _templateObject3$9, _templateObject4$9, _templateObject5$9, _templateObject6$9, _templateObject7$9, _templateObject8$9, _templateObject9$9, _templateObject0$9, _templateObject1$9, _templateObject10$9, _templateObject11$9, _templateObject12$9, _templateObject13$8, _templateObject14$8, _templateObject15$8, _templateObject16$8, _templateObject17$8, _templateObject18$8, _templateObject19$8, _templateObject20$7, _templateObject21$7, _templateObject22$7, _templateObject23$7, _templateObject24$7, _templateObject25$7, _templateObject26$7, _templateObject27$7, _templateObject28$7, _templateObject29$7, _templateObject30$7, _templateObject31$7, _templateObject32$7, _templateObject33$7, _templateObject34$6, _templateObject35$6, _templateObject36$6, _templateObject37$6, _templateObject38$6, _templateObject39$6, _templateObject40$6, _templateObject41$6, _templateObject42$5, _templateObject43$5, _templateObject44$5, _templateObject45$5, _templateObject46$5, _templateObject47$5, _templateObject48$5, _templateObject49$5, _templateObject50$4, _templateObject51$4, _templateObject52$4, _templateObject53$4;
@@ -13019,7 +13040,7 @@ function borrowSheriffProps() {
     }
   }
   if (!sheriffOutfit()) {
-    kolmafia.print("No Sheriff outfit -- either its props are not unlocked, or today's three prop borrows are spent. Skipping the Assert your Authority free kills; the run costs up to three more turns.", "blue");
+    debug("No Sheriff outfit -- either its props are not unlocked, or today's three prop borrows are spent. Skipping the Assert your Authority free kills; the run costs up to three more turns.");
   }
 }
 function dailies() {
@@ -13072,7 +13093,7 @@ function dailies() {
 
   // One free saber upgrade a day: the familiar weight chip.
   if (haveItem($item(_templateObject7$9 || (_templateObject7$9 = _taggedTemplateLiteral(["Fourth of May Cosplay Saber"])))) && get$1("_saberMod") === 0) {
-    step("initialization: saber daily upgrade (choice 1386)");
+    debug("initialization: saber daily upgrade (choice 1386)");
     kolmafia.visitUrl("main.php?action=may4");
     // mafia may already have answered it; only answer a choice still open.
     if (kolmafia.handlingChoice() && kolmafia.lastChoice() === 1386) {
@@ -13097,7 +13118,7 @@ function dailies() {
     kolmafia.useFamiliar(emilio);
     kolmafia.equip($item(_templateObject1$9 || (_templateObject1$9 = _taggedTemplateLiteral(["tiny stillsuit"]))));
   }
-  step("initialization: Mayam rings");
+  debug("initialization: Mayam rings");
   if (have$4() && symbolsUsed().length === 0) {
     if (kolmafia.haveFamiliar($familiar(_templateObject10$9 || (_templateObject10$9 = _taggedTemplateLiteral(["Chest Mimic"]))))) kolmafia.useFamiliar($familiar(_templateObject11$9 || (_templateObject11$9 = _taggedTemplateLiteral(["Chest Mimic"]))));else switchFamiliar(pickFamiliar("itdrop"));
     submit("vessel yam2 cheese explosion");
@@ -13141,7 +13162,7 @@ function dailies() {
       }
     }
   }
-  step("initialization: workshed");
+  debug("initialization: workshed");
   if (!get$1("_workshedItemUsed") && kolmafia.getWorkshed() === $item.none) {
     if (highShiny() && haveItem($item(_templateObject24$7 || (_templateObject24$7 = _taggedTemplateLiteral(["portable Mayo Clinic"]))))) {
       kolmafia.use($item(_templateObject25$7 || (_templateObject25$7 = _taggedTemplateLiteral(["portable Mayo Clinic"]))));
@@ -13159,7 +13180,7 @@ function dailies() {
       make($item(_templateObject33$7 || (_templateObject33$7 = _taggedTemplateLiteral(["anchor bomb"]))));
     }
   }
-  step("initialization: storage pulls");
+  debug("initialization: storage pulls");
   var _iterator6 = _createForOfIteratorHelper($items(_templateObject45$5 || (_templateObject45$5 = _taggedTemplateLiteral(["Mer-kin sneakmask, sea lasso, shark jumper, ten-leaf clover, large box, scale-mail underwear, Congressional Medal of Insanity, Flash Liquidizer Ultra Dousing Accessory"])))),
     _step6;
   try {
@@ -13198,9 +13219,13 @@ function initialization() {
   if (!get$1("autoSatisfyWithNPCs")) {
     throw new Error("set autoSatisfyWithNPCs = true, the script isn't going to work if it's false");
   }
-  iotmChecklist();
-  skillChecklist();
-  if (inSeaPath()) pullChecklist();
+
+  // The full lists are for "sebastian sim" and seb_debug; a run prints only
+  // the counts and what the run can't get on its own.
+  var full = debugMode();
+  iotmChecklist(full);
+  skillChecklist(full);
+  if (inSeaPath()) pullChecklist(full);
   if (questStep("questS01OldGuy") === -1) {
     kolmafia.visitUrl("place.php?whichplace=sea_oldman&action=oldman_oldman");
   }
@@ -13275,7 +13300,7 @@ function mood(mode) {
         }
         sourceEnhance();
         briefcase();
-        kolmafia.print("Item drop is ".concat(kolmafia.numericModifier("Item Drop")));
+        debug("Item drop is ".concat(kolmafia.numericModifier("Item Drop")));
         return;
       }
     case "-combat":
@@ -13298,7 +13323,7 @@ function mood(mode) {
         } finally {
           _iterator2.f();
         }
-        kolmafia.print("Combat rate is ".concat(kolmafia.numericModifier("Combat Rate")));
+        debug("Combat rate is ".concat(kolmafia.numericModifier("Combat Rate")));
         return;
       }
     case "combat":
@@ -13322,7 +13347,7 @@ function mood(mode) {
         } finally {
           _iterator3.f();
         }
-        kolmafia.print("Combat rate is ".concat(kolmafia.numericModifier("Combat Rate")));
+        debug("Combat rate is ".concat(kolmafia.numericModifier("Combat Rate")));
         return;
       }
     case "hotres":
@@ -15560,9 +15585,9 @@ function yogHpCheck() {
     }
   }
   var predictedMus = Math.round(30 * (1 + kolmafia.numericModifier("Muscle Percent") / 100)) + kolmafia.numericModifier("Muscle");
-  kolmafia.print("Predicted Mus ".concat(predictedMus));
+  debug("Predicted Mus ".concat(predictedMus));
   var predictedHP = Math.round((predictedMus + 3) * trueHPPercent()) + kolmafia.numericModifier("Maximum HP");
-  kolmafia.print("predicted HP ".concat(predictedHP));
+  debug("predicted HP ".concat(predictedHP));
   if (predictedHP * 0.9 * 2 <= predictedHP + maxHeal) return true;
   if (kolmafia.haveEffect($effect(_templateObject13 || (_templateObject13 = _taggedTemplateLiteral(["Gummiheart"])))) === 0) return false;
   var antidote = $item(_templateObject14 || (_templateObject14 = _taggedTemplateLiteral(["soft green echo eyedrop antidote"])));

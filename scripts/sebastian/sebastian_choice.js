@@ -700,6 +700,20 @@ createSingleConstant(kolmafia.Stat, kolmafia.toStat);
  */
 createSingleConstant(kolmafia.Thrall, kolmafia.toThrall);
 
+/** Whether the seb_debug preference asks for the run's routine narration. */
+function debugMode() {
+  return get("seb_debug", false);
+}
+
+/**
+ * Routine narration (what the run is about to do, what it measured), with
+ * the "SEB:" prefix the original printed as "UTS:". Silent unless seb_debug
+ * is set: mafia already logs every turn, item and skill the run spends.
+ */
+function debug(message) {
+  if (debugMode()) kolmafia.print("SEB: ".concat(message), "blue");
+}
+
 var _templateObject13;
 function cheatsheetsNeeded() {
   return kolmafia.itemAmount($item(_templateObject13 || (_templateObject13 = _taggedTemplateLiteral(["Mer-kin cheatsheet"])))) < 9 && get("merkinVocabularyMastery") === 0;
@@ -922,7 +936,7 @@ function main(choice, page) {
         var _Object$entries3$_i = _slicedToArray(_Object$entries3[_i8], 2),
           option = _Object$entries3$_i[0],
           text = _Object$entries3$_i[1];
-        kolmafia.print("".concat(option, ": ").concat(text));
+        debug("".concat(option, ": ").concat(text));
       }
       if (!["impress", "better", "targeting", "Butt"].some(perk => pickChoice(perk))) {
         kolmafia.runChoice(1);

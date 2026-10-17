@@ -2295,9 +2295,18 @@ function timesCast(skill) {
 
 var _templateObject$4, _templateObject2$1, _templateObject3$2;
 
-/** Progress tracker, printed with a "SEB:" prefix as the original did with "UTS:". */
-function step(message) {
-  kolmafia.print("SEB: ".concat(message), "blue");
+/** Whether the seb_debug preference asks for the run's routine narration. */
+function debugMode() {
+  return get("seb_debug", false);
+}
+
+/**
+ * Routine narration (what the run is about to do, what it measured), with
+ * the "SEB:" prefix the original printed as "UTS:". Silent unless seb_debug
+ * is set: mafia already logs every turn, item and skill the run spends.
+ */
+function debug(message) {
+  if (debugMode()) kolmafia.print("SEB: ".concat(message), "blue");
 }
 
 /** Owned anywhere: inventory, closet, storage, or worn by a familiar. */
@@ -2731,7 +2740,7 @@ function layMimicEgg() {
 function forceOn(target, ready, why) {
   var first = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : new Macro();
   if (foe !== target || !ready || !kolmafia.haveEquipped(saber)) return new Macro();
-  step("Use the Force planned -> ".concat(why));
+  debug("Use the Force planned -> ".concat(why));
   return Macro.if_(force, first.skill(force));
 }
 
@@ -2771,11 +2780,11 @@ function replaceEnemy() {
   if (kolmafia.myLocation() !== $location(_templateObject62 || (_templateObject62 = _taggedTemplateLiteral(["The Wreck of the Edgar Fitzsimmons"])))) return undefined;
   if (freeMonster(foe) || foe === $monster(_templateObject63 || (_templateObject63 = _taggedTemplateLiteral(["unholy diver"]))) || diverPartsComplete()) return undefined;
   if (macroReady() && kolmafia.haveSkill($skill(_templateObject64 || (_templateObject64 = _taggedTemplateLiteral(["Macrometeorite"]))))) {
-    step("Macrometeorite: re-rolling the monster");
+    debug("Macrometeorite: re-rolling the monster");
     return Macro.skill($skill(_templateObject65 || (_templateObject65 = _taggedTemplateLiteral(["Macrometeorite"]))));
   }
   if (gloveReady() && kolmafia.haveEquipped($item(_templateObject66 || (_templateObject66 = _taggedTemplateLiteral(["Powerful Glove"]))))) {
-    step("CHEAT CODE: re-rolling the monster");
+    debug("CHEAT CODE: re-rolling the monster");
     return Macro.skill($skill(_templateObject67 || (_templateObject67 = _taggedTemplateLiteral(["CHEAT CODE: Replace Enemy"]))));
   }
   return undefined;
