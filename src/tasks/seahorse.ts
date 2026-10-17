@@ -83,6 +83,8 @@ import {
 } from "../lib/resources";
 import {
   countSummons,
+  bangAlcoholKnown,
+  detectionPotion,
   gotPeriled,
   haveItem,
   highShiny,
@@ -91,6 +93,7 @@ import {
   lowShiny,
   pearlLoc,
   pearlRes,
+  unknownBangPotions,
 } from "../lib/state";
 
 import {
@@ -697,6 +700,27 @@ export const TeflonQuest: SebQuest = {
         if (!haveDigpick()) pullSequence($item`Mer-kin digpick`);
       },
       limit: { skip: 1 },
+    },
+    {
+      // Once the booze potion is known the rest are safe to drink, so drink
+      // them until the potion of detection turns up.
+      name: "Teflon: identify bang potions",
+      ready: () => teflonNeeded() && haveDigpick() && bangAlcoholKnown(),
+      completed: () =>
+        !teflonNeeded() || detectionPotion() !== undefined || unknownBangPotions().length === 0,
+      ...action(() => use(unknownBangPotions()[0])),
+      limit: { tries: 9 },
+    },
+    {
+      // Object Detection shows every sparkle in the mine, teflon included.
+      name: "Teflon: Object Detection",
+      ready: () => {
+        const potion = detectionPotion();
+        return teflonNeeded() && haveDigpick() && potion !== undefined && haveItem(potion);
+      },
+      completed: () => !teflonNeeded() || haveEffect($effect`Object Detection`) > 0,
+      ...action(() => use(detectionPotion() as Item)),
+      limit: { tries: 3 },
     },
     {
       name: "Teflon: Unaccompanied Miner",

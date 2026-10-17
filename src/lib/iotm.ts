@@ -174,16 +174,99 @@ function adjacentCaverns(x: number, y: number): string {
     .join("");
 }
 
-/** The mine square (column, row) to dig for teflon ore. */
+type Square = [x: number, y: number];
+const at = ([x, y]: Square) => [x, y] as Mining.MiningCoordinate;
+const neighbours = ([x, y]: Square): Square[] =>
+  (
+    [
+      [x - 1, y],
+      [x + 1, y],
+      [x, y - 1],
+      [x, y + 1],
+    ] as Square[]
+  ).filter(([a, b]) => a >= 1 && a <= 6 && b >= 1 && b <= 6);
+
+/** The anemone mine as mafia last saw it: "o" open, "*" sparkly, anything else rock. */
+function mineSquare(state: string, [x, y]: Square): string {
+  return state[(y - 1) * 6 + (x - 1)] ?? "";
+}
+
+/** Rock that can be dug now: the front row, or beside an open cavern. */
+function diggable(state: string, square: Square): boolean {
+  if (mineSquare(state, square) === "o") return false;
+  return square[1] === 6 || neighbours(square).some((n) => mineSquare(state, n) === "o");
+}
+
+/** A sparkle beside a dug velcro or vinyl vein is that ore, not teflon. */
+const badOre = ([x, y]: Square) => /velcroore|vinylore/.test(adjacentCaverns(x, y));
+
+/**
+ * The next square on the cheapest tunnel to the target: a 0-1 search out from
+ * the target, where every unopened square costs a swing.
+ */
+function towards(state: string, target: Square): Square | undefined {
+  const key = ([x, y]: Square) => (y - 1) * 6 + (x - 1);
+  const cost = new Map<number, number>([[key(target), 1]]);
+  const queue: Square[] = [target];
+  while (queue.length > 0) {
+    const square = queue.shift() as Square;
+    const here = cost.get(key(square)) as number;
+    for (const next of neighbours(square)) {
+      const step = here + (mineSquare(state, next) === "o" ? 0 : 1);
+      if (step >= (cost.get(key(next)) ?? Infinity)) continue;
+      cost.set(key(next), step);
+      queue.push(next);
+    }
+  }
+  let best: Square | undefined;
+  for (let i = 0; i < 36; i++) {
+    const square: Square = [(i % 6) + 1, Math.floor(i / 6) + 1];
+    if (!diggable(state, square)) continue;
+    const score = cost.get(i) ?? Infinity;
+    const bestScore = best ? (cost.get(key(best)) ?? Infinity) : Infinity;
+    // Ties go to a sparkle, a free shot at ore on the way.
+    if (
+      score < bestScore ||
+      (score === bestScore &&
+        best &&
+        mineSquare(state, square) === "*" &&
+        mineSquare(state, best) !== "*")
+    ) {
+      best = square;
+    }
+  }
+  return best && (cost.get(key(best)) ?? Infinity) < Infinity ? best : undefined;
+}
+
+/**
+ * The mine square (column, row) to dig for teflon ore. Teflon sits in the back
+ * row, so the shaft goes straight up column 3 and then up to any sparkle it
+ * shows there, before spreading out sideways.
+ */
 export function mineNum(): Mining.MiningCoordinate {
-  const at = (x: number, y: number) => [x, y] as Mining.MiningCoordinate;
-  const page = Mining.visit(Mining.Mine.ANEMONE);
-  const chunks = [...page.matchAll(/Promising Chunk of Wall \((\d+),(\d+)\)/g)].map((m) => [
-    Number(m[1]),
-    Number(m[2]),
-  ]);
-  // Preferred spots first.
-  for (const [x, y] of [
+  Mining.visit(Mining.Mine.ANEMONE);
+  const state = Mining.getState(Mining.Mine.ANEMONE);
+  const open = (square: Square) => mineSquare(state, square) === "o";
+  const sparkles: Square[] = [];
+  for (let i = 0; i < 36; i++) {
+    const square: Square = [(i % 6) + 1, Math.floor(i / 6) + 1];
+    if (mineSquare(state, square) === "*" && !badOre(square)) sparkles.push(square);
+  }
+  const inRow = (row: number) => sparkles.filter(([, y]) => y === row);
+  const reachable = (row: number) => inRow(row).filter((square) => diggable(state, square));
+
+  // Object Detection shows every sparkle, so tunnel to the nearest one at the back.
+  if (Mining.hasObjectDetection(Mining.Mine.ANEMONE)) {
+    for (const row of [1, 2]) {
+      const target = inRow(row)
+        .map((square) => towards(state, square))
+        .find((square) => square !== undefined);
+      if (target) return at(target);
+    }
+  }
+
+  // Up the shaft to the second row, checking left and right of its top.
+  const shaft: Square[] = [
     [3, 6],
     [3, 5],
     [3, 4],
@@ -191,24 +274,16 @@ export function mineNum(): Mining.MiningCoordinate {
     [3, 2],
     [2, 2],
     [4, 2],
-    [5, 2],
-  ]) {
-    if (!page.includes(`Open Cavern (${x},${y})`)) return at(x, y);
-  }
-  // Promising chunks away from the bad ores.
-  for (const [x, y] of chunks) {
-    const adjacent = adjacentCaverns(x, y);
-    if (y >= 4 || adjacent.includes("velcroore") || adjacent.includes("vinylore")) continue;
-    return at(x, y);
-  }
-  // The edge chunks beside a matching pair.
-  for (const [x, y] of chunks) {
-    if (x === 1 && y === 2 && squareImage(18) === squareImage(19)) return at(x, y);
-    if (x === 6 && y === 2 && squareImage(21) === squareImage(20)) return at(x, y);
-  }
-  // Any chunk not too deep.
-  for (const [x, y] of chunks) {
-    if (y < 4) return at(x, y);
+  ];
+  for (const square of shaft) if (!open(square)) return at(square);
+  // Then up into the back row before out along the second.
+  const up = [...reachable(1), ...reachable(2)][0];
+  if (up) return at(up);
+  if (!open([5, 2])) return at([5, 2]);
+  // Any other sparkle not too deep, even beside the wrong ore.
+  for (let i = 0; i < 18; i++) {
+    const square: Square = [(i % 6) + 1, Math.floor(i / 6) + 1];
+    if (mineSquare(state, square) === "*" && diggable(state, square)) return at(square);
   }
   throw new Error(
     "Generic mining did not find teflon ore, mine manually. TIP: the ores show up in adjacent veins of 5.",

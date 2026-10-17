@@ -80,7 +80,14 @@ import {
   YOG_HEALINGS_NEEDED,
 } from "./lib/progress";
 import { bczSweatReady } from "./lib/resources";
-import { haveItem, highShiny, lowShiny, step } from "./lib/state";
+import {
+  bangAlcoholKnown,
+  haveItem,
+  highShiny,
+  lowShiny,
+  step,
+  unknownBangPotions,
+} from "./lib/state";
 
 // The combat consult script. Ported from UnderTheSeaCCS.ash and the fight
 // helpers of UnderTheSeaGlobals.ash onto libram macros; the run's CCS is
@@ -1200,14 +1207,16 @@ function killDiver(): Macro {
     .step(cleanUp());
 }
 
-const BANG_POTIONS = $items`milky potion, swirly potion, bubbly potion, smoky potion, cloudy potion, effervescent potion, fizzy potion, dark potion, murky potion`;
-
-/** Murky potions thrown in the first rounds, two at a time with Funkslinging. */
+/**
+ * Unknown bang potions thrown in the first rounds, two at a time with
+ * Funkslinging, until the booze one turns up: the rest are safe to drink.
+ */
 function bangPotions(): Macro {
   const macro = new Macro();
   if (availableAmount($item`murky potion`) === 0 || foe === $monster`sea cowboy`) return macro;
-  const owned = BANG_POTIONS.filter((item) => availableAmount(item) > 0);
-  const [a, b] = owned;
+  if (bangAlcoholKnown()) return macro;
+  const [a, b] = unknownBangPotions();
+  if (!a) return macro;
   const throwOnce =
     haveSkill($skill`Ambidextrous Funkslinging`) && b ? Macro.item([a, b]) : Macro.item(a);
   for (let round = currentRound(); round < 5; round++) macro.if_("!pastround 4", throwOnce);
