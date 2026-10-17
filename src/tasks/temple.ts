@@ -838,9 +838,12 @@ function championCheck(): void {
     return;
   }
   const weakest = monsterHp($monster`Georgepaul, the Balldodger`);
-  const ranEst = get("_sebChampionRanEst");
+  // "estimate:roundsWon", written by the combat script before each champion cast.
+  // A round won since then means that cast killed, so it isn't a failure.
+  const [ranEst, wonThen] = get("_sebChampionRanEst", "").split(":");
+  const failed = ranEst !== "" && won <= toInt(wonThen ?? "0");
   let why = "";
-  if (ranEst !== "" && geyserLowRoll() <= toInt(ranEst)) {
+  if (failed && geyserLowRoll() <= toInt(ranEst)) {
     why =
       `SEB: one Saucegeyser estimated at ${ranEst} failed to kill a Colosseum champion today, ` +
       `and the estimate here is ${geyserLowRoll()}. Raise Mysticality or spell damage past that, or fight it by hand, then rerun.`;

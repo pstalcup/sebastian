@@ -1066,8 +1066,10 @@ function gymnasium(plan: Plan): void {
 function colosseum(plan: Plan): void {
   if (foe.boss && haveSkill($skill`Saucegeyser`)) {
     // championCheck() reads _sebChampionRanEst to stop a rerun before the turn.
+    // The round count lets it tell a cast that killed from one that didn't.
+    const ranEst = `${geyserLowRoll()}:${get("lastColosseumRoundWon")}`;
     if (geyserLowRoll() < monsterHp()) {
-      set("_sebChampionRanEst", geyserLowRoll());
+      set("_sebChampionRanEst", ranEst);
       let why =
         `SEB: ${foe} has ${monsterHp()} HP and one Saucegeyser is estimated at ` +
         `${geyserLowRoll()}. Raise Mysticality or spell damage, or fight it by hand, then rerun.`;
@@ -1077,7 +1079,7 @@ function colosseum(plan: Plan): void {
       stop(why);
     }
     // Recorded before the cast: a kill ends the fight and the run moves on.
-    set("_sebChampionRanEst", geyserLowRoll());
+    set("_sebChampionRanEst", ranEst);
     plan.skill($skill`Saucegeyser`);
   } else {
     plan.step(freeKill(false));
