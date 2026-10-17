@@ -11134,6 +11134,11 @@ var args = Args.create("sebastian", "A grimoire port of UnderTheSea, the 11,037 
     help: "Run only the postloop steps (pilsners, pearls, the eagle re-aim, the codpiece).",
     setting: "",
     default: false
+  }),
+  boss: Args.string({
+    help: "The boss an aftercore run is for. Saved to _sebAftercoreBoss, which a run started in aftercore needs.",
+    options: [["Yogurt"], ["Shub"], ["Dad"]],
+    setting: ""
   })
 });
 
@@ -15351,8 +15356,9 @@ var TamingQuest = {
 
 var noTailpiece = () => tailpiece() === $item.none;
 var disguiseShort = () => kolmafia.availableAmount($item(_templateObject176$1 || (_templateObject176$1 = _taggedTemplateLiteral(["crappy Mer-kin mask"])))) === 0 || kolmafia.availableAmount($item(_templateObject177$1 || (_templateObject177$1 = _taggedTemplateLiteral(["crappy Mer-kin tailpiece"])))) === 0;
+var AFTERCORE_BOSSES = ["Yogurt", "Shub", "Dad"];
 
-/** Which boss an aftercore run is for, asked once and kept for reruns. */
+/** Which boss an aftercore run is for, from the boss arg or set by hand, kept for reruns. */
 var aftercoreBoss = () => get$1("_sebAftercoreBoss");
 
 /** Mafia skips Deep Dark Visions below 500 maximum HP; under 67% spooky res a cast ends Beaten Up. */
@@ -15463,18 +15469,14 @@ var PostSeahorseQuest = {
       tries: 1
     }
   }), _objectSpread2(_objectSpread2({
+    // Mafia often runs headless, where userPrompt throws, so the boss comes
+    // from the boss arg or the pref instead.
     name: "Pick the aftercore boss",
     ready: inAftercore,
-    completed: () => aftercoreBoss() !== ""
+    completed: () => AFTERCORE_BOSSES.includes(aftercoreBoss())
   }, action(() => {
-    var boss = kolmafia.userPrompt("Which boss?", {
-      Yogurt: true,
-      Shub: true,
-      Dad: true,
-      Abort: true
-    });
-    if (boss === "Abort" || boss === "") throw new Error("No aftercore boss chosen.");
-    _set("_sebAftercoreBoss", boss);
+    var boss = aftercoreBoss();
+    throw new Error(boss === "" ? "No aftercore boss chosen. Run \"sebastian boss=Shub\" (or Yogurt, or Dad), or set _sebAftercoreBoss." : "_sebAftercoreBoss is \"".concat(boss, "\", which isn't Yogurt, Shub or Dad."));
   })), {}, {
     limit: {
       tries: 1
@@ -16322,14 +16324,25 @@ function main(command) {
     }
     return;
   }
+  if (args.boss) _set("_sebAftercoreBoss", args.boss);
   var home = Clan.get();
+  // Freeing the king at the council drops the path, which makes the aftercore
+  // tasks ready. A run that starts in the path stops at the king: its sea
+  // quests stay gated on the path, and only the postloop steps run after.
+  var startedInPath = inSeaPath();
+  var pathOnly = quest => startedInPath ? _objectSpread2(_objectSpread2({}, quest), {}, {
+    ready: () => {
+      var _quest$ready;
+      return inSeaPath() && (((_quest$ready = quest.ready) === null || _quest$ready === void 0 ? void 0 : _quest$ready.call(quest)) ?? true);
+    }
+  }) : quest;
   // In seaMonkees() order: the early lasso, the guild, the quest, the outpost,
   // the seahorse, the temple, then past the prism. Every task reads its state
   // from the game, so a rerun picks up where the last one stopped.
-  var engine = new SebEngine(getTasks([LassoQuest, GuildQuest, MonkeesQuest, OutpostQuest, SeahorseRouteQuest, TeflonQuest, BackupLassoQuest, TamingQuest, PostSeahorseQuest, YogUrtQuest, AfterYogUrtQuest, ShubQuest, FinalBossQuest, PathCleanupQuest, // The postloop steps wait for the council visit that closes the path.
+  var engine = new SebEngine(getTasks([].concat(_toConsumableArray([LassoQuest, GuildQuest, MonkeesQuest, OutpostQuest, SeahorseRouteQuest, TeflonQuest, BackupLassoQuest, TamingQuest, PostSeahorseQuest, YogUrtQuest, AfterYogUrtQuest, ShubQuest, FinalBossQuest, PathCleanupQuest].map(pathOnly)), [// The postloop steps wait for the council visit that closes the path.
   _objectSpread2(_objectSpread2({}, PostloopQuest), {}, {
     ready: () => get$1("_sebCouncilVisited", false)
-  })]), {
+  })])), {
     ccs: SEB_CCS
   });
   kolmafia.print("Starting UnderTheSea");
@@ -16338,7 +16351,9 @@ function main(command) {
     // Priming, in case the last run aborted mid-combat.
     postAdventure();
     engine.run();
-    if (inSeaPath() && questStep("questL13Final") < 999) {
+    if (startedInPath && !inSeaPath()) {
+      kolmafia.print("SEB: the king is free, so this run is done. Aftercore takes its own run.", "blue");
+    } else if (inSeaPath() && questStep("questL13Final") < 999) {
       kolmafia.print("SEB: no task is ready to run, but the prism isn't broken yet. Check the log above.", "red");
     }
   } catch (e) {
