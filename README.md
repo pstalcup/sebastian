@@ -23,7 +23,12 @@ Then:
 sebastian          # the whole run, from startup through the prism
 sebastian sim      # print the IOTM, skill and pull checklists and stop
 sebastian postloop # only the postloop steps (pilsners, pearls, the eagle re-aim, the codpiece)
+sebastian boss=Shub # an aftercore sea run for one boss (Yogurt, Shub or Dad)
 ```
+
+A run started in the path stops once the council frees the king; it never carries on into the
+aftercore sea quest. An aftercore run needs its boss, from `boss=` or `_sebAftercoreBoss`, and stops
+with an error when neither is set.
 
 Everything in UnderTheSea's README still applies: the hard requirements, `autoSatisfyWithNPCs`, the
 high, mid and low "shiny" tiers, and its per-account preferences, renamed from `uts_` to `seb_`

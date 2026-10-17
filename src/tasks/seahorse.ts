@@ -31,7 +31,6 @@ import {
   totalTurnsPlayed,
   use,
   useSkill,
-  userPrompt,
   visitUrl,
 } from "kolmafia";
 import {
@@ -904,7 +903,9 @@ const disguiseShort = () =>
   availableAmount($item`crappy Mer-kin mask`) === 0 ||
   availableAmount($item`crappy Mer-kin tailpiece`) === 0;
 
-/** Which boss an aftercore run is for, asked once and kept for reruns. */
+export const AFTERCORE_BOSSES = ["Yogurt", "Shub", "Dad"];
+
+/** Which boss an aftercore run is for, from the boss arg or set by hand, kept for reruns. */
 export const aftercoreBoss = () => get("_sebAftercoreBoss");
 
 /** Mafia skips Deep Dark Visions below 500 maximum HP; under 67% spooky res a cast ends Beaten Up. */
@@ -1027,18 +1028,18 @@ export const PostSeahorseQuest: SebQuest = {
       limit: { tries: 1 },
     },
     {
+      // Mafia often runs headless, where userPrompt throws, so the boss comes
+      // from the boss arg or the pref instead.
       name: "Pick the aftercore boss",
       ready: inAftercore,
-      completed: () => aftercoreBoss() !== "",
+      completed: () => AFTERCORE_BOSSES.includes(aftercoreBoss()),
       ...action(() => {
-        const boss = userPrompt("Which boss?", {
-          Yogurt: true,
-          Shub: true,
-          Dad: true,
-          Abort: true,
-        });
-        if (boss === "Abort" || boss === "") throw new Error("No aftercore boss chosen.");
-        set("_sebAftercoreBoss", boss);
+        const boss = aftercoreBoss();
+        throw new Error(
+          boss === ""
+            ? `No aftercore boss chosen. Run "sebastian boss=Shub" (or Yogurt, or Dad), or set _sebAftercoreBoss.`
+            : `_sebAftercoreBoss is "${boss}", which isn't Yogurt, Shub or Dad.`,
+        );
       }),
       limit: { tries: 1 },
     },
