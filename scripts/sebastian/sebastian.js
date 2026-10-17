@@ -11637,9 +11637,13 @@ var _templateObject$d, _templateObject2$d, _templateObject3$d, _templateObject4$
 
 // ─── SMALL CHECKS ─────────────────────────────────────────────────────────────
 
-/** Monsters that give a free fight. */
+/**
+ * Monsters that give a free fight: whatever mafia's monster data tags FREE
+ * (the Kramco's goblins, Black Crayon monsters, trick-or-treat kids, Witchess,
+ * Eldritch Tentacles...), plus the time cop, which mafia leaves untagged.
+ */
 function freeMonster(monster) {
-  return $monsters(_templateObject$d || (_templateObject$d = _taggedTemplateLiteral(["Black Crayon Golem, Black Crayon Beetle, Black Crayon Man, Black Crayon Goblin, Black Crayon Undead Thing, Black Crayon Slime, time cop, sausage goblin, kid who is too old to be Trick-or-Treating, suburban security civilian, vandal kid"]))).includes(monster);
+  return monster === $monster(_templateObject$d || (_templateObject$d = _taggedTemplateLiteral(["time cop"]))) || /(^|\s)FREE(\s|$)/.test(monster.attributes);
 }
 function parkaForceAvailable() {
   return haveItem($item(_templateObject2$d || (_templateObject2$d = _taggedTemplateLiteral(["Jurassic Parka"])))) && get$1("_spikolodonSpikeUses") < 5;
