@@ -111,10 +111,28 @@ export function questLoc(stat: Stat = myPrimestat()): Location {
   }
 }
 
+/**
+ * The fax is unused today and hasn't failed. summon() sets _sebFaxFailed when
+ * the faxbot can't deliver, so a dead faxbot isn't counted (or retried) again.
+ */
+export function faxAvailable(): boolean {
+  return (
+    !get("_photocopyUsed") && haveItem($item`Clan VIP Lounge key`) && !get("_sebFaxFailed", false)
+  );
+}
+
+/** Genie monster wishes left today, from the bottle or pocket wishes. */
+export function genieFightsLeft(): number {
+  const wishes =
+    (have($item`genie bottle`) ? Math.max(0, 3 - get("_genieWishesUsed")) : 0) +
+    availableAmount($item`pocket wish`);
+  return Math.min(wishes, Math.max(0, 3 - get("_genieFightsUsed")));
+}
+
 /** Fax, locket and chest mimic summons left today. */
 export function countSummons(): number {
   let n = 0;
-  if (!get("_photocopyUsed") && haveItem($item`Clan VIP Lounge key`)) n += 1;
+  if (faxAvailable()) n += 1;
   if (CombatLoversLocket.have()) n += CombatLoversLocket.reminiscesLeft();
   if (have($familiar`Chest Mimic`)) n += Math.floor($familiar`Chest Mimic`.experience / 200);
   return n;
