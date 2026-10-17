@@ -46,7 +46,7 @@ import {
 
 import { pickFamiliar } from "./familiar";
 import { pulledToday, pullSequence } from "./pulls";
-import { gotPeriled, haveItem, inAftercore, inSeaPath, step } from "./state";
+import { gotPeriled, haveItem, inAftercore, inSeaPath, debug } from "./state";
 
 // Daily resources and one-shot IOTM helpers. Ported from the "REMAINING SHARED
 // HELPERS" sections of UnderTheSeaGlobals.ash and summon() in UnderTheSea.ash.
@@ -72,7 +72,7 @@ export function briefcase(): void {
 export function cargoPocket(): void {
   if (`,${get("cargoPocketsEmptied")},`.includes(",494,")) return;
   if (!haveItem($item`Cargo Cultist Shorts`)) return;
-  step("Cargo shorts: opening pocket 494");
+  debug("Cargo shorts: opening pocket 494");
   cliExecute("cargo pocket 494");
 }
 
@@ -81,11 +81,11 @@ export function garbageTote(): void {
   if (!haveItem($item`January's Garbage Tote`)) return;
   if (haveItem($item`broken champagne bottle`)) return;
   if (get("garbageChampagneCharge") <= 0) return;
-  step("Garbage tote: fetching the broken champagne bottle");
+  debug("Garbage tote: fetching the broken champagne bottle");
   visitUrl(`inv_use.php?whichitem=${$item`January's Garbage Tote`.id}&pwd=${myHash()}`);
   // mafia may already have answered it; only answer a live choice.
   if (!handlingChoice()) {
-    step("Tote choice was auto-resolved or never opened; skipping");
+    debug("Tote choice was auto-resolved or never opened; skipping");
     return;
   }
   const options = Object.entries(availableChoiceOptions());
@@ -110,7 +110,7 @@ export function censer(): void {
 export function pillKeeper(pill: string): void {
   if (!haveItem($item`Eight Days a Week Pill Keeper`)) return;
   if (get("_freePillKeeperUsed")) return;
-  step(`Pill keeper: ${pill}`);
+  debug(`Pill keeper: ${pill}`);
   cliExecute(`pillkeeper ${pill}`);
 }
 
@@ -175,7 +175,7 @@ export function mapReady(): boolean {
 export function mapMonster(location: Location): void {
   if (!mapReady()) return;
   if (haveItem($item`Peridot of Peril`) && !gotPeriled(location)) return;
-  step(`Map the Monsters armed for ${location}`);
+  debug(`Map the Monsters armed for ${location}`);
   useSkill($skill`Map the Monsters`);
 }
 

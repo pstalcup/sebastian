@@ -1,6 +1,8 @@
 import { cliExecute } from "kolmafia";
 import { get, set } from "libram";
 
+import { debugMode } from "./state";
+
 // The one ASH dependency left: seedfinder, which solves the dreadscroll from
 // the clues found so far. It is an ASH library with no TypeScript port, so it
 // is called through a one-statement ASH bridge, as the original imported it.
@@ -14,9 +16,10 @@ function seedfinder(statement: string): boolean {
 /** Fill in every dreadscroll answer once the clues pin down a single seed. */
 export function dreadSeedCheck(): void {
   seedfinder(
-    "SeedData[int] s = find_seeds(); " +
-      'if (count(s) == 1) { foreach i, seed in s for x from 1 to 8 if (get_property("dreadScroll" + x) == "0") set_property("dreadScroll" + x, seed.dreadscroll[x - 1]); } ' +
-      'else print(count(s) + " possible seeds right now");',
+    `SeedData[int] s = find_seeds(); ` +
+      `if (count(s) == 1) { foreach i, seed in s for x from 1 to 8 if (get_property("dreadScroll" + x) == "0") set_property("dreadScroll" + x, seed.dreadscroll[x - 1]); } ${
+        debugMode() ? 'else print(count(s) + " possible seeds right now");' : ""
+      }`,
   );
 }
 
