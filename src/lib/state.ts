@@ -37,9 +37,18 @@ export function inAftercore(): boolean {
   return myPath().id === 0;
 }
 
-/** Progress tracker, printed with a "SEB:" prefix as the original did with "UTS:". */
-export function step(message: string): void {
-  print(`SEB: ${message}`, "blue");
+/** Whether the seb_debug preference asks for the run's routine narration. */
+export function debugMode(): boolean {
+  return get("seb_debug", false);
+}
+
+/**
+ * Routine narration (what the run is about to do, what it measured), with
+ * the "SEB:" prefix the original printed as "UTS:". Silent unless seb_debug
+ * is set: mafia already logs every turn, item and skill the run spends.
+ */
+export function debug(message: string): void {
+  if (debugMode()) print(`SEB: ${message}`, "blue");
 }
 
 /** Owned anywhere: inventory, closet, storage, or worn by a familiar. */

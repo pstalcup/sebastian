@@ -5,7 +5,6 @@ import {
   itemAmount,
   lastChoice,
   myLocation,
-  print,
   runChoice,
   setLocation,
   toInt,
@@ -15,6 +14,7 @@ import {
 import { $effect, $item, $location, get, set } from "libram";
 
 import { zoneTarget } from "./lib/iotm";
+import { debug } from "./lib/state";
 
 // The choice adventure script. Ported from UnderTheSea_Choice.ash; mafia
 // calls main() for every choice while the run has it set as
@@ -188,7 +188,7 @@ export function main(choice: number, page: string): void {
     // The Everfull Dart Holster's perks.
     case 1525:
       for (const [option, text] of Object.entries(availableChoiceOptions())) {
-        print(`${option}: ${text}`);
+        debug(`${option}: ${text}`);
       }
       if (!["impress", "better", "targeting", "Butt"].some((perk) => pickChoice(perk))) {
         runChoice(1);
