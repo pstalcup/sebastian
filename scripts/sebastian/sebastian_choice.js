@@ -944,7 +944,7 @@ $items(_templateObject17$1 || (_templateObject17$1 = _taggedTemplateLiteral(["mi
 
 var _templateObject13;
 function cheatsheetsNeeded() {
-  return kolmafia.itemAmount($item(_templateObject13 || (_templateObject13 = _taggedTemplateLiteral(["Mer-kin cheatsheet"])))) < 9 && get("merkinVocabularyMastery") === 0;
+  return kolmafia.availableAmount($item(_templateObject13 || (_templateObject13 = _taggedTemplateLiteral(["Mer-kin cheatsheet"])))) < 9 && get("merkinVocabularyMastery") === 0;
 }
 
 var _templateObject$1;
@@ -1003,7 +1003,7 @@ function stashboxCheck(priority) {
   if (option === undefined) return;
   kolmafia.runChoice(option);
   _set("stashboxChecked", checked === "" ? "".concat(option) : "".concat(checked, ",").concat(option));
-  if (kolmafia.itemAmount($item(_templateObject || (_templateObject = _taggedTemplateLiteral(["Mer-kin stashbox"])))) > 0) _set("stashboxFound", option);
+  if (kolmafia.availableAmount($item(_templateObject || (_templateObject = _taggedTemplateLiteral(["Mer-kin stashbox"])))) > 0) _set("stashboxFound", option);
 }
 
 /** Pick the first option whose text contains the keyword. */
