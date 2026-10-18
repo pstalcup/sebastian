@@ -180,7 +180,6 @@ function freeKill(drop: boolean): Macro {
   }
 
   for (const item of $items`shadow brick, groveling gravel`) {
-    if (availableAmount(item) === 0) continue;
     if (item === $item`groveling gravel` && drop) continue;
     if (item === $item`shadow brick` && get("_shadowBricksUsed") === 13) continue;
     if (colosseum) continue;
@@ -228,7 +227,6 @@ function freeRunAny(banish: boolean): Macro {
 
   const banishItems = $items`anchor bomb, stuffed yam stinkbomb, handful of split pea soup`;
   for (const item of $items`glob of Blank-Out, peppermint parasol, anchor bomb, stuffed yam stinkbomb, handful of split pea soup, Mer-kin pinkslip, ink bladder`) {
-    if (availableAmount(item) === 0) continue;
     if (!banish && banishItems.includes(item)) continue;
     if (item === $item`peppermint parasol` && get("parasolUsed") >= 3) continue;
     if (item === $item`Mer-kin pinkslip` && foe.phylum !== $phylum`mer-kin`) continue;
@@ -279,9 +277,7 @@ function finishFreeFight(): Macro {
 /** Finish the enemy with Saucegeyser while MP lasts. */
 function cleanUp(): Macro {
   const macro = new Macro();
-  if (availableAmount($item`pulled red taffy`) > 0 && myLocation().environment === "underwater") {
-    macro.tryItem($item`pulled red taffy`);
-  }
+  macro.if_("underwater", Macro.tryItem($item`pulled red taffy`));
   let round: Macro;
   if (haveSkill($skill`Saucegeyser`) && foe !== $monster`Yog-Urt, Elder Goddess of Hatred`) {
     round = Macro.skill($skill`Saucegeyser`);
@@ -578,17 +574,14 @@ const someFish = $monster`some fish`;
 /** The scroll hints the dreadscroll wants, thrown at mer-kin. */
 function throwScrollHints(): Macro {
   const macro = new Macro();
-  if (get("dreadScroll2") === 0) {
-    for (let i = 0; i < availableAmount($item`Mer-kin healscroll`); i++) {
-      macro.tryItem($item`Mer-kin healscroll`);
-    }
-  }
-  if (get("dreadScroll5") === 0 && foe.phylum === $phylum`mer-kin`) {
-    for (let i = 0; i < availableAmount($item`Mer-kin killscroll`); i++) {
-      macro.tryItem($item`Mer-kin killscroll`);
-    }
-  }
-  return macro;
+  const throwAll = (scroll: Item) =>
+    Macro.while_(`${Macro.makeBALLSPredicate(scroll)} && !pastround 20`, Macro.item(scroll));
+  return macro
+    .externalIf(get("dreadScroll2") === 0, throwAll($item`Mer-kin healscroll`))
+    .externalIf(
+      get("dreadScroll5") === 0 && foe.phylum === $phylum`mer-kin`,
+      throwAll($item`Mer-kin killscroll`),
+    );
 }
 
 function knobAlleyPantry(plan: Plan): void {
@@ -615,17 +608,12 @@ function madnessBakery(plan: Plan): void {
 
 function shadowRift(plan: Plan): void {
   if (myPrimestat() === $stat`Moxie`) plan.step("pickpocket");
-  if (
-    get("_seadentWaveUsed") &&
-    get("lassoTrainingCount") < 20 &&
-    availableAmount($item`sea lasso`) > 0
-  ) {
-    plan.tryItem($item`sea lasso`);
-  }
+  plan.externalIf(
+    get("_seadentWaveUsed") && get("lassoTrainingCount") < 20,
+    Macro.tryItem($item`sea lasso`),
+  );
   if (foe === $monster`shadow slab`) {
-    if (availableAmount($item`Septapus summoning charm`) > 0) {
-      plan.tryItem($item`Septapus summoning charm`);
-    }
+    plan.tryItem($item`Septapus summoning charm`);
     plan.trySkill($skill`Swoop like a Bat`, $skill`Perpetrate Mild Evil`);
     // Douse Foe exists only while the Liquidizer is worn.
     if (haveEquipped($item`Flash Liquidizer Ultra Dousing Accessory`) && !get("_douseFoeSuccess")) {
@@ -855,12 +843,14 @@ function corral(plan: Plan): void {
       plan.trySkill(talkToFish, gaze, mcTwist).tryItem($item`pulled yellow taffy`);
     } else if (foe === seahorse) {
       plan.runaway();
-    } else if (availableAmount($item`software glitch`) > 0) {
-      plan
-        .item($item`software glitch`)
-        .ifNot($monster`bugged bugbear`, Macro.abortWithWarning("Software glitch failed"))
-        .trySkill(gaze, mcTwist)
-        .tryItem($item`pulled yellow taffy`);
+    } else {
+      plan.if_(
+        $item`software glitch`,
+        Macro.item($item`software glitch`)
+          .ifNot($monster`bugged bugbear`, Macro.abortWithWarning("Software glitch failed"))
+          .trySkill(gaze, mcTwist)
+          .tryItem($item`pulled yellow taffy`),
+      );
     }
     plan.step(freeKill(true)).step(cleanUp());
   } else if (readyToTame) {
@@ -946,7 +936,6 @@ function abyss(plan: Plan): void {
   }
   const habitats = $monsters`slithering thing, eye in the darkness`;
   if (
-    availableAmount($item`Spooky VHS Tape`) > 0 &&
     get("spookyVHSTapeMonster") === null &&
     get("momSeaMonkeeProgress") < 36 &&
     [...habitats, $monster`school of many`].includes(foe)
@@ -1303,7 +1292,6 @@ function plan(page: string): Plan {
     if (
       haveEquipped($item`sea cowboy hat`) &&
       haveEquipped($item`sea chaps`) &&
-      availableAmount($item`sea lasso`) > 0 &&
       get("lassoTrainingCount") < 20
     ) {
       plan.tryItem($item`sea lasso`);
