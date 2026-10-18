@@ -10,10 +10,12 @@ import {
   print,
   Stat,
   storageAmount,
+  toInt,
 } from "kolmafia";
 import {
   $familiar,
   $item,
+  $items,
   $location,
   $stat,
   CombatLoversLocket,
@@ -150,4 +152,28 @@ export function countSummons(): number {
 /** Whether the Peridot of Peril has already been spent in this zone today. */
 export function gotPeriled(location: Location): boolean {
   return PeridotOfPeril.periledToday(location);
+}
+
+// ─── BANG POTIONS ─────────────────────────────────────────────────────────────
+
+export const BANG_POTIONS = $items`milky potion, swirly potion, bubbly potion, smoky potion, cloudy potion, effervescent potion, fizzy potion, dark potion, murky potion`;
+
+/** What mafia has learned a bang potion does ("inebriety", "detection", ...), or "". */
+export function bangPotionEffect(potion: Item): string {
+  return get(`lastBangPotion${toInt(potion)}`, "");
+}
+
+/** The bang potions on hand that mafia hasn't identified yet. */
+export function unknownBangPotions(): Item[] {
+  return BANG_POTIONS.filter((potion) => availableAmount(potion) > 0 && !bangPotionEffect(potion));
+}
+
+/** The booze potion is known, so every other unknown one is safe to drink. */
+export function bangAlcoholKnown(): boolean {
+  return BANG_POTIONS.some((potion) => bangPotionEffect(potion).includes("inebriety"));
+}
+
+/** The potion of detection, once identified; Object Detection shows every sparkle in a mine. */
+export function detectionPotion(): Item | undefined {
+  return BANG_POTIONS.find((potion) => bangPotionEffect(potion).includes("detection"));
 }
