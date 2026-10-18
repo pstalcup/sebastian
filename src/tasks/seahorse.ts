@@ -84,6 +84,7 @@ import {
 } from "../lib/resources";
 import {
   countSummons,
+  genieFightsLeft,
   bangAlcoholKnown,
   detectionPotion,
   gotPeriled,
@@ -233,7 +234,8 @@ function diverChainReport(): string {
 }
 
 const diver = $monster`unholy diver`;
-const diverSummonable = () => ChestMimic.differentiableQuantity(diver) > 0 || countSummons() >= 1;
+const summonsLeft = () => countSummons() + genieFightsLeft();
+const diverSummonable = () => ChestMimic.differentiableQuantity(diver) > 0 || summonsLeft() > 0;
 
 /** A summoned diver: a mimic egg, the Time-Spinner, then summon(). */
 function summonDiver(): TaskBody {
@@ -355,7 +357,7 @@ const diverTasks: SebTask[] = [
     name: "Diver: Shadow Waters",
     ready: () =>
       summonLeg() &&
-      countSummons() > 0 &&
+      summonsLeft() > 0 &&
       !diverPartsComplete() &&
       haveEffect($effect`Shadow Waters`) === 0 &&
       riftOpen(),
@@ -368,7 +370,8 @@ const diverTasks: SebTask[] = [
     ready: () => summonLeg() && diverSummonable(),
     completed: () => diverPartsComplete() || helmetOn(),
     ...summonDiver(),
-    // A summon that fails doesn't use itself up; the wreck takes over.
+    // A failed fax marks itself spent, so this stops being ready once every
+    // source is used up or broken, and the wreck takes over.
     limit: { skip: 10 },
   },
   {

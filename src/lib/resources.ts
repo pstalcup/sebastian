@@ -14,6 +14,7 @@ import {
   Monster,
   myBasestat,
   myHash,
+  print,
   pullsRemaining,
   runChoice,
   runCombat,
@@ -41,12 +42,21 @@ import {
   CombatLoversLocket,
   get,
   have,
+  set,
   SourceTerminal,
 } from "libram";
 
 import { pickFamiliar } from "./familiar";
 import { pulledToday, pullSequence } from "./pulls";
-import { gotPeriled, haveItem, inAftercore, inSeaPath, debug } from "./state";
+import {
+  debug,
+  faxAvailable,
+  genieFightsLeft,
+  gotPeriled,
+  haveItem,
+  inAftercore,
+  inSeaPath,
+} from "./state";
 
 // Daily resources and one-shot IOTM helpers. Ported from the "REMAINING SHARED
 // HELPERS" sections of UnderTheSeaGlobals.ash and summon() in UnderTheSea.ash.
@@ -224,8 +234,9 @@ export function equipSwimTrunks(): void {
 const fax = (monster: Monster) => faxbot(monster, "OnlyFax");
 
 /**
- * Fight a monster from the locket, a fax, a mimic egg or a pocket wish, in
- * that order. False when none of them is available.
+ * Fight a monster from the locket, a fax, a mimic egg or a genie wish, in
+ * that order. A fax that doesn't arrive marks the fax as failed for the day
+ * and falls through to the next source. False when none of them is available.
  */
 export function summon(monster: Monster, wishGear?: () => void): boolean {
   if (
@@ -235,14 +246,16 @@ export function summon(monster: Monster, wishGear?: () => void): boolean {
     return CombatLoversLocket.reminisce(monster);
   }
   if (CombatLoversLocket.have()) equip($slot`acc3`, $item`combat lover's locket`);
-  if (
-    !get("_photocopyUsed") &&
-    haveItem($item`Clan VIP Lounge key`) &&
-    (fax(monster) || fax(monster) || fax(monster))
-  ) {
-    use($item`photocopied monster`);
-    runCombat();
-  } else if ($familiar`Chest Mimic`.experience > 200) {
+  if (faxAvailable()) {
+    if (fax(monster) || fax(monster)) {
+      use($item`photocopied monster`);
+      runCombat();
+      return true;
+    }
+    print(`Couldn't fax a ${monster}; trying other summons and skipping the fax today.`, "red");
+    set("_sebFaxFailed", true);
+  }
+  if ($familiar`Chest Mimic`.experience > 200) {
     if (ChestMimic.differentiableQuantity(monster) === 0) ChestMimic.receive(monster);
     if (!ChestMimic.differentiate(monster)) {
       throw new Error(
@@ -251,9 +264,11 @@ export function summon(monster: Monster, wishGear?: () => void): boolean {
     }
     // A Force cast during the egg fight can strand the session in choice 1387.
     if (handlingChoice() && lastChoice() === 1387) runChoice(3);
-  } else if (availableAmount($item`pocket wish`) > 0) {
+  } else if (genieFightsLeft() > 0) {
     wishGear?.();
+    const fights = get("_genieFightsUsed");
     cliExecute(`genie monster ${monster}`);
+    if (get("_genieFightsUsed") === fights) return false;
     runCombat();
   } else {
     return false;
