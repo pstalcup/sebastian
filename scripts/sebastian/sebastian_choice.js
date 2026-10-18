@@ -922,7 +922,7 @@ createSingleConstant(kolmafia.Thrall, kolmafia.toThrall);
  */
 createPluralConstant(kolmafia.Thrall);
 
-var _templateObject17$1;
+var _templateObject19$1;
 
 /** Whether the seb_debug preference asks for the run's routine narration. */
 function debugMode() {
@@ -940,7 +940,7 @@ function debug(message) {
 
 // ─── BANG POTIONS ─────────────────────────────────────────────────────────────
 
-$items(_templateObject17$1 || (_templateObject17$1 = _taggedTemplateLiteral(["milky potion, swirly potion, bubbly potion, smoky potion, cloudy potion, effervescent potion, fizzy potion, dark potion, murky potion"])));
+$items(_templateObject19$1 || (_templateObject19$1 = _taggedTemplateLiteral(["milky potion, swirly potion, bubbly potion, smoky potion, cloudy potion, effervescent potion, fizzy potion, dark potion, murky potion"])));
 
 var _templateObject13;
 function cheatsheetsNeeded() {
