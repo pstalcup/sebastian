@@ -11607,6 +11607,9 @@ function equipSwimTrunks() {
   if (inSeaPath()) kolmafia.equip($item(_templateObject46$9 || (_templateObject46$9 = _taggedTemplateLiteral(["really, really nice swimming trunks"]))));else if (inAftercore()) kolmafia.equip($item(_templateObject47$9 || (_templateObject47$9 = _taggedTemplateLiteral(["Elf Guard SCUBA tank"]))));
 }
 
+/** A fax from OnlyFax; EasyFax, mafia's default bot, is gone. */
+var fax = monster => kolmafia.faxbot(monster, "OnlyFax");
+
 /**
  * Fight a monster from the locket, a fax, a mimic egg or a pocket wish, in
  * that order. False when none of them is available.
@@ -11616,7 +11619,7 @@ function summon(monster, wishGear) {
     return reminisce(monster);
   }
   if (have$8()) kolmafia.equip($slot(_templateObject48$9 || (_templateObject48$9 = _taggedTemplateLiteral(["acc3"]))), $item(_templateObject49$9 || (_templateObject49$9 = _taggedTemplateLiteral(["combat lover's locket"]))));
-  if (!get$1("_photocopyUsed") && haveItem($item(_templateObject50$8 || (_templateObject50$8 = _taggedTemplateLiteral(["Clan VIP Lounge key"])))) && (kolmafia.faxbot(monster) || kolmafia.faxbot(monster) || kolmafia.faxbot(monster))) {
+  if (!get$1("_photocopyUsed") && haveItem($item(_templateObject50$8 || (_templateObject50$8 = _taggedTemplateLiteral(["Clan VIP Lounge key"])))) && (fax(monster) || fax(monster) || fax(monster))) {
     kolmafia.use($item(_templateObject51$8 || (_templateObject51$8 = _taggedTemplateLiteral(["photocopied monster"]))));
     kolmafia.runCombat();
   } else if ($familiar(_templateObject52$8 || (_templateObject52$8 = _taggedTemplateLiteral(["Chest Mimic"]))).experience > 200) {
@@ -13864,7 +13867,8 @@ function shadowWaters() {
         ncForce();
         adv1Rift();
       }
-      if (!get$1("_seadentWaveUsed")) kolmafia.useSkill($skill(_templateObject46$4 || (_templateObject46$4 = _taggedTemplateLiteral(["Sea *dent: Summon a Wave"]))));
+      // No wave once today's affinity is spent: the rift it was for is done.
+      if (!get$1("_seadentWaveUsed") && riftOpen()) kolmafia.useSkill($skill(_templateObject46$4 || (_templateObject46$4 = _taggedTemplateLiteral(["Sea *dent: Summon a Wave"]))));
       kolmafia.use($item(_templateObject47$4 || (_templateObject47$4 = _taggedTemplateLiteral(["closed-circuit pay phone"]))));
       // The noncombat force can take an accessory slot.
       shadowRiftGear().dress();
@@ -13891,9 +13895,10 @@ function shadowAffinity() {
     prepare: () => mood("itdrop"),
     do: rift$1,
     post: () => {
+      // Wave first, while affinity is left: the extra fight can spend the last of it.
       if (!get$1("_seadentWaveUsed") && kolmafia.haveEffect($effect(_templateObject57$2 || (_templateObject57$2 = _taggedTemplateLiteral(["Shadow Affinity"])))) > 0) {
-        adv1Rift();
         kolmafia.useSkill($skill(_templateObject58$2 || (_templateObject58$2 = _taggedTemplateLiteral(["Sea *dent: Summon a Wave"]))));
+        adv1Rift();
       }
       if (get$1("encountersUntilSRChoice") === 0) adv1Rift();
     }
@@ -15065,9 +15070,30 @@ var abyssTasks = [{
 var dropLeg = () => legReady("corral:drop");
 var corralLeg = () => legReady("corral:collect", "corral:drop");
 
+/**
+ * Smith a sea leather with its pattern (pants kit or helmet recipe). Mafia
+ * won't fetch the pattern itself ("That item cannot be created"), so buy it
+ * first, and stop the run on a failure rather than retry it forever.
+ */
+function smithLeather(item) {
+  var _iterator = _createForOfIteratorHelper(Object.keys(kolmafia.getIngredients(item)).map(name => kolmafia.Item.get(name))),
+    _step;
+  try {
+    for (_iterator.s(); !(_step = _iterator.n()).done;) {
+      var part = _step.value;
+      if (!kolmafia.retrieveItem(part)) throw new Error("Couldn't get a ".concat(part, " to smith ").concat(item, "."));
+    }
+  } catch (err) {
+    _iterator.e(err);
+  } finally {
+    _iterator.f();
+  }
+  if (!kolmafia.create(item)) throw new Error("Couldn't smith ".concat(item, "; see mafia's message above."));
+}
+
 /** The leather piece, crafted from a sea leather or farmed for one. */
 function leatherPiece(item) {
-  var body = branch(() => kolmafia.itemAmount($item(_templateObject87$1 || (_templateObject87$1 = _taggedTemplateLiteral(["sea leather"])))) > 0, action(() => kolmafia.create(item)), corralFarm());
+  var body = branch(() => kolmafia.itemAmount($item(_templateObject87$1 || (_templateObject87$1 = _taggedTemplateLiteral(["sea leather"])))) > 0, action(() => smithLeather(item)), corralFarm());
   return withHooks(body, {
     before: () => {
       if (dropLeg()) codpiece("none");
