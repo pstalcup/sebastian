@@ -36,6 +36,11 @@ high, mid and low "shiny" tiers, and its per-account preferences, renamed from `
 `seb_usePilsners`, `seb_postloopCommand`, `seb_postLoopRunOutEagleBanish`, `seb_postLoopFarmPearls`,
 `seb_postLoopCloverFishy`, `seb_postLoopPrepCodpiece`), which you still set with the mafia CLI.
 
+A run prints only errors, warnings and a one-line summary of each startup checklist (IOTMs, skills,
+pulls), plus any missing required skill or unbuyable pull. `sebastian sim` prints the full
+checklists. Set `seb_debug` to `true` (`set seb_debug = true`) for the full checklists at startup and
+the run's routine narration (buff levels, resources about to be spent, combat plans).
+
 ## Layout
 
 - `src/main.ts` runs the grimoire engine over the quests in `src/tasks`, in the order the original's

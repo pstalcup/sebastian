@@ -63,12 +63,13 @@ import {
 } from "./lib/resources";
 import {
   countSummons,
+  debugMode,
   haveItem,
   highShiny,
   inAftercore,
   inSeaPath,
   lowShiny,
-  step,
+  debug,
 } from "./lib/state";
 
 // Once-a-run setup before the first quest step. Ported from initialization()
@@ -105,9 +106,8 @@ function borrowSheriffProps(): void {
     }
   }
   if (!sheriffOutfit()) {
-    print(
+    debug(
       "No Sheriff outfit -- either its props are not unlocked, or today's three prop borrows are spent. Skipping the Assert your Authority free kills; the run costs up to three more turns.",
-      "blue",
     );
   }
 }
@@ -149,7 +149,7 @@ function dailies(): void {
 
   // One free saber upgrade a day: the familiar weight chip.
   if (haveItem($item`Fourth of May Cosplay Saber`) && get("_saberMod") === 0) {
-    step("initialization: saber daily upgrade (choice 1386)");
+    debug("initialization: saber daily upgrade (choice 1386)");
     visitUrl("main.php?action=may4");
     // mafia may already have answered it; only answer a choice still open.
     if (handlingChoice() && lastChoice() === 1386) {
@@ -172,7 +172,7 @@ function dailies(): void {
     equip($item`tiny stillsuit`);
   }
 
-  step("initialization: Mayam rings");
+  debug("initialization: Mayam rings");
   if (MayamCalendar.have() && MayamCalendar.symbolsUsed().length === 0) {
     if (haveFamiliar($familiar`Chest Mimic`)) useFamiliar($familiar`Chest Mimic`);
     else switchFamiliar(pickFamiliar("itdrop"));
@@ -207,7 +207,7 @@ function dailies(): void {
       for (const item of $items`pro skateboard, Spooky VHS Tape, Spooky VHS Tape`) create(1, item);
   }
 
-  step("initialization: workshed");
+  debug("initialization: workshed");
   if (!get("_workshedItemUsed") && getWorkshed() === $item.none) {
     if (highShiny() && haveItem($item`portable Mayo Clinic`)) {
       use($item`portable Mayo Clinic`);
@@ -226,7 +226,7 @@ function dailies(): void {
     }
   }
 
-  step("initialization: storage pulls");
+  debug("initialization: storage pulls");
   for (const item of $items`Mer-kin sneakmask, sea lasso, shark jumper, ten-leaf clover, large box, scale-mail underwear, Congressional Medal of Insanity, Flash Liquidizer Ultra Dousing Accessory`) {
     if (have(item) || pulledToday(item)) continue;
     if (
@@ -265,9 +265,12 @@ export function initialization(): void {
     throw new Error("set autoSatisfyWithNPCs = true, the script isn't going to work if it's false");
   }
 
-  iotmChecklist();
-  skillChecklist();
-  if (inSeaPath()) pullChecklist();
+  // The full lists are for "sebastian sim" and seb_debug; a run prints only
+  // the counts and what the run can't get on its own.
+  const full = debugMode();
+  iotmChecklist(full);
+  skillChecklist(full);
+  if (inSeaPath()) pullChecklist(full);
 
   if (questStep("questS01OldGuy") === -1) {
     visitUrl("place.php?whichplace=sea_oldman&action=oldman_oldman");

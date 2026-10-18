@@ -6,14 +6,13 @@ import {
   Item,
   itemAmount,
   numericModifier,
-  print,
   toItem,
   toSkill,
 } from "kolmafia";
 import { $effect, $effects, $item, $skill, AprilingBandHelmet, get } from "libram";
 
 import { briefcase, sourceEnhance } from "./resources";
-import { haveItem, highShiny, lowShiny } from "./state";
+import { debug, haveItem, highShiny, lowShiny } from "./state";
 
 // Buffs before an adventure. Ported from mood(string) in UnderTheSea.ash.
 
@@ -89,7 +88,7 @@ export function mood(mode: Mood): void {
       // Both are guarded inside, so this only tops the buffs back up.
       sourceEnhance();
       briefcase();
-      print(`Item drop is ${numericModifier("Item Drop")}`);
+      debug(`Item drop is ${numericModifier("Item Drop")}`);
       return;
     }
     case "-combat": {
@@ -104,7 +103,7 @@ export function mood(mode: Mood): void {
         if (needsMissingSkill(effect)) continue;
         getEffect(effect);
       }
-      print(`Combat rate is ${numericModifier("Combat Rate")}`);
+      debug(`Combat rate is ${numericModifier("Combat Rate")}`);
       return;
     }
     case "combat": {
@@ -119,7 +118,7 @@ export function mood(mode: Mood): void {
         if (needsMissingSkill(effect)) continue;
         getEffect(effect);
       }
-      print(`Combat rate is ${numericModifier("Combat Rate")}`);
+      debug(`Combat rate is ${numericModifier("Combat Rate")}`);
       return;
     }
     case "hotres":

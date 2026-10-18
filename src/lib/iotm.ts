@@ -64,7 +64,7 @@ import {
   seaCowNeeded,
 } from "./progress";
 import { equipSwimTrunks } from "./resources";
-import { haveItem, highShiny, step } from "./state";
+import { haveItem, highShiny, debug } from "./state";
 
 // IOTM and game-mechanic helpers. Ported from UnderTheSeaGlobals.ash.
 
@@ -151,7 +151,7 @@ export function codpiece(input: string): void {
     );
     if (worn) equip(worn, $item.none);
     if (itemAmount(gem) === 0) return false;
-    print(`Inserting ${gem} into Codpiece`);
+    debug(`Inserting ${gem} into Codpiece`);
     equip(slot, gem);
     return true;
   });
@@ -363,10 +363,10 @@ function timeSpinnerReady(): boolean {
 /** Re-fight the monster just fought, walking the Time-Spinner's choice chain by hand. */
 export function timeSpinnerFight(monster: Monster): boolean {
   if (!timeSpinnerReady() || lastMonster() !== monster) return false;
-  step(`Time-Spinner: refighting ${monster}`);
+  debug(`Time-Spinner: refighting ${monster}`);
   visitUrl(`inv_use.php?whichitem=${$item`Time-Spinner`.id}&pwd=${myHash()}`);
   if (!handlingChoice()) {
-    step("Time-Spinner choice was auto-resolved or never opened; skipping");
+    debug("Time-Spinner choice was auto-resolved or never opened; skipping");
     return false;
   }
   const options = Object.entries(availableChoiceOptions());

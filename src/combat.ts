@@ -82,10 +82,10 @@ import {
 import { bczSweatReady } from "./lib/resources";
 import {
   bangAlcoholKnown,
+  debug,
   haveItem,
   highShiny,
   lowShiny,
-  step,
   unknownBangPotions,
 } from "./lib/state";
 
@@ -129,6 +129,12 @@ class Plan extends Macro {
     this.step(step);
     this.swapped = true;
     return this;
+  }
+
+  /** Fish won't call over some fish, so Talk to Some Fish drops out against the fish phylum. */
+  trySkill(...skills: (Skill | string)[]): this {
+    const fish = foe.phylum === $phylum`fish`;
+    return super.trySkill(...skills.filter((skill) => !fish || skill !== talkToFish));
   }
 }
 
@@ -309,7 +315,7 @@ function layMimicEgg(): Macro {
 /** A Force that ends the fight, where one is planned for this monster. */
 function forceOn(target: Monster, ready: boolean, why: string, first = new Macro()): Macro {
   if (foe !== target || !ready || !haveEquipped(saber)) return new Macro();
-  step(`Use the Force planned -> ${why}`);
+  debug(`Use the Force planned -> ${why}`);
   return Macro.if_(force, first.skill(force));
 }
 
@@ -387,11 +393,11 @@ function replaceEnemy(): Macro | undefined {
   if (myLocation() !== $location`The Wreck of the Edgar Fitzsimmons`) return undefined;
   if (freeMonster(foe) || foe === $monster`unholy diver` || diverPartsComplete()) return undefined;
   if (macroReady() && haveSkill($skill`Macrometeorite`)) {
-    step("Macrometeorite: re-rolling the monster");
+    debug("Macrometeorite: re-rolling the monster");
     return Macro.skill($skill`Macrometeorite`);
   }
   if (gloveReady() && haveEquipped($item`Powerful Glove`)) {
-    step("CHEAT CODE: re-rolling the monster");
+    debug("CHEAT CODE: re-rolling the monster");
     return Macro.skill($skill`CHEAT CODE: Replace Enemy`);
   }
   return undefined;
