@@ -123,6 +123,12 @@ class Plan extends Macro {
     this.swapped = true;
     return this;
   }
+
+  /** Fish won't call over some fish, so Talk to Some Fish drops out against the fish phylum. */
+  trySkill(...skills: (Skill | string)[]): this {
+    const fish = foe.phylum === $phylum`fish`;
+    return super.trySkill(...skills.filter((skill) => !fish || skill !== talkToFish));
+  }
 }
 
 // ─── FREE KILLS AND RUNS ──────────────────────────────────────────────────────

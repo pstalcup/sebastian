@@ -220,6 +220,9 @@ export function equipSwimTrunks(): void {
   else if (inAftercore()) equip($item`Elf Guard SCUBA tank`);
 }
 
+/** A fax from OnlyFax; EasyFax, mafia's default bot, is gone. */
+const fax = (monster: Monster) => faxbot(monster, "OnlyFax");
+
 /**
  * Fight a monster from the locket, a fax, a mimic egg or a pocket wish, in
  * that order. False when none of them is available.
@@ -235,7 +238,7 @@ export function summon(monster: Monster, wishGear?: () => void): boolean {
   if (
     !get("_photocopyUsed") &&
     haveItem($item`Clan VIP Lounge key`) &&
-    (faxbot(monster) || faxbot(monster) || faxbot(monster))
+    (fax(monster) || fax(monster) || fax(monster))
   ) {
     use($item`photocopied monster`);
     runCombat();

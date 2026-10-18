@@ -269,7 +269,8 @@ function shadowWaters(): TaskBody {
         ncForce();
         adv1Rift();
       }
-      if (!get("_seadentWaveUsed")) useSkill($skill`Sea *dent: Summon a Wave`);
+      // No wave once today's affinity is spent: the rift it was for is done.
+      if (!get("_seadentWaveUsed") && riftOpen()) useSkill($skill`Sea *dent: Summon a Wave`);
       use($item`closed-circuit pay phone`);
       // The noncombat force can take an accessory slot.
       shadowRiftGear().dress();
@@ -306,9 +307,10 @@ function shadowAffinity(): TaskBody {
     prepare: () => mood("itdrop"),
     do: rift,
     post: () => {
+      // Wave first, while affinity is left: the extra fight can spend the last of it.
       if (!get("_seadentWaveUsed") && haveEffect($effect`Shadow Affinity`) > 0) {
-        adv1Rift();
         useSkill($skill`Sea *dent: Summon a Wave`);
+        adv1Rift();
       }
       if (get("encountersUntilSRChoice") === 0) adv1Rift();
     },
