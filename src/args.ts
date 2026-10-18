@@ -18,5 +18,10 @@ export const args = Args.create(
       setting: "",
       default: false,
     }),
+    boss: Args.string({
+      help: "The boss an aftercore run is for. Saved to _sebAftercoreBoss, which a run started in aftercore needs.",
+      options: [["Yogurt"], ["Shub"], ["Dad"]],
+      setting: "",
+    }),
   },
 );

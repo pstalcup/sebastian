@@ -70,7 +70,7 @@ import {
 import { pulledToday, pullSequence, reservedPulls } from "../lib/pulls";
 import { baseballPlayers, equipSwimTrunks } from "../lib/resources";
 import { dreadSeedCheck, isKBandSushiEnough } from "../lib/seedfinder";
-import { haveItem, highShiny, inAftercore, inSeaPath, lowShiny } from "../lib/state";
+import { debug, haveItem, highShiny, inAftercore, inSeaPath, lowShiny } from "../lib/state";
 
 import { aftercoreBoss, tamed } from "./seahorse";
 import {
@@ -151,10 +151,10 @@ function yogHpCheck(): boolean {
   }
   const predictedMus =
     Math.round(30 * (1 + numericModifier("Muscle Percent") / 100)) + numericModifier("Muscle");
-  print(`Predicted Mus ${predictedMus}`);
+  debug(`Predicted Mus ${predictedMus}`);
   const predictedHP =
     Math.round((predictedMus + 3) * trueHPPercent()) + numericModifier("Maximum HP");
-  print(`predicted HP ${predictedHP}`);
+  debug(`predicted HP ${predictedHP}`);
   if (predictedHP * 0.9 * 2 <= predictedHP + maxHeal) return true;
   if (haveEffect($effect`Gummiheart`) === 0) return false;
   const antidote = $item`soft green echo eyedrop antidote`;
@@ -838,9 +838,12 @@ function championCheck(): void {
     return;
   }
   const weakest = monsterHp($monster`Georgepaul, the Balldodger`);
-  const ranEst = get("_sebChampionRanEst");
+  // "estimate:roundsWon", written by the combat script before each champion cast.
+  // A round won since then means that cast killed, so it isn't a failure.
+  const [ranEst, wonThen] = get("_sebChampionRanEst", "").split(":");
+  const failed = ranEst !== "" && won <= toInt(wonThen ?? "0");
   let why = "";
-  if (ranEst !== "" && geyserLowRoll() <= toInt(ranEst)) {
+  if (failed && geyserLowRoll() <= toInt(ranEst)) {
     why =
       `SEB: one Saucegeyser estimated at ${ranEst} failed to kill a Colosseum champion today, ` +
       `and the estimate here is ${geyserLowRoll()}. Raise Mysticality or spell damage past that, or fight it by hand, then rerun.`;

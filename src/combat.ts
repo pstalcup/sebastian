@@ -80,7 +80,7 @@ import {
   YOG_HEALINGS_NEEDED,
 } from "./lib/progress";
 import { bczSweatReady } from "./lib/resources";
-import { haveItem, highShiny, lowShiny, step } from "./lib/state";
+import { haveItem, highShiny, lowShiny, debug } from "./lib/state";
 
 // The combat consult script. Ported from UnderTheSeaCCS.ash and the fight
 // helpers of UnderTheSeaGlobals.ash onto libram macros; the run's CCS is
@@ -122,6 +122,12 @@ class Plan extends Macro {
     this.step(step);
     this.swapped = true;
     return this;
+  }
+
+  /** Fish won't call over some fish, so Talk to Some Fish drops out against the fish phylum. */
+  trySkill(...skills: (Skill | string)[]): this {
+    const fish = foe.phylum === $phylum`fish`;
+    return super.trySkill(...skills.filter((skill) => !fish || skill !== talkToFish));
   }
 }
 
@@ -302,7 +308,7 @@ function layMimicEgg(): Macro {
 /** A Force that ends the fight, where one is planned for this monster. */
 function forceOn(target: Monster, ready: boolean, why: string, first = new Macro()): Macro {
   if (foe !== target || !ready || !haveEquipped(saber)) return new Macro();
-  step(`Use the Force planned -> ${why}`);
+  debug(`Use the Force planned -> ${why}`);
   return Macro.if_(force, first.skill(force));
 }
 
@@ -380,11 +386,11 @@ function replaceEnemy(): Macro | undefined {
   if (myLocation() !== $location`The Wreck of the Edgar Fitzsimmons`) return undefined;
   if (freeMonster(foe) || foe === $monster`unholy diver` || diverPartsComplete()) return undefined;
   if (macroReady() && haveSkill($skill`Macrometeorite`)) {
-    step("Macrometeorite: re-rolling the monster");
+    debug("Macrometeorite: re-rolling the monster");
     return Macro.skill($skill`Macrometeorite`);
   }
   if (gloveReady() && haveEquipped($item`Powerful Glove`)) {
-    step("CHEAT CODE: re-rolling the monster");
+    debug("CHEAT CODE: re-rolling the monster");
     return Macro.skill($skill`CHEAT CODE: Replace Enemy`);
   }
   return undefined;
@@ -1066,8 +1072,10 @@ function gymnasium(plan: Plan): void {
 function colosseum(plan: Plan): void {
   if (foe.boss && haveSkill($skill`Saucegeyser`)) {
     // championCheck() reads _sebChampionRanEst to stop a rerun before the turn.
+    // The round count lets it tell a cast that killed from one that didn't.
+    const ranEst = `${geyserLowRoll()}:${get("lastColosseumRoundWon")}`;
     if (geyserLowRoll() < monsterHp()) {
-      set("_sebChampionRanEst", geyserLowRoll());
+      set("_sebChampionRanEst", ranEst);
       let why =
         `SEB: ${foe} has ${monsterHp()} HP and one Saucegeyser is estimated at ` +
         `${geyserLowRoll()}. Raise Mysticality or spell damage, or fight it by hand, then rerun.`;
@@ -1077,7 +1085,7 @@ function colosseum(plan: Plan): void {
       stop(why);
     }
     // Recorded before the cast: a kill ends the fight and the run moves on.
-    set("_sebChampionRanEst", geyserLowRoll());
+    set("_sebChampionRanEst", ranEst);
     plan.skill($skill`Saucegeyser`);
   } else {
     plan.step(freeKill(false));

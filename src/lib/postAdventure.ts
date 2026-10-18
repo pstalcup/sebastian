@@ -69,7 +69,7 @@ import {
   lowShiny,
   pearlLoc,
   pearlRes,
-  step,
+  debug,
 } from "./state";
 
 // Housekeeping after every adventure. Ported from post_adv(), setMPRecovery()
@@ -208,7 +208,7 @@ function dolphinWhistle(): void {
         : `no whistle, and ${itemAmount($item`sand dollar`)} sand dollars against ${sandDollarsOwed()} owed`;
   const said = `${stolen}: ${why}`;
   if (said !== dolphinSaid) {
-    step(`a dolphin took ${stolen}; ${why}.`);
+    debug(`a dolphin took ${stolen}; ${why}.`);
     dolphinSaid = said;
   }
   // A later theft of the same item is a new event.

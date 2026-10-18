@@ -23,13 +23,23 @@ Then:
 sebastian          # the whole run, from startup through the prism
 sebastian sim      # print the IOTM, skill and pull checklists and stop
 sebastian postloop # only the postloop steps (pilsners, pearls, the eagle re-aim, the codpiece)
+sebastian boss=Shub # an aftercore sea run for one boss (Yogurt, Shub or Dad)
 ```
+
+A run started in the path stops once the council frees the king; it never carries on into the
+aftercore sea quest. An aftercore run needs its boss, from `boss=` or `_sebAftercoreBoss`, and stops
+with an error when neither is set.
 
 Everything in UnderTheSea's README still applies: the hard requirements, `autoSatisfyWithNPCs`, the
 high, mid and low "shiny" tiers, and its per-account preferences, renamed from `uts_` to `seb_`
 (`seb_godRunGuard`,
 `seb_usePilsners`, `seb_postloopCommand`, `seb_postLoopRunOutEagleBanish`, `seb_postLoopFarmPearls`,
 `seb_postLoopCloverFishy`, `seb_postLoopPrepCodpiece`), which you still set with the mafia CLI.
+
+A run prints only errors, warnings and a one-line summary of each startup checklist (IOTMs, skills,
+pulls), plus any missing required skill or unbuyable pull. `sebastian sim` prints the full
+checklists. Set `seb_debug` to `true` (`set seb_debug = true`) for the full checklists at startup and
+the run's routine narration (buff levels, resources about to be spent, combat plans).
 
 ## Layout
 

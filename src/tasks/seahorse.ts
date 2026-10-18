@@ -4,6 +4,7 @@ import {
   canAdventure,
   cliExecute,
   create,
+  getIngredients,
   elementalResistance,
   equip,
   handlingChoice,
@@ -31,7 +32,6 @@ import {
   totalTurnsPlayed,
   use,
   useSkill,
-  userPrompt,
   visitUrl,
 } from "kolmafia";
 import {
@@ -511,11 +511,23 @@ const abyssTasks: SebTask[] = [
 const dropLeg = () => legReady("corral:drop");
 const corralLeg = () => legReady("corral:collect", "corral:drop");
 
+/**
+ * Smith a sea leather with its pattern (pants kit or helmet recipe). Mafia
+ * won't fetch the pattern itself ("That item cannot be created"), so buy it
+ * first, and stop the run on a failure rather than retry it forever.
+ */
+function smithLeather(item: Item): void {
+  for (const part of Object.keys(getIngredients(item)).map((name) => Item.get(name))) {
+    if (!retrieveItem(part)) throw new Error(`Couldn't get a ${part} to smith ${item}.`);
+  }
+  if (!create(item)) throw new Error(`Couldn't smith ${item}; see mafia's message above.`);
+}
+
 /** The leather piece, crafted from a sea leather or farmed for one. */
 function leatherPiece(item: Item): TaskBody {
   const body = branch(
     () => itemAmount($item`sea leather`) > 0,
-    action(() => create(item)),
+    action(() => smithLeather(item)),
     corralFarm(),
   );
   return withHooks(body, {
@@ -907,7 +919,9 @@ const disguiseShort = () =>
   availableAmount($item`crappy Mer-kin mask`) === 0 ||
   availableAmount($item`crappy Mer-kin tailpiece`) === 0;
 
-/** Which boss an aftercore run is for, asked once and kept for reruns. */
+export const AFTERCORE_BOSSES = ["Yogurt", "Shub", "Dad"];
+
+/** Which boss an aftercore run is for, from the boss arg or set by hand, kept for reruns. */
 export const aftercoreBoss = () => get("_sebAftercoreBoss");
 
 /** Mafia skips Deep Dark Visions below 500 maximum HP; under 67% spooky res a cast ends Beaten Up. */
@@ -1030,18 +1044,18 @@ export const PostSeahorseQuest: SebQuest = {
       limit: { tries: 1 },
     },
     {
+      // Mafia often runs headless, where userPrompt throws, so the boss comes
+      // from the boss arg or the pref instead.
       name: "Pick the aftercore boss",
       ready: inAftercore,
-      completed: () => aftercoreBoss() !== "",
+      completed: () => AFTERCORE_BOSSES.includes(aftercoreBoss()),
       ...action(() => {
-        const boss = userPrompt("Which boss?", {
-          Yogurt: true,
-          Shub: true,
-          Dad: true,
-          Abort: true,
-        });
-        if (boss === "Abort" || boss === "") throw new Error("No aftercore boss chosen.");
-        set("_sebAftercoreBoss", boss);
+        const boss = aftercoreBoss();
+        throw new Error(
+          boss === ""
+            ? `No aftercore boss chosen. Run "sebastian boss=Shub" (or Yogurt, or Dad), or set _sebAftercoreBoss.`
+            : `_sebAftercoreBoss is "${boss}", which isn't Yogurt, Shub or Dad.`,
+        );
       }),
       limit: { tries: 1 },
     },

@@ -3,7 +3,7 @@ import { maximize, print, writeCcs } from "kolmafia";
 import { Clan, get, questStep, set } from "libram";
 
 import { args } from "./args";
-import { COMBAT_SCRIPT, SEB_CCS, SebEngine } from "./engine";
+import { COMBAT_SCRIPT, SEB_CCS, SebEngine, SebQuest } from "./engine";
 import { initialization } from "./initialization";
 import { iotmChecklist, pullChecklist, skillChecklist } from "./lib/checklists";
 import { setDropsItems } from "./lib/gear";
@@ -61,26 +61,36 @@ export function main(command?: string): void {
     return;
   }
 
+  if (args.boss) set("_sebAftercoreBoss", args.boss);
+
   const home = Clan.get();
+  // Freeing the king at the council drops the path, which makes the aftercore
+  // tasks ready. A run that starts in the path stops at the king: its sea
+  // quests stay gated on the path, and only the postloop steps run after.
+  const startedInPath = inSeaPath();
+  const pathOnly = (quest: SebQuest): SebQuest =>
+    startedInPath ? { ...quest, ready: () => inSeaPath() && (quest.ready?.() ?? true) } : quest;
   // In seaMonkees() order: the early lasso, the guild, the quest, the outpost,
   // the seahorse, the temple, then past the prism. Every task reads its state
   // from the game, so a rerun picks up where the last one stopped.
   const engine = new SebEngine(
     getTasks([
-      LassoQuest,
-      GuildQuest,
-      MonkeesQuest,
-      OutpostQuest,
-      SeahorseRouteQuest,
-      TeflonQuest,
-      BackupLassoQuest,
-      TamingQuest,
-      PostSeahorseQuest,
-      YogUrtQuest,
-      AfterYogUrtQuest,
-      ShubQuest,
-      FinalBossQuest,
-      PathCleanupQuest,
+      ...[
+        LassoQuest,
+        GuildQuest,
+        MonkeesQuest,
+        OutpostQuest,
+        SeahorseRouteQuest,
+        TeflonQuest,
+        BackupLassoQuest,
+        TamingQuest,
+        PostSeahorseQuest,
+        YogUrtQuest,
+        AfterYogUrtQuest,
+        ShubQuest,
+        FinalBossQuest,
+        PathCleanupQuest,
+      ].map(pathOnly),
       // The postloop steps wait for the council visit that closes the path.
       { ...PostloopQuest, ready: () => get("_sebCouncilVisited", false) },
     ]),
@@ -93,7 +103,9 @@ export function main(command?: string): void {
     // Priming, in case the last run aborted mid-combat.
     postAdventure();
     engine.run();
-    if (inSeaPath() && questStep("questL13Final") < 999) {
+    if (startedInPath && !inSeaPath()) {
+      print("SEB: the king is free, so this run is done. Aftercore takes its own run.", "blue");
+    } else if (inSeaPath() && questStep("questL13Final") < 999) {
       print(
         "SEB: no task is ready to run, but the prism isn't broken yet. Check the log above.",
         "red",
