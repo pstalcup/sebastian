@@ -11,7 +11,6 @@ import {
   haveFamiliar,
   haveSkill,
   Item,
-  itemAmount,
   lastMonster,
   Location,
   Monster,
@@ -113,7 +112,7 @@ export function zoneStall(
     const forced = turnsUntilForcedNoncombat(zone);
     why = `${forced < 0 ? "no forced noncombat here" : `forced noncombat in ${forced} turns`}, combat rate ${Math.round(combatRateModifier())}%`;
   } else {
-    why = `${gate} x${itemAmount(gate)}, item ${Math.round(numericModifier("Item Drop"))}% against this zone's ${Math.round(numericModifier(`Loc:${zone}`, "Item Drop Penalty"))}%`;
+    why = `${gate} x${availableAmount(gate)}, item ${Math.round(numericModifier("Item Drop"))}% against this zone's ${Math.round(numericModifier(`Loc:${zone}`, "Item Drop Penalty"))}%`;
   }
   print(`${spent} turns in ${zone} still waiting on ${waitingFor}: ${why}.`, "red");
 }
@@ -126,7 +125,7 @@ export function yellowRayPrep(): void {
   } else if (
     haveItem($item`April Shower Thoughts shield`) &&
     availableAmount($item`spitball`) === 0 &&
-    itemAmount($item`glob of wet paper`) > 0
+    availableAmount($item`glob of wet paper`) > 0
   ) {
     create($item`spitball`);
   }
@@ -150,7 +149,7 @@ export function codpiece(input: string): void {
       (s) => !EternityCodpiece.SLOTS.includes(s) && equippedItem(s) === gem,
     );
     if (worn) equip(worn, $item.none);
-    if (itemAmount(gem) === 0) return false;
+    if (availableAmount(gem) === 0) return false;
     debug(`Inserting ${gem} into Codpiece`);
     equip(slot, gem);
     return true;
@@ -298,7 +297,7 @@ export function eatSushi(): void {
     [$item`glistening fish meat`, "glistening nigiri"],
     [$item`slick fish meat`, "slick nigiri"],
   ];
-  const found = sushi.find(([meat]) => itemAmount(meat) > 0);
+  const found = sushi.find(([meat]) => availableAmount(meat) > 0);
   if (found) cliExecute(`make ${found[1]}`);
 }
 
@@ -516,7 +515,7 @@ export function useMapIfAvailable(): void {
   if (highShiny()) return;
   if (!haveEquipped($item`backup camera`)) return;
   if (freeMonster(get("lastCopyableMonster") ?? $monster.none)) return;
-  if (!get("_mapToACandyRichBlockUsed") && itemAmount($item`map to a candy-rich block`) > 0) {
+  if (!get("_mapToACandyRichBlockUsed") && availableAmount($item`map to a candy-rich block`) > 0) {
     use($item`map to a candy-rich block`);
   }
   if (get("_mapToACandyRichBlockUsed")) candy("fight");

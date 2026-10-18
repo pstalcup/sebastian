@@ -159,7 +159,7 @@ function yogHpCheck(): boolean {
   if (haveEffect($effect`Gummiheart`) === 0) return false;
   const antidote = $item`soft green echo eyedrop antidote`;
   if (itemAmount(antidote) === 0 && pullsRemaining() > reservedPulls()) pullSequence(antidote);
-  if (itemAmount(antidote) > 0) uneffect($effect`Gummiheart`);
+  if (availableAmount(antidote) > 0) uneffect($effect`Gummiheart`);
   return haveEffect($effect`Gummiheart`) === 0;
 }
 
@@ -197,7 +197,7 @@ const vocabularyTasks: SebTask[] = [
   {
     name: "Aftercore school supplies",
     ready: () => vocabularyRoute() && inAftercore(),
-    completed: () => itemAmount($item`Mer-kin wordquiz`) >= 10 || vocabulary() >= 90,
+    completed: () => availableAmount($item`Mer-kin wordquiz`) >= 10 || vocabulary() >= 90,
     ...action(() =>
       cliExecute(
         "acquire 10 mer-kin cheatsheet, 10 mer-kin wordquiz, mer-kin killscroll, mer-kin healscroll, mer-kin knucklebone",
@@ -208,7 +208,7 @@ const vocabularyTasks: SebTask[] = [
   {
     name: "Cheatsheets",
     ready: vocabularyRoute,
-    completed: () => itemAmount($item`Mer-kin cheatsheet`) >= 9 || vocabulary() > 0,
+    completed: () => availableAmount($item`Mer-kin cheatsheet`) >= 9 || vocabulary() > 0,
     ...getCheatsheet(),
   },
   {
@@ -299,9 +299,9 @@ const vocabularyTasks: SebTask[] = [
     ready: () =>
       vocabularyRoute() &&
       vocabulary() < 90 &&
-      itemAmount($item`Mer-kin wordquiz`) > 0 &&
+      availableAmount($item`Mer-kin wordquiz`) > 0 &&
       pullsRemaining() === 0,
-    completed: () => itemAmount($item`Mer-kin cheatsheet`) > 0,
+    completed: () => availableAmount($item`Mer-kin cheatsheet`) > 0,
     ...getCheatsheet(),
   },
   {
@@ -310,7 +310,7 @@ const vocabularyTasks: SebTask[] = [
     completed: () => vocabulary() >= 90,
     ...withHooks(
       branch(
-        () => itemAmount($item`Mer-kin wordquiz`) > 0,
+        () => availableAmount($item`Mer-kin wordquiz`) > 0,
         action(() => {
           if (itemAmount($item`Mer-kin cheatsheet`) === 0) pullSequence($item`Mer-kin cheatsheet`);
           use($item`Mer-kin wordquiz`);
@@ -430,8 +430,8 @@ function sushiClue(): void {
 /** A turn towards the scroll a combat hint needs: thingpouches, a pull, or prayerbead trips. */
 function scrollFor(item: Item, fromPouches: boolean): TaskBody {
   return branch(
-    () => fromPouches && itemAmount($item`Mer-kin thingpouch`) > 0,
-    action(() => use(itemAmount($item`Mer-kin thingpouch`), $item`Mer-kin thingpouch`)),
+    () => fromPouches && availableAmount($item`Mer-kin thingpouch`) > 0,
+    action(() => use(availableAmount($item`Mer-kin thingpouch`), $item`Mer-kin thingpouch`)),
     branch(
       () => !lowShiny() && pullsRemaining() > reservedPulls(),
       action(() => pullSequence(item)),
@@ -490,7 +490,7 @@ const dreadscrollTasks: SebTask[] = [
   {
     name: "Killscroll for its hint",
     ready: () => !highPriest() && libraryDone() && scroll(5) === 0,
-    completed: () => itemAmount($item`Mer-kin killscroll`) > 0,
+    completed: () => availableAmount($item`Mer-kin killscroll`) > 0,
     ...withHooks(scrollFor($item`Mer-kin killscroll`, true), {
       before: () => print("Missed the killscroll hint", "red"),
     }),
@@ -498,7 +498,7 @@ const dreadscrollTasks: SebTask[] = [
   {
     name: "Healscroll for its hint",
     ready: () => !highPriest() && libraryDone() && scroll(2) === 0,
-    completed: () => itemAmount($item`Mer-kin healscroll`) > 0,
+    completed: () => availableAmount($item`Mer-kin healscroll`) > 0,
     ...withHooks(scrollFor($item`Mer-kin healscroll`, false), {
       before: () => print("Missed the healscroll hint", "red"),
     }),
@@ -528,7 +528,8 @@ const priestReady = () => !highPriest() && libraryDone() && hintsDone();
 const tainted = () => haveEffect($effect`Deep-Tainted Mind`) > 0;
 const skateWar = () => get("skateParkStatus") === "war";
 const guardsMissing = () =>
-  itemAmount($item`Mer-kin thighguard`) === 0 || itemAmount($item`Mer-kin headguard`) === 0;
+  availableAmount($item`Mer-kin thighguard`) === 0 ||
+  availableAmount($item`Mer-kin headguard`) === 0;
 
 function skateBuff(): void {
   if (!get("_skateBuff1") && !highShiny()) {
@@ -562,7 +563,7 @@ const priestTasks: SebTask[] = [
       priestReady() && turnsPlayed() <= 17 && get("seb_godRunGuard", false) && scroll(7) === 0,
     completed: () => scroll(7) !== 0,
     ...action(() => {
-      if (itemAmount($item`Mer-kin worktea`) === 0) {
+      if (availableAmount($item`Mer-kin worktea`) === 0) {
         throw new Error("On track for a god run, eat a sushi for the dreadscroll clue");
       }
       retrieveItem($item`white rice`);
@@ -803,7 +804,7 @@ export const AfterYogUrtQuest: SebQuest = {
       ready: inSeaPath,
       completed: () => pullsRemaining() === 0,
       ...action(() => {
-        if (itemAmount($item`crayon shavings`) < 8) pullSequence($item`null-day exploit`);
+        if (availableAmount($item`crayon shavings`) < 8) pullSequence($item`null-day exploit`);
         for (const item of $items`peppermint parasol, ink bladder, Mer-kin pinkslip, stuffed yam stinkbomb, Louder Than Bomb, anchor bomb`) {
           if (
             item === $item`peppermint parasol` &&
@@ -884,10 +885,10 @@ export const ShubQuest: SebQuest = {
         equip($slot`hat`, $item.none);
         equip($slot`pants`, $item.none);
         equipSwimTrunks();
-        if (itemAmount($item`Mer-kin scholar mask`) > 0) {
+        if (availableAmount($item`Mer-kin scholar mask`) > 0) {
           visitUrl("shop.php?whichshop=grandma&action=buyitem&quantity=1&whichrow=131");
         }
-        if (itemAmount($item`Mer-kin scholar tailpiece`) > 0) {
+        if (availableAmount($item`Mer-kin scholar tailpiece`) > 0) {
           visitUrl("shop.php?whichshop=grandma&action=buyitem&quantity=1&whichrow=1619");
         }
         for (const item of $items`Mer-kin gladiator mask, Mer-kin gladiator tailpiece`) {
@@ -912,8 +913,8 @@ export const ShubQuest: SebQuest = {
         }
         if (
           roundsWon() >= 6 &&
-          itemAmount($item`crayon shavings`) < 8 &&
-          itemAmount($item`null-day exploit`) > 0 &&
+          availableAmount($item`crayon shavings`) < 8 &&
+          availableAmount($item`null-day exploit`) > 0 &&
           haveEffect($effect`Null Afternoon`) === 0
         ) {
           use($item`null-day exploit`);
@@ -977,10 +978,10 @@ export const ShubQuest: SebQuest = {
         if (inAftercore()) {
           retrieveItem(8, $item`crayon shavings`);
         } else if (
-          itemAmount($item`crayon shavings`) < 8 &&
+          availableAmount($item`crayon shavings`) < 8 &&
           haveEffect($effect`Null Afternoon`) === 0
         ) {
-          if (itemAmount($item`null-day exploit`) > 0) use($item`null-day exploit`);
+          if (availableAmount($item`null-day exploit`) > 0) use($item`null-day exploit`);
           else if (highShiny()) mood("shub");
           else
             throw new Error(

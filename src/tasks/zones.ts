@@ -8,7 +8,6 @@ import {
   haveFamiliar,
   haveSkill,
   Item,
-  itemAmount,
   Location,
   myHp,
   putCloset,
@@ -228,7 +227,7 @@ export function corralFarm(): TaskBody {
       if (
         get("baseballTeam").includes("775") &&
         baseballPlayers() === 9 &&
-        itemAmount($item`sea cowbell`) < 3
+        availableAmount($item`sea cowbell`) < 3
       ) {
         baseballD();
       }
@@ -286,7 +285,7 @@ function shadowAffinity(): TaskBody {
       if (
         get("encountersUntilSRChoice") > 9 &&
         riftQuest() === -1 &&
-        itemAmount($item`closed-circuit pay phone`) > 0
+        availableAmount($item`closed-circuit pay phone`) > 0
       ) {
         new Gear("item drop", rift)
           .need($item`Flash Liquidizer Ultra Dousing Accessory`, $item`Monodent of the Sea`)
@@ -341,7 +340,7 @@ export function shadowRift(): TaskBody {
   const needLasso = () =>
     haveEffect($effect`Shadow Waters`) > 0 &&
     haveEffect($effect`Shadow Affinity`) > 0 &&
-    itemAmount($item`sea lasso`) === 0;
+    availableAmount($item`sea lasso`) === 0;
   return branch(
     () => haveEffect($effect`Shadow Waters`) === 0,
     shadowWaters(),
@@ -409,7 +408,7 @@ export function digAnemone(): void {
   equipSwimTrunks();
   Mining.mineCoordinate(Mining.Mine.ANEMONE, mineNum());
   if (myHp() === 0) cliExecute("restore HP");
-  if (itemAmount($item`teflon ore`) > 0 && haveEffect($effect`Beaten Up`) > 0) {
+  if (availableAmount($item`teflon ore`) > 0 && haveEffect($effect`Beaten Up`) > 0) {
     if (haveSkill($skill`Tongue of the Walrus`)) useSkill($skill`Tongue of the Walrus`);
     else cliExecute("rest");
   }
@@ -475,7 +474,7 @@ function skateParkTurn(): TaskBody {
       }
       equipSwimTrunks();
       cliExecute("unequip peridot");
-      if (itemAmount(skateBoard()) > 0) equip(skateBoard());
+      if (availableAmount(skateBoard()) > 0) equip(skateBoard());
     },
     do: skatePark,
   };
@@ -502,7 +501,7 @@ export function skateParkWar(): TaskBody {
 
 /** Hallpasses go in the closet, so the lounge noncombat doesn't eat one. */
 export function closetHallpasses(): void {
-  const passes = itemAmount($item`Mer-kin hallpass`);
+  const passes = availableAmount($item`Mer-kin hallpass`);
   if (passes > 0) putCloset(passes, $item`Mer-kin hallpass`);
 }
 
@@ -511,7 +510,7 @@ export function getCheatsheet(): TaskBody {
     before: closetHallpasses,
     outfit: () => {
       let modifier = "item drop,sea";
-      if (itemAmount($item`Mer-kin bunwig`) === 0 && availableAmount($item`Mer-kin bunwig`) === 0) {
+      if (availableAmount($item`Mer-kin bunwig`) === 0) {
         modifier += ", hat drop";
       }
       const gear = new Gear(modifier, school).forRole("itdrop");
@@ -554,10 +553,10 @@ export function merkinLib(): TaskBody {
   return {
     outfit: () => {
       const scroll7 = get("dreadScroll7") === 0;
-      const kill = itemAmount($item`Mer-kin killscroll`);
-      const heal = itemAmount($item`Mer-kin healscroll`);
-      const worktea = itemAmount($item`Mer-kin worktea`);
-      const knucklebone = itemAmount($item`Mer-kin knucklebone`);
+      const kill = availableAmount($item`Mer-kin killscroll`);
+      const heal = availableAmount($item`Mer-kin healscroll`);
+      const worktea = availableAmount($item`Mer-kin worktea`);
+      const knucklebone = availableAmount($item`Mer-kin knucklebone`);
 
       const gear = new Gear(heal < 2 ? "item drop,sea" : dropsItems, library)
         .forRole(scroll7 ? "itdrop" : "exp")

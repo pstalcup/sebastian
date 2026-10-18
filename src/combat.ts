@@ -10,7 +10,6 @@ import {
   haveFamiliar,
   haveSkill,
   Item,
-  itemAmount,
   lastMonster,
   Monster,
   monsterAttack,
@@ -181,7 +180,7 @@ function freeKill(drop: boolean): Macro {
   }
 
   for (const item of $items`shadow brick, groveling gravel`) {
-    if (itemAmount(item) === 0) continue;
+    if (availableAmount(item) === 0) continue;
     if (item === $item`groveling gravel` && drop) continue;
     if (item === $item`shadow brick` && get("_shadowBricksUsed") === 13) continue;
     if (colosseum) continue;
@@ -229,7 +228,7 @@ function freeRunAny(banish: boolean): Macro {
 
   const banishItems = $items`anchor bomb, stuffed yam stinkbomb, handful of split pea soup`;
   for (const item of $items`glob of Blank-Out, peppermint parasol, anchor bomb, stuffed yam stinkbomb, handful of split pea soup, Mer-kin pinkslip, ink bladder`) {
-    if (itemAmount(item) === 0) continue;
+    if (availableAmount(item) === 0) continue;
     if (!banish && banishItems.includes(item)) continue;
     if (item === $item`peppermint parasol` && get("parasolUsed") >= 3) continue;
     if (item === $item`Mer-kin pinkslip` && foe.phylum !== $phylum`mer-kin`) continue;
@@ -280,7 +279,7 @@ function finishFreeFight(): Macro {
 /** Finish the enemy with Saucegeyser while MP lasts. */
 function cleanUp(): Macro {
   const macro = new Macro();
-  if (itemAmount($item`pulled red taffy`) > 0 && myLocation().environment === "underwater") {
+  if (availableAmount($item`pulled red taffy`) > 0 && myLocation().environment === "underwater") {
     macro.tryItem($item`pulled red taffy`);
   }
   let round: Macro;
@@ -327,18 +326,19 @@ function forces(): Macro {
     !(haveEquipped($item`pro skateboard`) && !get("_epicMcTwistUsed")) &&
     !(
       $location`The Coral Corral`.turnsSpent <= 1 &&
-      itemAmount($item`sea leather`) === 0 &&
+      availableAmount($item`sea leather`) === 0 &&
       availableAmount($item`sea cowboy hat`) === 0
     );
   const researcherReady =
-    (itemAmount($item`Mer-kin killscroll`) === 0 || itemAmount($item`Mer-kin healscroll`) === 0) &&
+    (availableAmount($item`Mer-kin killscroll`) === 0 ||
+      availableAmount($item`Mer-kin healscroll`) === 0) &&
     saberForcesFree() > 0;
   return new Macro()
     .step(
       forceOn(
         $monster`unholy diver`,
         diverForceReady(),
-        `unholy diver (rivets ${itemAmount($item`rusty rivet`)}/8)`,
+        `unholy diver (rivets ${availableAmount($item`rusty rivet`)}/8)`,
         layMimicEgg(),
       ),
     )
@@ -384,7 +384,7 @@ function otoscope(): Macro {
 function extractJelly(): Macro {
   const stench = `${foe.attackElement}` === "stench" || `${foe.defenseElement}` === "stench";
   if (myFamiliar() !== $familiar`Space Jellyfish` || !stench) return new Macro();
-  if (itemAmount($item`stench jelly`) > 0) return new Macro();
+  if (availableAmount($item`stench jelly`) > 0) return new Macro();
   return Macro.trySkill($skill`Extract Jelly`);
 }
 
@@ -450,7 +450,7 @@ function yogDeleveler(): Item {
   ) {
     return $item.none;
   }
-  const found = DELEVELERS.find((item) => itemAmount(item) > 0 && !itemUsedThisCombat(item));
+  const found = DELEVELERS.find((item) => availableAmount(item) > 0 && !itemUsedThisCombat(item));
   if (!found) stop("Yog-Urt needs a deleveler and none is left.");
   return found ?? $item.none;
 }
@@ -458,12 +458,12 @@ function yogDeleveler(): Item {
 /** None when every full heal has been used. */
 function yogHealing(): Item {
   return (
-    YOG_HEALING.find((item) => itemAmount(item) > 0 && !itemUsedThisCombat(item)) ?? $item.none
+    YOG_HEALING.find((item) => availableAmount(item) > 0 && !itemUsedThisCombat(item)) ?? $item.none
   );
 }
 
 function yogDocPair(): boolean {
-  return [elixir, unguent].every((item) => itemAmount(item) > 0 && !itemUsedThisCombat(item));
+  return [elixir, unguent].every((item) => availableAmount(item) > 0 && !itemUsedThisCombat(item));
 }
 
 /** One round under More Like a Suckrament. Nothing thrown may damage Yog-Urt. */
@@ -530,27 +530,27 @@ function shubFight(): void {
     myBasestat($stat`Moxie`) + 10 < monsterAttack() ||
     myBasestat($stat`Muscle`) - 30 < monsterDefense();
   if (haveEffect($effect`Null Afternoon`) === 0) {
-    if (itemAmount($item`crayon shavings`) >= 8) {
+    if (availableAmount($item`crayon shavings`) >= 8) {
       const shavings: [Item, Item] = [$item`crayon shavings`, $item`crayon shavings`];
       Macro.item(shavings, shavings, shavings, shavings).submit();
     } else {
       while (currentRound() > 0 && delevelers() > 0 && statsTooHigh()) {
         const pair = DELEVELER_PAIRS.find(
           ([a, b]) =>
-            itemAmount(a) > 0 &&
-            itemAmount(b) > 0 &&
-            !(a === b && (itemAmount(a) < 2 || b === lasso)) &&
+            availableAmount(a) > 0 &&
+            availableAmount(b) > 0 &&
+            !(a === b && (availableAmount(a) < 2 || b === lasso)) &&
             !((a === lasso || b === lasso) && itemUsedThisCombat(lasso)),
         );
         if (pair) Macro.item(pair).submit();
-        const lassoSpent = itemAmount(lasso) > 0 && itemUsedThisCombat(lasso);
+        const lassoSpent = availableAmount(lasso) > 0 && itemUsedThisCombat(lasso);
         if (delevelers() === 1 || (lassoSpent && delevelers() === 2)) {
           const singles =
             $items`Mer-kin mouthsoap, crayon shavings, table tennis ball, sea cowbell`.filter(
-              (item) => itemAmount(item) === 1,
+              (item) => availableAmount(item) === 1,
             );
           if (singles.length > 0) Macro.item(...singles).submit();
-          if (delevelers() === 1 && itemAmount(lasso) > 0) break;
+          if (delevelers() === 1 && availableAmount(lasso) > 0) break;
         }
         if (!pair) break;
       }
@@ -579,12 +579,12 @@ const someFish = $monster`some fish`;
 function throwScrollHints(): Macro {
   const macro = new Macro();
   if (get("dreadScroll2") === 0) {
-    for (let i = 0; i < itemAmount($item`Mer-kin healscroll`); i++) {
+    for (let i = 0; i < availableAmount($item`Mer-kin healscroll`); i++) {
       macro.tryItem($item`Mer-kin healscroll`);
     }
   }
   if (get("dreadScroll5") === 0 && foe.phylum === $phylum`mer-kin`) {
-    for (let i = 0; i < itemAmount($item`Mer-kin killscroll`); i++) {
+    for (let i = 0; i < availableAmount($item`Mer-kin killscroll`); i++) {
       macro.tryItem($item`Mer-kin killscroll`);
     }
   }
@@ -618,12 +618,12 @@ function shadowRift(plan: Plan): void {
   if (
     get("_seadentWaveUsed") &&
     get("lassoTrainingCount") < 20 &&
-    itemAmount($item`sea lasso`) > 0
+    availableAmount($item`sea lasso`) > 0
   ) {
     plan.tryItem($item`sea lasso`);
   }
   if (foe === $monster`shadow slab`) {
-    if (itemAmount($item`Septapus summoning charm`) > 0) {
+    if (availableAmount($item`Septapus summoning charm`) > 0) {
       plan.tryItem($item`Septapus summoning charm`);
     }
     plan.trySkill($skill`Swoop like a Bat`, $skill`Perpetrate Mild Evil`);
@@ -719,9 +719,9 @@ function pearlZone(plan: Plan): void {
   if (highShiny() && foe === $monster`Anemone combatant`) plan.trySkill(lightningBolt);
   if (someFishCurveball()) plan.trySkill(talkToFish).step(cleanUp());
   if (
-    (foe !== squid || itemAmount($item`comb jelly`) > 0) &&
+    (foe !== squid || availableAmount($item`comb jelly`) > 0) &&
     foe !== tippler &&
-    (foe !== miner || itemAmount($item`Mer-kin digpick`) > 0)
+    (foe !== miner || availableAmount($item`Mer-kin digpick`) > 0)
   ) {
     if (haveItem($item`cosmic bowling ball`)) plan.step(freeRun(true));
     plan.trySkill(talkToFish).step(darts()).step(freeRun(true)).step(cleanUp());
@@ -776,7 +776,7 @@ function outpost(plan: Plan): void {
       return;
     }
     if (scaleHunt) plan.trySkill(talkToFish).step(freeKill(true)).step(cleanUp());
-    if (foe === healer && itemAmount($item`Mer-kin prayerbeads`) < 2) {
+    if (foe === healer && availableAmount($item`Mer-kin prayerbeads`) < 2) {
       if (haveEquipped($item`Baseball Diamond`) || someFishCurveball()) plan.trySkill(talkToFish);
       plan.step(freeKill(true));
       if (backupReady) {
@@ -799,7 +799,7 @@ function outpost(plan: Plan): void {
     if (scaleHunt) plan.trySkill(talkToFish).step(freeKill(true)).step(cleanUp());
     if (thief) plan.step(freeRun(true));
     plan
-      .step(freeKill(foe === healer && itemAmount($item`Mer-kin prayerbeads`) < 2))
+      .step(freeKill(foe === healer && availableAmount($item`Mer-kin prayerbeads`) < 2))
       .step(cleanUp());
   }
 }
@@ -829,8 +829,8 @@ function corral(plan: Plan): void {
     return;
   }
   const readyToTame =
-    itemAmount($item`sea cowbell`) >= 3 &&
-    itemAmount($item`sea lasso`) >= 1 &&
+    availableAmount($item`sea cowbell`) >= 3 &&
+    availableAmount($item`sea lasso`) >= 1 &&
     get("lassoTrainingCount") === 20;
   if (foe === seahorse && readyToTame) {
     plan
@@ -855,7 +855,7 @@ function corral(plan: Plan): void {
       plan.trySkill(talkToFish, gaze, mcTwist).tryItem($item`pulled yellow taffy`);
     } else if (foe === seahorse) {
       plan.runaway();
-    } else if (itemAmount($item`software glitch`) > 0) {
+    } else if (availableAmount($item`software glitch`) > 0) {
       plan
         .item($item`software glitch`)
         .ifNot($monster`bugged bugbear`, Macro.abortWithWarning("Software glitch failed"))
@@ -888,7 +888,7 @@ function corral(plan: Plan): void {
         }
       }
     }
-    if (itemAmount($item`waffle`) > 0 && !get("_lastCombatActions").includes("it11311")) {
+    if (availableAmount($item`waffle`) > 0 && !get("_lastCombatActions").includes("it11311")) {
       // The waffle swaps the monster; the next pass plans for the new one.
       plan.swap(Macro.item($item`waffle`));
       return;
@@ -919,7 +919,7 @@ function corral(plan: Plan): void {
 function abyss(plan: Plan): void {
   if (
     (highShiny() || !haveItem($item`closed-circuit pay phone`)) &&
-    itemAmount($item`sea lasso`) > 1 &&
+    availableAmount($item`sea lasso`) > 1 &&
     get("lassoTrainingCount") < 20 &&
     haveEquipped($item`sea cowboy hat`)
   ) {
@@ -946,7 +946,7 @@ function abyss(plan: Plan): void {
   }
   const habitats = $monsters`slithering thing, eye in the darkness`;
   if (
-    itemAmount($item`Spooky VHS Tape`) > 0 &&
+    availableAmount($item`Spooky VHS Tape`) > 0 &&
     get("spookyVHSTapeMonster") === null &&
     get("momSeaMonkeeProgress") < 36 &&
     [...habitats, $monster`school of many`].includes(foe)
@@ -981,8 +981,8 @@ function school(plan: Plan): void {
     if (
       haveEquipped($item`spring shoes`) &&
       !banishUsedAtYourLocation($skill`Spring Kick`) &&
-      ((foe === $monster`Mer-kin teacher` && itemAmount($item`Mer-kin bunwig`) > 0) ||
-        (foe === $monster`Mer-kin punisher` && itemAmount($item`Mer-kin mouthsoap`) > 0))
+      ((foe === $monster`Mer-kin teacher` && availableAmount($item`Mer-kin bunwig`) > 0) ||
+        (foe === $monster`Mer-kin punisher` && availableAmount($item`Mer-kin mouthsoap`) > 0))
     ) {
       plan.trySkill($skill`Spring Kick`);
     }
@@ -990,8 +990,8 @@ function school(plan: Plan): void {
     // longer wanted: the same bunwig and mouthsoap test as the Spring Kick,
     // and the monitor while cheatsheets are owed.
     const wanted =
-      (foe === $monster`Mer-kin teacher` && itemAmount($item`Mer-kin bunwig`) === 0) ||
-      (foe === $monster`Mer-kin punisher` && itemAmount($item`Mer-kin mouthsoap`) === 0) ||
+      (foe === $monster`Mer-kin teacher` && availableAmount($item`Mer-kin bunwig`) === 0) ||
+      (foe === $monster`Mer-kin punisher` && availableAmount($item`Mer-kin mouthsoap`) === 0) ||
       (foe === $monster`Mer-kin monitor` && cheatsheetsNeeded());
     if (
       !wanted &&
@@ -1010,7 +1010,7 @@ function school(plan: Plan): void {
   plan.step(feelNostalgic());
   if (bczGazeReady() && !forced) {
     plan.trySkill(talkToFish);
-    if (itemAmount($item`Mer-kin cheatsheet`) < 10) plan.trySkill(gaze);
+    if (availableAmount($item`Mer-kin cheatsheet`) < 10) plan.trySkill(gaze);
   }
   plan.step(freeKill(true)).step(cleanUp());
 }
@@ -1020,7 +1020,7 @@ function library(plan: Plan): void {
     if (bczGazeReady()) plan.trySkill(gaze);
     plan.step(cleanUp());
   }
-  const short = (item: Item) => itemAmount(item) === 0;
+  const short = (item: Item) => availableAmount(item) === 0;
   if (get("merkinVocabularyMastery") >= 90) {
     plan.step(throwScrollHints());
     if (freeMonster(foe)) {
@@ -1285,7 +1285,7 @@ function plan(page: string): Plan {
   plan.step(lectureOnRelativity()).step(bangPotions());
   if (
     (highShiny() || !haveItem($item`closed-circuit pay phone`)) &&
-    itemAmount($item`sea lasso`) > 5 &&
+    availableAmount($item`sea lasso`) > 5 &&
     myLocation().environment === "underwater" &&
     get("lassoTrainingCount") < 6
   ) {
@@ -1303,7 +1303,7 @@ function plan(page: string): Plan {
     if (
       haveEquipped($item`sea cowboy hat`) &&
       haveEquipped($item`sea chaps`) &&
-      itemAmount($item`sea lasso`) > 0 &&
+      availableAmount($item`sea lasso`) > 0 &&
       get("lassoTrainingCount") < 20
     ) {
       plan.tryItem($item`sea lasso`);

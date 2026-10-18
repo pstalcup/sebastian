@@ -2,7 +2,6 @@ import {
   availableAmount,
   availableChoiceOptions,
   haveEffect,
-  itemAmount,
   lastChoice,
   myLocation,
   runChoice,
@@ -36,7 +35,7 @@ function stashboxCheck(priority: number[]): void {
   if (option === undefined) return;
   runChoice(option);
   set("stashboxChecked", checked === "" ? `${option}` : `${checked},${option}`);
-  if (itemAmount($item`Mer-kin stashbox`) > 0) set("stashboxFound", option);
+  if (availableAmount($item`Mer-kin stashbox`) > 0) set("stashboxFound", option);
 }
 
 /** Pick the first option whose text contains the keyword. */

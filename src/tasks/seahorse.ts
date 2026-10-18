@@ -92,6 +92,7 @@ import {
   inAftercore,
   inSeaPath,
   lowShiny,
+  ownItem,
   pearlLoc,
   pearlRes,
   unknownBangPotions,
@@ -178,7 +179,7 @@ function momTarget(): number {
 const mcTwistDone = () => get("_epicMcTwistUsed");
 const lassosDone = () =>
   haveItem($item`cursed monkey's paw`) ||
-  itemAmount($item`sea lasso`) >= 6 ||
+  availableAmount($item`sea lasso`) >= 6 ||
   get("lassoTrainingCount") >= 20;
 const leathersDone = () =>
   (availableAmount($item`sea chaps`) > 0 || tailpiece() !== $item.none) &&
@@ -226,8 +227,8 @@ function diverBaseball(): void {
 function diverChainReport(): string {
   return (
     `${availableAmount($item`rusty broken diving helmet`)} broken helmet, ` +
-    `${itemAmount($item`rusty porthole`)} porthole, ` +
-    `${itemAmount($item`rusty rivet`)}/8 rivets`
+    `${availableAmount($item`rusty porthole`)} porthole, ` +
+    `${availableAmount($item`rusty rivet`)}/8 rivets`
   );
 }
 
@@ -239,7 +240,7 @@ function summonDiver(): TaskBody {
   return {
     outfit: () => {
       const gear = new Gear("item drop", wreck);
-      const egg = diverForceReady() || itemAmount($item`rusty rivet`) < 4;
+      const egg = diverForceReady() || availableAmount($item`rusty rivet`) < 4;
       const familiar = egg ? $familiar`Chest Mimic` : $familiar`Jill-of-All-Trades`;
       if (haveFamiliar(familiar)) gear.fam(familiar);
       else gear.forRole("itdrop");
@@ -374,10 +375,10 @@ const diverTasks: SebTask[] = [
     name: "Diver: wish for rivets",
     ready: () =>
       summonLeg() &&
-      itemAmount($item`rusty rivet`) > 5 &&
+      availableAmount($item`rusty rivet`) > 5 &&
       pawWishReady() &&
       availableAmount($item`cursed monkey's paw`) > 0,
-    completed: () => itemAmount($item`rusty rivet`) >= 8 || diverPartsComplete() || helmetOn(),
+    completed: () => availableAmount($item`rusty rivet`) >= 8 || diverPartsComplete() || helmetOn(),
     ...action(() => CursedMonkeyPaw.wishFor($item`rusty rivet`)),
     limit: { tries: 3 },
   },
@@ -526,7 +527,7 @@ function smithLeather(item: Item): void {
 /** The leather piece, crafted from a sea leather or farmed for one. */
 function leatherPiece(item: Item): TaskBody {
   const body = branch(
-    () => itemAmount($item`sea leather`) > 0,
+    () => availableAmount($item`sea leather`) > 0,
     action(() => smithLeather(item)),
     corralFarm(),
   );
@@ -640,7 +641,7 @@ function freeDig(): void {
   }
 }
 
-const teflonNeeded = () => itemAmount($item`teflon ore`) === 0 && tailpiece() === $item.none;
+const teflonNeeded = () => availableAmount($item`teflon ore`) === 0 && tailpiece() === $item.none;
 const haveDigpick = () => availableAmount($item`Mer-kin digpick`) > 0;
 const affinityLeft = () => haveEffect($effect`Shadow Affinity`) > 0 || !get("_shadowAffinityToday");
 const phone = () => haveItem($item`closed-circuit pay phone`);
@@ -659,11 +660,11 @@ export const TeflonQuest: SebQuest = {
         inSeaPath() &&
         !highShiny() &&
         get("encountersUntilSRChoice") > 9 &&
-        itemAmount($item`closed-circuit pay phone`) > 0,
+        availableAmount($item`closed-circuit pay phone`) > 0,
       completed: () => questStep("questRufus") >= 0,
       before: () => {
         retrieveItem($item`oversized sparkler`);
-        if (itemAmount($item`lump of loyal latite`) > 0) use($item`lump of loyal latite`);
+        if (availableAmount($item`lump of loyal latite`) > 0) use($item`lump of loyal latite`);
       },
       outfit: () =>
         new Gear("item drop", rift)
@@ -762,7 +763,7 @@ export const TeflonQuest: SebQuest = {
     },
     {
       name: "Express card",
-      ready: () => inSeaPath() && haveItem(card) && !highShiny(),
+      ready: () => inSeaPath() && ownItem(card) && !highShiny(),
       completed: () => get("expressCardUsed"),
       ...action(() => {
         if (storageAmount(card) > 0 && itemAmount(card) === 0) takeStorage(1, card);
@@ -819,7 +820,7 @@ export const BackupLassoQuest: SebQuest = {
     {
       name: "Sea lasso",
       ready: () => get("lassoTrainingCount") < 20,
-      completed: () => itemAmount($item`sea lasso`) > 0 || get("lassoTrainingCount") >= 20,
+      completed: () => availableAmount($item`sea lasso`) > 0 || get("lassoTrainingCount") >= 20,
       ...lassoWish(),
     },
     {
@@ -861,19 +862,20 @@ export const TamingQuest: SebQuest = {
   tasks: [
     {
       name: "Farm cowbells",
-      completed: () => itemAmount($item`sea cowbell`) >= cowbellsWanted(),
+      completed: () => availableAmount($item`sea cowbell`) >= cowbellsWanted(),
       ...corralFarm(),
     },
     {
       name: "Farm a sea lasso",
       ready: () => !inAftercore(),
-      completed: () => itemAmount($item`sea lasso`) > 0,
+      completed: () => availableAmount($item`sea lasso`) > 0,
       ...corralFarm(),
     },
     {
       name: "Aftercore lasso and cowbells",
       ready: inAftercore,
-      completed: () => itemAmount($item`sea cowbell`) >= 3 && itemAmount($item`sea lasso`) > 0,
+      completed: () =>
+        availableAmount($item`sea cowbell`) >= 3 && availableAmount($item`sea lasso`) > 0,
       ...action(() => {
         retrieveItem(3, $item`sea cowbell`);
         retrieveItem($item`sea lasso`);
@@ -890,7 +892,7 @@ export const TamingQuest: SebQuest = {
     {
       name: "Wish for cowbells",
       ready: () => CursedMonkeyPaw.wishes() > 0,
-      completed: () => itemAmount($item`sea cowbell`) >= 3,
+      completed: () => availableAmount($item`sea cowbell`) >= 3,
       ...monkeypaw($item`sea cowbell`),
     },
     {
@@ -900,7 +902,7 @@ export const TamingQuest: SebQuest = {
         crystalBall() &&
         !seahorseNext() &&
         (CrystalBall.getPrediction().has($location`The Coral Corral`) ||
-          itemAmount($item`shadow brick`) === 0),
+          availableAmount($item`shadow brick`) === 0),
       completed: () => haveEffect($effect`Shadow Affinity`) === 0,
       ...shadowRift(),
       limit: { tries: 20 },
@@ -909,7 +911,7 @@ export const TamingQuest: SebQuest = {
       name: "Tame the seahorse",
       completed: tamed,
       before: () => {
-        if (itemAmount($item`sea cowbell`) < 3) throw new Error("need more cowbells");
+        if (availableAmount($item`sea cowbell`) < 3) throw new Error("need more cowbells");
         if (itemAmount($item`waffle`) === 0) pullSequence($item`waffle`);
       },
       outfit: () => {
@@ -997,7 +999,7 @@ export const PostSeahorseQuest: SebQuest = {
     {
       name: "Sand dollars",
       ready: noTailpiece,
-      completed: () => itemAmount($item`sand dollar`) >= 10,
+      completed: () => availableAmount($item`sand dollar`) >= 10,
       ...withHooks(action(getSandDollar), { before: equipSwimTrunks }),
     },
     {

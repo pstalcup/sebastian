@@ -4,10 +4,10 @@ import {
   haveEffect,
   haveSkill,
   Item,
-  itemAmount,
   numericModifier,
   toItem,
   toSkill,
+  availableAmount,
 } from "kolmafia";
 import { $effect, $effects, $item, $skill, AprilingBandHelmet, get, have } from "libram";
 
@@ -103,9 +103,9 @@ export function mood(mode: Mood): void {
     case "-combat": {
       for (const effect of $effects`The Sonata of Sneakiness, Ultra-Soft Steps, Wild and Westy!, Hiding From Seekers, Life Goals, Smooth Movements, Apriling Band Patrol Beat, Silent Running, Feeling Lonely`) {
         if (haveEffect(effect) > 0) continue;
-        if (effect === $effect`Ultra-Soft Steps` && itemAmount($item`ultra-soft ferns`) === 0)
+        if (effect === $effect`Ultra-Soft Steps` && availableAmount($item`ultra-soft ferns`) === 0)
           continue;
-        if (effect === $effect`Life Goals` && itemAmount($item`Life Goals Pamphlet`) === 0)
+        if (effect === $effect`Life Goals` && availableAmount($item`Life Goals Pamphlet`) === 0)
           continue;
         if (effect === $effect`Wild and Westy!` && photoBoothSpent()) continue;
         if (effect === $effect`Apriling Band Patrol Beat` && aprilBandWaiting()) continue;
@@ -118,7 +118,8 @@ export function mood(mode: Mood): void {
     case "combat": {
       for (const effect of $effects`Carlweather's Cantata of Confrontation, Fresh Breath, Musk of the Moose, Crunchy Steps, Apriling Band Battle Cadence, Towering Muscles, Attracting Snakes, Bloodbathed`) {
         if (haveEffect(effect) > 0) continue;
-        if (effect === $effect`Crunchy Steps` && itemAmount($item`crunchy brush`) === 0) continue;
+        if (effect === $effect`Crunchy Steps` && availableAmount($item`crunchy brush`) === 0)
+          continue;
         if (effect === $effect`Towering Muscles` && (!get("yogUrtDefeated") || photoBoothSpent()))
           continue;
         if (effect === $effect`Fresh Breath` && (get("_aug6Cast") || highShiny())) continue;
@@ -140,7 +141,7 @@ export function mood(mode: Mood): void {
       for (const effect of effects) {
         if (
           effect === $effect`Minor Invulnerability` &&
-          itemAmount($item`scroll of minor invulnerability`) === 0
+          availableAmount($item`scroll of minor invulnerability`) === 0
         ) {
           continue;
         }
@@ -173,7 +174,7 @@ export function mood(mode: Mood): void {
       for (const effect of $effects`Ruthlessly Efficient, Juiced Out, Juiced, Starry-Eyed, Gummiheart, Carol of the Bulls, Song of Bravado, Quiet Desperation, Stevedave's Shanty of Superiority, Rage of the Reindeer`) {
         if (needsMissingSkill(effect)) continue;
         const item = effectToItem(effect);
-        if (item !== $item.none && itemAmount(item) === 0) continue;
+        if (item !== $item.none && availableAmount(item) === 0) continue;
         if (effect === $effect`Starry-Eyed` && get("telescopeUpgrades") === 0) continue;
         if (haveEffect(effect) === 0) getEffect(effect);
       }
