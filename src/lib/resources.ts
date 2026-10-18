@@ -9,7 +9,6 @@ import {
   haveEffect,
   haveFamiliar,
   haveSkill,
-  itemAmount,
   lastChoice,
   Location,
   Monster,
@@ -24,6 +23,7 @@ import {
   useFamiliar,
   useSkill,
   visitUrl,
+  availableAmount,
 } from "kolmafia";
 import {
   $coinmaster,
@@ -101,7 +101,7 @@ export function censer(): void {
   if (!haveItem($item`Sept-Ember Censer`)) return;
   if (!get("_septEmberBalanceChecked")) visitUrl("shop.php?whichshop=september");
   const wanted = Math.min(
-    3 - itemAmount($item`Septapus summoning charm`),
+    3 - availableAmount($item`Septapus summoning charm`),
     Math.floor(get("availableSeptEmbers") / 2),
   );
   if (wanted > 0) buy($coinmaster`Sept-Ember Censer`, wanted, $item`Septapus summoning charm`);
@@ -251,7 +251,7 @@ export function summon(monster: Monster, wishGear?: () => void): boolean {
     }
     // A Force cast during the egg fight can strand the session in choice 1387.
     if (handlingChoice() && lastChoice() === 1387) runChoice(3);
-  } else if (itemAmount($item`pocket wish`) > 0) {
+  } else if (availableAmount($item`pocket wish`) > 0) {
     wishGear?.();
     cliExecute(`genie monster ${monster}`);
     runCombat();

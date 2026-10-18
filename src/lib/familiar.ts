@@ -2,10 +2,10 @@ import {
   cliExecute,
   Familiar,
   haveFamiliar,
-  itemAmount,
   myFamiliar,
   print,
   useFamiliar,
+  availableAmount,
 } from "kolmafia";
 import { $effect, $familiar, $item, $monster, get, have, MummingTrunk } from "libram";
 
@@ -80,7 +80,7 @@ export function mummery(): void {
 /** Sword of S Words is set on the sea cowboy and lassos are still short. */
 export function doSWord(): boolean {
   if (!have(swordOfSWords) || get("swordOfSWordsMonster") !== $monster`sea cowboy`) return false;
-  const lassos = itemAmount($item`sea lasso`);
+  const lassos = availableAmount($item`sea lasso`);
   if (highShiny() && lassos < 7) return true;
   return !haveItem($item`closed-circuit pay phone`) && lassos < 4;
 }

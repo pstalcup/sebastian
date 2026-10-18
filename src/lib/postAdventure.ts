@@ -35,6 +35,7 @@ import {
   use,
   useSkill,
   equip,
+  availableAmount,
 } from "kolmafia";
 import {
   $coinmaster,
@@ -144,7 +145,7 @@ function stillWanted(item: Item): boolean {
       return seaCowNeeded();
     case $item`Mer-kin cheatsheet`:
       // One is spent per wordquiz, and each quiz is ten of the ninety wanted.
-      return itemAmount(item) * 10 < 90 - get("merkinVocabularyMastery");
+      return availableAmount(item) * 10 < 90 - get("merkinVocabularyMastery");
     case $item`Mer-kin prayerbeads`:
       return !have(item, 3);
     case $item`Mer-kin bunwig`:
@@ -155,7 +156,7 @@ function stillWanted(item: Item): boolean {
 
 function durableWhistleReady(): boolean {
   return (
-    itemAmount($item`durable dolphin whistle`) > 0 &&
+    availableAmount($item`durable dolphin whistle`) > 0 &&
     get("_durableDolphinWhistleUsed") < get("seaPoints")
   );
 }
@@ -185,15 +186,15 @@ function dolphinWhistle(): void {
   }
   let refused = false;
   if (
-    itemAmount($item`dolphin whistle`) === 0 &&
+    availableAmount($item`dolphin whistle`) === 0 &&
     !durableWhistleReady() &&
-    itemAmount($item`sand dollar`) > sandDollarsOwed()
+    availableAmount($item`sand dollar`) > sandDollarsOwed()
   ) {
     refused = !buy($coinmaster`Big Brother`, 1, $item`dolphin whistle`);
   }
   const whistle = durableWhistleReady()
     ? $item`durable dolphin whistle`
-    : itemAmount($item`dolphin whistle`) > 0
+    : availableAmount($item`dolphin whistle`) > 0
       ? $item`dolphin whistle`
       : $item.none;
   if (whistle !== $item.none) use(whistle);
@@ -205,7 +206,7 @@ function dolphinWhistle(): void {
       ? `the ${whistle} would not blow`
       : refused
         ? "Big Brother would not sell a whistle"
-        : `no whistle, and ${itemAmount($item`sand dollar`)} sand dollars against ${sandDollarsOwed()} owed`;
+        : `no whistle, and ${availableAmount($item`sand dollar`)} sand dollars against ${sandDollarsOwed()} owed`;
   const said = `${stolen}: ${why}`;
   if (said !== dolphinSaid) {
     debug(`a dolphin took ${stolen}; ${why}.`);
@@ -229,7 +230,7 @@ function valueOfSpleen(): number {
 function seaPathFishy(): void {
   if (
     haveItem($item`fishy pipe`) &&
-    itemAmount($item`closed-circuit pay phone`) > 0 &&
+    availableAmount($item`closed-circuit pay phone`) > 0 &&
     haveItem($item`Monodent of the Sea`) &&
     haveItem($item`Platinum Yendorian Express Card`) &&
     !get("_fishyPipeUsed") &&
@@ -265,8 +266,8 @@ function seaPathFishy(): void {
 
 function seaPathUpkeep(): void {
   if (myAdventures() === 0) {
-    if (itemAmount($item`astral six-pack`) > 0) use($item`astral six-pack`);
-    if (itemAmount($item`astral pilsner`) === 0) throw new Error("no more easy diet");
+    if (availableAmount($item`astral six-pack`) > 0) use($item`astral six-pack`);
+    if (availableAmount($item`astral pilsner`) === 0) throw new Error("no more easy diet");
     uneffect($effect`Donho's Bubbly Ballad`);
     if (haveSkill($skill`The Ode to Booze`)) useSkill($skill`The Ode to Booze`);
     drink($item`astral pilsner`);
@@ -288,7 +289,7 @@ function seaPathUpkeep(): void {
 }
 
 function aftercoreUpkeep(): void {
-  if (itemAmount($item`sea lasso`) === 0) retrieveItem($item`sea lasso`);
+  if (availableAmount($item`sea lasso`) === 0) retrieveItem($item`sea lasso`);
   if (myAdventures() === 0) throw new Error("Out of adventures, run consume");
   if (haveEffect($effect`Fishy`) > 0) return;
   if (haveItem($item`fishy pipe`) && !get("_fishyPipeUsed")) {
@@ -327,7 +328,7 @@ function copiedMonsterFollowUps(): void {
   // VHS tape recording window, in the Caliginous Abyss.
   const momProgress = get("momSeaMonkeeProgress");
   if (
-    itemAmount($item`Spooky VHS Tape`) > 0 &&
+    availableAmount($item`Spooky VHS Tape`) > 0 &&
     get("spookyVHSTapeMonster") === null &&
     momProgress > 22 &&
     momProgress < 33
@@ -391,10 +392,10 @@ export function postAdventure(): void {
     cliExecute("numberology 69");
   }
   if (TrainSet.canConfigure()) trainset();
-  if (haveEffect($effect`Resined`) === 0 && itemAmount($item`inflammable leaf`) > 50) {
+  if (haveEffect($effect`Resined`) === 0 && availableAmount($item`inflammable leaf`) > 50) {
     use($item`distilled resin`);
   }
-  if (itemAmount($item`whirled peas`) >= 2) retrieveItem($item`handful of split pea soup`);
+  if (availableAmount($item`whirled peas`) >= 2) retrieveItem($item`handful of split pea soup`);
   if (
     haveSkill($skill`Summon Taffy`) &&
     mpCost($skill`Summon Taffy`) < myMp() &&

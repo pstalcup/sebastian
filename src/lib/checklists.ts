@@ -14,7 +14,7 @@ import {
 } from "kolmafia";
 import { $familiars, $item, $items, $skill, $skills } from "libram";
 
-import { haveItem } from "./state";
+import { ownItem } from "./state";
 
 // Run-start checklists, printed in full by "sebastian sim" or with seb_debug
 // set. Ported from iotmChecklist(), skillChecklist() and pullChecklist() in
@@ -35,13 +35,13 @@ export function iotmChecklist(full = true): void {
 
   if (full) print("IOTM check — supported IOTMs:");
   const results = [
-    ...items.map((item: Item) => tick(haveItem(item), `${item}`)),
+    ...items.map((item: Item) => tick(ownItem(item), `${item}`)),
     ...skills.map((skill: Skill) => tick(haveSkill(skill), `${skill}`)),
     ...familiars.map((familiar: Familiar) => tick(haveFamiliar(familiar), `${familiar}`)),
     tick(
       getWorkshed() !== $item.none ||
         $items`Asdon Martin keyfob (on ring), model train set, portable Mayo Clinic, TakerSpace letter of Marque`.some(
-          (item) => haveItem(item),
+          (item) => ownItem(item),
         ),
       "a workshed",
     ),
@@ -193,7 +193,7 @@ export function pullChecklist(full = true): void {
   let checked = 0;
   for (const item of pulls) {
     // Catalog credits make these in-run; only worth stocking without it.
-    if (haveItem($item`2002 Mr. Store Catalog`) && catalogMakes.includes(item)) continue;
+    if (ownItem($item`2002 Mr. Store Catalog`) && catalogMakes.includes(item)) continue;
     const stocked = storageAmount(item) > 0 || (inventory[item.name] ?? 0) > 0;
     checked++;
     if (stocked) stockedCount++;

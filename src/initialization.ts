@@ -28,6 +28,7 @@ import {
   userConfirm,
   useSkill,
   visitUrl,
+  availableAmount,
 } from "kolmafia";
 import {
   $class,
@@ -164,7 +165,7 @@ function dailies(): void {
 
   const emilio = $familiar`Tickle-Me Emilio`;
   if (
-    itemAmount($item`tiny stillsuit`) > 0 &&
+    availableAmount($item`tiny stillsuit`) > 0 &&
     haveFamiliar(emilio) &&
     familiarEquippedEquipment(emilio) !== $item`tiny stillsuit`
   ) {
@@ -184,7 +185,10 @@ function dailies(): void {
     leprecondo(highShiny() ? "10,11,12,24,4,5,6" : "22,24,12,11,10,4,5,6");
   }
   visitUrl("campground.php?preaction=leaves");
-  if (itemAmount($item`S.I.T. Course Completion Certificate`) > 0 && !get("_sitCourseCompleted")) {
+  if (
+    availableAmount($item`S.I.T. Course Completion Certificate`) > 0 &&
+    !get("_sitCourseCompleted")
+  ) {
     use($item`S.I.T. Course Completion Certificate`);
   }
   if (get("_aprilBandInstruments") === 0 && AprilingBandHelmet.have()) {
@@ -215,9 +219,9 @@ function dailies(): void {
     }
     if (AsdonMartin.have()) {
       use($item`Asdon Martin keyfob (on ring)`);
-    } else if (itemAmount($item`portable Mayo Clinic`) > 0) {
+    } else if (availableAmount($item`portable Mayo Clinic`) > 0) {
       use($item`portable Mayo Clinic`);
-    } else if (itemAmount($item`model train set`) === 1) {
+    } else if (availableAmount($item`model train set`) === 1) {
       use($item`model train set`);
     } else if (TakerSpace.have()) {
       use($item`TakerSpace letter of Marque`);
@@ -275,7 +279,7 @@ export function initialization(): void {
   if (questStep("questS01OldGuy") === -1) {
     visitUrl("place.php?whichplace=sea_oldman&action=oldman_oldman");
   }
-  if (!have($item`black glass`) && itemAmount($item`sand dollar`) > 13) blackGlass();
+  if (!have($item`black glass`) && availableAmount($item`sand dollar`) > 13) blackGlass();
 
   borrowSheriffProps();
 
