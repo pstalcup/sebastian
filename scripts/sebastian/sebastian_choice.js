@@ -27,6 +27,54 @@ function _createClass(e, r, t) {
     writable: false
   }), e;
 }
+function _createForOfIteratorHelper(r, e) {
+  var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"];
+  if (!t) {
+    if (Array.isArray(r) || (t = _unsupportedIterableToArray(r)) || e) {
+      t && (r = t);
+      var n = 0,
+        F = function () {};
+      return {
+        s: F,
+        n: function () {
+          return n >= r.length ? {
+            done: true
+          } : {
+            done: false,
+            value: r[n++]
+          };
+        },
+        e: function (r) {
+          throw r;
+        },
+        f: F
+      };
+    }
+    throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+  }
+  var o,
+    a = true,
+    u = false;
+  return {
+    s: function () {
+      t = t.call(r);
+    },
+    n: function () {
+      var r = t.next();
+      return a = r.done, r;
+    },
+    e: function (r) {
+      u = true, o = r;
+    },
+    f: function () {
+      try {
+        a || null == t.return || t.return();
+      } finally {
+        if (u) throw o;
+      }
+    }
+  };
+}
 function _defineProperty(e, r, t) {
   return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, {
     value: t,
@@ -561,6 +609,42 @@ var PropertiesManager = /*#__PURE__*/function () {
 }();
 _defineProperty(PropertiesManager, "EMPTY_PREFERENCE", Symbol("empty preference"));
 
+/**
+ * Splits a string by commas while also respecting escaping commas with a backslash
+ *
+ * @param str String to split
+ * @returns List of tokens
+ */
+function splitByCommasWithEscapes(str) {
+  var returnValue = [];
+  var ignoreNext = false;
+  var currentString = "";
+  var _iterator2 = _createForOfIteratorHelper(str.split("")),
+    _step2;
+  try {
+    for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+      var char = _step2.value;
+      if (char === "\\") {
+        ignoreNext = true;
+      } else {
+        if (char == "," && !ignoreNext) {
+          returnValue.push(currentString.trim());
+          currentString = "";
+        } else {
+          currentString += char;
+        }
+        ignoreNext = false;
+      }
+    }
+  } catch (err) {
+    _iterator2.e(err);
+  } finally {
+    _iterator2.f();
+  }
+  returnValue.push(currentString.trim());
+  return returnValue;
+}
+
 var concatTemplateString = function concatTemplateString(literals) {
   for (var _len = arguments.length, placeholders = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
     placeholders[_key - 1] = arguments[_key];
@@ -597,6 +681,25 @@ var createSingleConstant = (Type, converter) => {
   };
   return tagFunction;
 };
+var createPluralConstant = Type => {
+  var tagFunction = function tagFunction(literals) {
+    for (var _len3 = arguments.length, placeholders = new Array(_len3 > 1 ? _len3 - 1 : 0), _key3 = 1; _key3 < _len3; _key3++) {
+      placeholders[_key3 - 1] = arguments[_key3];
+    }
+    var input = concatTemplateString.apply(void 0, [literals].concat(placeholders));
+    if (input === "") {
+      return Type.all();
+    }
+    try {
+      return Type.get(splitByCommasWithEscapes(input));
+    } catch (error) {
+      handleTypeGetError(Type, error);
+    }
+    kolmafia.abort();
+  };
+  tagFunction.all = () => Type.all();
+  return tagFunction;
+};
 /**
  * A Bounty specified by name.
  *
@@ -604,11 +707,25 @@ var createSingleConstant = (Type, converter) => {
  */
 createSingleConstant(kolmafia.Bounty, kolmafia.toBounty);
 /**
+ * A list of Bounties specified by a comma-separated list of names.
+ * For a list of all possible Bounties, leave the template string blank.
+ *
+ * @category In-game constant
+ */
+createPluralConstant(kolmafia.Bounty);
+/**
  * A Class specified by name.
  *
  * @category In-game constant
  */
 createSingleConstant(kolmafia.Class, kolmafia.toClass);
+/**
+ * A list of Classes specified by a comma-separated list of names.
+ * For a list of all possible Classes, leave the template string blank.
+ *
+ * @category In-game constant
+ */
+createPluralConstant(kolmafia.Class);
 /**
  * A Coinmaster specified by name.
  *
@@ -616,11 +733,25 @@ createSingleConstant(kolmafia.Class, kolmafia.toClass);
  */
 createSingleConstant(kolmafia.Coinmaster, kolmafia.toCoinmaster);
 /**
+ * A list of Coinmasters specified by a comma-separated list of names.
+ * For a list of all possible Coinmasters, leave the template string blank.
+ *
+ * @category In-game constant
+ */
+createPluralConstant(kolmafia.Coinmaster);
+/**
  * An Effect specified by name.
  *
  * @category In-game constant
  */
 var $effect = createSingleConstant(kolmafia.Effect, kolmafia.toEffect);
+/**
+ * A list of Effects specified by a comma-separated list of names.
+ * For a list of all possible Effects, leave the template string blank.
+ *
+ * @category In-game constant
+ */
+createPluralConstant(kolmafia.Effect);
 /**
  * An Element specified by name.
  *
@@ -628,11 +759,25 @@ var $effect = createSingleConstant(kolmafia.Effect, kolmafia.toEffect);
  */
 createSingleConstant(kolmafia.Element, kolmafia.toElement);
 /**
+ * A list of Elements specified by a comma-separated list of names.
+ * For a list of all possible Elements, leave the template string blank.
+ *
+ * @category In-game constant
+ */
+createPluralConstant(kolmafia.Element);
+/**
  * A Familiar specified by name.
  *
  * @category In-game constant
  */
 var $familiar = createSingleConstant(kolmafia.Familiar, kolmafia.toFamiliar);
+/**
+ * A list of Familiars specified by a comma-separated list of names.
+ * For a list of all possible Familiars, leave the template string blank.
+ *
+ * @category In-game constant
+ */
+createPluralConstant(kolmafia.Familiar);
 /**
  * An Item specified by name.
  *
@@ -640,11 +785,25 @@ var $familiar = createSingleConstant(kolmafia.Familiar, kolmafia.toFamiliar);
  */
 var $item = createSingleConstant(kolmafia.Item, kolmafia.toItem);
 /**
+ * A list of Items specified by a comma-separated list of names.
+ * For a list of all possible Items, leave the template string blank.
+ *
+ * @category In-game constant
+ */
+var $items = createPluralConstant(kolmafia.Item);
+/**
  * A Location specified by name.
  *
  * @category In-game constant
  */
 var $location = createSingleConstant(kolmafia.Location, kolmafia.toLocation);
+/**
+ * A list of Locations specified by a comma-separated list of names.
+ * For a list of all possible Locations, leave the template string blank.
+ *
+ * @category In-game constant
+ */
+createPluralConstant(kolmafia.Location);
 /**
  * A Modifier specified by name.
  *
@@ -652,11 +811,25 @@ var $location = createSingleConstant(kolmafia.Location, kolmafia.toLocation);
  */
 createSingleConstant(kolmafia.Modifier, kolmafia.toModifier);
 /**
+ * A list of Modifiers specified by a comma-separated list of names.
+ * For a list of all possible Modifiers, leave the template string blank.
+ *
+ * @category In-game constant
+ */
+createPluralConstant(kolmafia.Modifier);
+/**
  * A Monster specified by name.
  *
  * @category In-game constant
  */
 createSingleConstant(kolmafia.Monster, kolmafia.toMonster);
+/**
+ * A list of Monsters specified by a comma-separated list of names.
+ * For a list of all possible Monsters, leave the template string blank.
+ *
+ * @category In-game constant
+ */
+createPluralConstant(kolmafia.Monster);
 /**
  * A Path specified by name.
  *
@@ -664,11 +837,25 @@ createSingleConstant(kolmafia.Monster, kolmafia.toMonster);
  */
 createSingleConstant(kolmafia.Path, kolmafia.toPath);
 /**
+ * A list of Paths specified by a comma-separated list of names.
+ * For a list of all possible Paths, leave the template string blank.
+ *
+ * @category In-game constant
+ */
+createPluralConstant(kolmafia.Path);
+/**
  * A Phylum specified by name.
  *
  * @category In-game constant
  */
 createSingleConstant(kolmafia.Phylum, kolmafia.toPhylum);
+/**
+ * A list of Phyla specified by a comma-separated list of names.
+ * For a list of all possible Phyla, leave the template string blank.
+ *
+ * @category In-game constant
+ */
+createPluralConstant(kolmafia.Phylum);
 /**
  * A Servant specified by name.
  *
@@ -676,11 +863,25 @@ createSingleConstant(kolmafia.Phylum, kolmafia.toPhylum);
  */
 createSingleConstant(kolmafia.Servant, kolmafia.toServant);
 /**
+ * A list of Servants specified by a comma-separated list of names.
+ * For a list of all possible Servants, leave the template string blank.
+ *
+ * @category In-game constant
+ */
+createPluralConstant(kolmafia.Servant);
+/**
  * A Skill specified by name.
  *
  * @category In-game constant
  */
 var $skill = createSingleConstant(kolmafia.Skill, kolmafia.toSkill);
+/**
+ * A list of Skills specified by a comma-separated list of names.
+ * For a list of all possible Skills, leave the template string blank.
+ *
+ * @category In-game constant
+ */
+createPluralConstant(kolmafia.Skill);
 /**
  * A Slot specified by name.
  *
@@ -688,17 +889,40 @@ var $skill = createSingleConstant(kolmafia.Skill, kolmafia.toSkill);
  */
 createSingleConstant(kolmafia.Slot, kolmafia.toSlot);
 /**
+ * A list of Slots specified by a comma-separated list of names.
+ * For a list of all possible Slots, leave the template string blank.
+ *
+ * @category In-game constant
+ */
+createPluralConstant(kolmafia.Slot);
+/**
  * A Stat specified by name.
  *
  * @category In-game constant
  */
 createSingleConstant(kolmafia.Stat, kolmafia.toStat);
 /**
+ * A list of Stats specified by a comma-separated list of names.
+ * For a list of all possible Stats, leave the template string blank.
+ *
+ * @category In-game constant
+ */
+createPluralConstant(kolmafia.Stat);
+/**
  * A Thrall specified by name.
  *
  * @category In-game constant
  */
 createSingleConstant(kolmafia.Thrall, kolmafia.toThrall);
+/**
+ * A list of Thralls specified by a comma-separated list of names.
+ * For a list of all possible Thralls, leave the template string blank.
+ *
+ * @category In-game constant
+ */
+createPluralConstant(kolmafia.Thrall);
+
+var _templateObject17$1;
 
 /** Whether the seb_debug preference asks for the run's routine narration. */
 function debugMode() {
@@ -713,6 +937,10 @@ function debugMode() {
 function debug(message) {
   if (debugMode()) kolmafia.print("SEB: ".concat(message), "blue");
 }
+
+// ─── BANG POTIONS ─────────────────────────────────────────────────────────────
+
+$items(_templateObject17$1 || (_templateObject17$1 = _taggedTemplateLiteral(["milky potion, swirly potion, bubbly potion, smoky potion, cloudy potion, effervescent potion, fizzy potion, dark potion, murky potion"])));
 
 var _templateObject13;
 function cheatsheetsNeeded() {
