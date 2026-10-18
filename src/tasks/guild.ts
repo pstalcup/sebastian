@@ -1,4 +1,12 @@
-import { equip, itemAmount, myFamiliar, myPrimestat, visitUrl } from "kolmafia";
+import {
+  equip,
+  itemAmount,
+  myFamiliar,
+  myPrimestat,
+  storageAmount,
+  visitUrl,
+  availableAmount,
+} from "kolmafia";
 import { $familiar, $item, $phylum, $stat, have, questStep, Snapper } from "libram";
 
 import { SebQuest } from "../engine";
@@ -14,7 +22,7 @@ import { haveItem, highShiny, inSeaPath, questLoc, questProp } from "../lib/stat
 function guildWanted(): boolean {
   return (
     questStep("questG03Ego") === -1 &&
-    itemAmount($item`closed-circuit pay phone`) > 0 &&
+    availableAmount($item`closed-circuit pay phone`) > 0 &&
     inSeaPath() &&
     !highShiny()
   );
@@ -62,7 +70,7 @@ export const GuildQuest: SebQuest = {
       completed: () => testStep() !== 0,
       before: () => {
         if (
-          haveItem($item`Greatest American Pants`) &&
+          storageAmount($item`Greatest American Pants`) > 0 &&
           itemAmount($item`Greatest American Pants`) === 0
         ) {
           pullSequence($item`Greatest American Pants`);

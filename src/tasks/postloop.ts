@@ -25,6 +25,7 @@ import {
   storageAmount,
   use,
   useSkill,
+  availableAmount,
 } from "kolmafia";
 import {
   $coinmaster,
@@ -138,7 +139,7 @@ function cloverFishyReady(): boolean {
   return (
     haveEffect($effect`Lucky!`) > 0 ||
     aug2Free ||
-    itemAmount($item`11-leaf clover`) > 0 ||
+    availableAmount($item`11-leaf clover`) > 0 ||
     (get("autoSatisfyWithCoinmasters") && get("_cloversPurchased") < 3)
   );
 }
@@ -323,10 +324,10 @@ function prepCodpiece(): void {
   pullEverything();
   codpiece("none");
   const pearl = $item`unblemished pearl`;
-  if (itemAmount(pearl) < 5) retrieveItem(5, pearl);
-  if (itemAmount(pearl) < 5) {
+  if (availableAmount(pearl) < 5) retrieveItem(5, pearl);
+  if (availableAmount(pearl) < 5) {
     throw new Error(
-      `seb_postLoopPrepCodpiece: couldn't get to five unblemished pearls (have ${itemAmount(pearl)}).`,
+      `seb_postLoopPrepCodpiece: couldn't get to five unblemished pearls (have ${availableAmount(pearl)}).`,
     );
   }
   codpiece(Array(5).fill("unblemished pearl").join(", "));
@@ -342,12 +343,12 @@ export const PathCleanupQuest: SebQuest = {
   tasks: [
     {
       name: "Sand pennies",
-      completed: () => itemAmount($item`sand penny`) <= 10,
+      completed: () => availableAmount($item`sand penny`) <= 10,
       ...action(() => {
-        while (itemAmount($item`sand penny`) > 30) {
+        while (availableAmount($item`sand penny`) > 30) {
           buy($coinmaster`Wet Crap For Sale`, 1, $item`water-logged pill`);
         }
-        while (itemAmount($item`sand penny`) > 10) {
+        while (availableAmount($item`sand penny`) > 10) {
           buy($coinmaster`Wet Crap For Sale`, 1, $item`waterlogged scroll of healing`);
         }
       }),

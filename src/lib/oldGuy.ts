@@ -1,4 +1,4 @@
-import { buy, itemAmount, storageAmount, use, visitUrl } from "kolmafia";
+import { buy, storageAmount, use, visitUrl, availableAmount } from "kolmafia";
 import { $coinmaster, $item, $location, have, questStep } from "libram";
 
 import { adv } from "./postAdventure";
@@ -9,9 +9,9 @@ import { blackGlass } from "./resources";
 // from getSandDollar() and oldGuy() in UnderTheSea.ash.
 
 export function getSandDollar(): void {
-  if (itemAmount($item`Mer-kin thingpouch`) > 0) {
-    use(itemAmount($item`Mer-kin thingpouch`), $item`Mer-kin thingpouch`);
-  } else if (itemAmount($item`sand penny`) >= 100) {
+  if (availableAmount($item`Mer-kin thingpouch`) > 0) {
+    use(availableAmount($item`Mer-kin thingpouch`), $item`Mer-kin thingpouch`);
+  } else if (availableAmount($item`sand penny`) >= 100) {
     buy($coinmaster`Wet Crap For Sale`, 1, $item`water-logged pill`);
   } else if (storageAmount($item`damp old wallet`) > 0 && pullSequence($item`damp old wallet`)) {
     use($item`damp old wallet`);
@@ -23,7 +23,7 @@ export function getSandDollar(): void {
 
 /** One step towards the Old Guy's reward: a sand dollar, or the boot and the reward once there are fifty. */
 export function oldGuyTurn(): void {
-  if (itemAmount($item`sand dollar`) < 50) {
+  if (availableAmount($item`sand dollar`) < 50) {
     getSandDollar();
     return;
   }

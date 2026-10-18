@@ -53,12 +53,17 @@ export function debug(message: string): void {
   if (debugMode()) print(`SEB: ${message}`, "blue");
 }
 
-/** Owned anywhere: inventory, closet, storage, or worn by a familiar. */
+/** Usable without a pull: inventory, closet, worn, or worn by a familiar. */
 export function haveItem(item: Item): boolean {
-  if (availableAmount(item) > 0 || storageAmount(item) > 0) return true;
+  if (availableAmount(item) > 0) return true;
   return Familiar.all().some(
     (familiar) => haveFamiliar(familiar) && familiarEquippedEquipment(familiar) === item,
   );
+}
+
+/** Owned at all, Hagnk's included: for ownership checks and deciding what to pull. */
+export function ownItem(item: Item): boolean {
+  return haveItem(item) || storageAmount(item) > 0;
 }
 
 /** Free fights are worth more to aftercore farming than to the run. */

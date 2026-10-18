@@ -1,7 +1,6 @@
 import {
   availableAmount,
   cliExecute,
-  itemAmount,
   myLocation,
   myPrimestat,
   print,
@@ -54,7 +53,7 @@ const garden = $location`An Octopus's Garden`;
 const wreck = $location`The Wreck of the Edgar Fitzsimmons`;
 const pellet = $item`wriggling flytrap pellet`;
 const sword = swordOfSWords;
-const havePellet = () => itemAmount(pellet) > 0;
+const havePellet = () => availableAmount(pellet) > 0;
 const flytrapPending = () => questStep("questS02Monkees") === -1 && !havePellet();
 
 /** The sword and spade route to the skeleton store, for saberless kits. */
@@ -236,7 +235,7 @@ export const MonkeesQuest: SebQuest = {
       before: () => {
         if (!have($effect`Colorfully Concealed`) && !lowShiny()) {
           pullSequence($item`Mer-kin hidepaint`);
-          if (itemAmount($item`Mer-kin hidepaint`) > 0) use($item`Mer-kin hidepaint`);
+          if (availableAmount($item`Mer-kin hidepaint`) > 0) use($item`Mer-kin hidepaint`);
         }
         if (baseballPlayers() >= 9 && get("_baseballInnings") <= 2) baseballD();
       },

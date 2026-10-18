@@ -3,7 +3,6 @@ import {
   cliExecute,
   equip,
   haveSkill,
-  itemAmount,
   myFamiliar,
   pullsRemaining,
   refreshStatus,
@@ -58,13 +57,13 @@ const lockkeyHunt = () => get("merkinLockkeyMonster") !== null;
 /** Item drops matter here: few forcers, or no shadow rift to fall back on. */
 const scaleHunt = () =>
   (highShiny() || lowShiny() || !haveItem($item`closed-circuit pay phone`)) &&
-  itemAmount($item`pristine fish scale`) < 6;
+  availableAmount($item`pristine fish scale`) < 6;
 
 /** The outpost loop runs until the stashbox turns up or the corral opens, and through steps 6 to 8. */
 export function outpostActive(): boolean {
   const step = questStep("questS02Monkees");
   return (
-    (itemAmount($item`Mer-kin stashbox`) === 0 && !get("corralUnlocked")) ||
+    (availableAmount($item`Mer-kin stashbox`) === 0 && !get("corralUnlocked")) ||
     (step >= 6 && step <= 8)
   );
 }
@@ -223,7 +222,7 @@ export const OutpostQuest: SebQuest = {
             $item`Grandma's Note`,
             $item`Grandma's Fuchsia Yarn`,
             $item`Grandma's Chartreuse Yarn`,
-          ].every((item) => itemAmount(item) > 0)
+          ].every((item) => availableAmount(item) > 0)
         ) {
           const familiar = pickFamiliar("itdrop");
           if (familiar) useFamiliar(familiar);
@@ -235,8 +234,8 @@ export const OutpostQuest: SebQuest = {
     },
     {
       name: "Open the stashbox",
-      ready: () => itemAmount($item`Mer-kin stashbox`) === 1,
-      completed: () => itemAmount($item`Mer-kin stashbox`) === 0,
+      ready: () => availableAmount($item`Mer-kin stashbox`) === 1,
+      completed: () => availableAmount($item`Mer-kin stashbox`) === 0,
       do: () => {
         use($item`Mer-kin stashbox`);
         use($item`Mer-kin trailmap`);

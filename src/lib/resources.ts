@@ -9,7 +9,6 @@ import {
   haveEffect,
   haveFamiliar,
   haveSkill,
-  itemAmount,
   lastChoice,
   Location,
   Monster,
@@ -25,6 +24,7 @@ import {
   useFamiliar,
   useSkill,
   visitUrl,
+  availableAmount,
 } from "kolmafia";
 import {
   $coinmaster,
@@ -111,7 +111,7 @@ export function censer(): void {
   if (!haveItem($item`Sept-Ember Censer`)) return;
   if (!get("_septEmberBalanceChecked")) visitUrl("shop.php?whichshop=september");
   const wanted = Math.min(
-    3 - itemAmount($item`Septapus summoning charm`),
+    3 - availableAmount($item`Septapus summoning charm`),
     Math.floor(get("availableSeptEmbers") / 2),
   );
   if (wanted > 0) buy($coinmaster`Sept-Ember Censer`, wanted, $item`Septapus summoning charm`);
