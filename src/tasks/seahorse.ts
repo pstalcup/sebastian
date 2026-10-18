@@ -4,6 +4,7 @@ import {
   canAdventure,
   cliExecute,
   create,
+  getIngredients,
   elementalResistance,
   equip,
   handlingChoice,
@@ -507,11 +508,23 @@ const abyssTasks: SebTask[] = [
 const dropLeg = () => legReady("corral:drop");
 const corralLeg = () => legReady("corral:collect", "corral:drop");
 
+/**
+ * Smith a sea leather with its pattern (pants kit or helmet recipe). Mafia
+ * won't fetch the pattern itself ("That item cannot be created"), so buy it
+ * first, and stop the run on a failure rather than retry it forever.
+ */
+function smithLeather(item: Item): void {
+  for (const part of Object.keys(getIngredients(item)).map((name) => Item.get(name))) {
+    if (!retrieveItem(part)) throw new Error(`Couldn't get a ${part} to smith ${item}.`);
+  }
+  if (!create(item)) throw new Error(`Couldn't smith ${item}; see mafia's message above.`);
+}
+
 /** The leather piece, crafted from a sea leather or farmed for one. */
 function leatherPiece(item: Item): TaskBody {
   const body = branch(
     () => itemAmount($item`sea leather`) > 0,
-    action(() => create(item)),
+    action(() => smithLeather(item)),
     corralFarm(),
   );
   return withHooks(body, {
