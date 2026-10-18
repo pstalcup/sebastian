@@ -9,7 +9,7 @@ import {
   toItem,
   toSkill,
 } from "kolmafia";
-import { $effect, $effects, $item, $skill, AprilingBandHelmet, get } from "libram";
+import { $effect, $effects, $item, $skill, AprilingBandHelmet, get, have } from "libram";
 
 import { briefcase, sourceEnhance } from "./resources";
 import { debug, haveItem, highShiny, lowShiny } from "./state";
@@ -54,8 +54,10 @@ function aprilBandWaiting(): boolean {
 function getEffect(effect: Effect): void {
   if (AprilingBandHelmet.MARCHING_SONG_EFFECTS.includes(effect)) {
     AprilingBandHelmet.changeSong(effect);
-  } else {
-    cliExecute(effect.default);
+  } else if (!cliExecute(effect.default)) {
+    // A failed command doesn't abort a JS script, so the run would carry on
+    // without the buff and never say why. Throwing reaches _lastScriptError.
+    throw new Error(`Couldn't get ${effect}: "${effect.default}" failed.`);
   }
 }
 
@@ -80,6 +82,13 @@ export function mood(mode: Mood): void {
         if (
           (effect === $effect`Thoughtful Empathy` || effect === $effect`Lubricating Sauce`) &&
           !haveItem($item`April Shower Thoughts shield`)
+        ) {
+          continue;
+        }
+        // Both Empathy skills need a turtle totem in inventory to cast.
+        if (
+          (effect === $effect`Empathy` || effect === $effect`Thoughtful Empathy`) &&
+          !have($item`turtle totem`)
         ) {
           continue;
         }
