@@ -729,7 +729,9 @@ export const TeflonQuest: SebQuest = {
       name: "Teflon: Object Detection",
       ready: () => {
         const potion = detectionPotion();
-        return teflonNeeded() && haveDigpick() && potion !== undefined && haveItem(potion);
+        return (
+          teflonNeeded() && haveDigpick() && potion !== undefined && availableAmount(potion) > 0
+        );
       },
       completed: () => !teflonNeeded() || haveEffect($effect`Object Detection`) > 0,
       ...action(() => use(detectionPotion() as Item)),
