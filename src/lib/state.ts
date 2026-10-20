@@ -5,6 +5,7 @@ import {
   haveFamiliar,
   Item,
   Location,
+  Monster,
   myPath,
   myPrimestat,
   print,
@@ -145,11 +146,22 @@ export function genieFightsLeft(): number {
   return Math.min(wishes, Math.max(0, 3 - get("_genieFightsUsed")));
 }
 
-/** Fax, locket and chest mimic summons left today. */
-export function countSummons(): number {
+/**
+ * Fax, locket and chest mimic summons left today. With a monster, the locket
+ * counts once, and only if it can still reminisce that monster, as summon()
+ * uses it.
+ */
+export function countSummons(monster?: Monster): number {
   let n = 0;
   if (faxAvailable()) n += 1;
-  if (CombatLoversLocket.have()) n += CombatLoversLocket.reminiscesLeft();
+  if (!monster) {
+    if (CombatLoversLocket.have()) n += CombatLoversLocket.reminiscesLeft();
+  } else if (
+    CombatLoversLocket.canReminisce(monster) &&
+    !CombatLoversLocket.monstersReminisced().includes(monster)
+  ) {
+    n += 1;
+  }
   if (have($familiar`Chest Mimic`)) n += Math.floor($familiar`Chest Mimic`.experience / 200);
   return n;
 }

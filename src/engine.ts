@@ -3,6 +3,7 @@ import { Location } from "kolmafia";
 import { get, PropertiesManager } from "libram";
 
 import { postAdventure, refreshMPRecovery } from "./lib/postAdventure";
+import { leaveChoice } from "./lib/resources";
 
 export type SebTask = Task & {
   /**
@@ -84,6 +85,13 @@ export class SebEngine extends Engine<never, SebTask> {
     return this.propertyManager;
   }
 
+  execute(task: SebTask): void {
+    // A choice left open by the last task refuses every request after it,
+    // which surfaces later as a maximizer failure or a do() that does nothing.
+    leaveChoice();
+    super.execute(task);
+  }
+
   createOutfit(task: SebTask): Outfit {
     task.before?.();
     return super.createOutfit(task);
@@ -99,6 +107,8 @@ export class SebEngine extends Engine<never, SebTask> {
     } else {
       super.do({ ...task, do: () => target });
     }
+    // super.do() only answers a choice that choiceFollowsFight() reports.
+    leaveChoice();
   }
 
   post(task: SebTask): void {
