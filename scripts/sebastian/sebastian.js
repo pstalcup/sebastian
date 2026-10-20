@@ -11274,11 +11274,19 @@ function genieFightsLeft() {
   return Math.min(wishes, Math.max(0, 3 - get$1("_genieFightsUsed")));
 }
 
-/** Fax, locket and chest mimic summons left today. */
-function countSummons() {
+/**
+ * Fax, locket and chest mimic summons left today. With a monster, the locket
+ * counts once, and only if it can still reminisce that monster, as summon()
+ * uses it.
+ */
+function countSummons(monster) {
   var n = 0;
   if (faxAvailable()) n += 1;
-  if (have$8()) n += reminiscesLeft();
+  if (!monster) {
+    if (have$8()) n += reminiscesLeft();
+  } else if (canReminisce(monster) && !monstersReminisced().includes(monster)) {
+    n += 1;
+  }
   if (have$g($familiar(_templateObject17$g || (_templateObject17$g = _taggedTemplateLiteral(["Chest Mimic"]))))) n += Math.floor($familiar(_templateObject18$g || (_templateObject18$g = _taggedTemplateLiteral(["Chest Mimic"]))).experience / 200);
   return n;
 }
@@ -11667,6 +11675,37 @@ function equipSwimTrunks() {
   if (inSeaPath()) kolmafia.equip($item(_templateObject46$9 || (_templateObject46$9 = _taggedTemplateLiteral(["really, really nice swimming trunks"]))));else if (inAftercore()) kolmafia.equip($item(_templateObject47$9 || (_templateObject47$9 = _taggedTemplateLiteral(["Elf Guard SCUBA tank"]))));
 }
 
+/**
+ * Answer a choice the game is parked in, from its choiceAdventure setting.
+ * The Force's follow-up (1387) is the usual one: mafia answers it after a
+ * fight it starts itself, like a locket reminisce, but not after one run by
+ * runCombat(), and grimoire's choiceFollowsFight() check misses it. Any other
+ * choice that can't be answered or walked away from stops the run, since
+ * every request after it would be refused.
+ */
+function leaveChoice() {
+  if (!kolmafia.handlingChoice()) return;
+  var choice = kolmafia.lastChoice();
+  var option = Number(get$1("choiceAdventure".concat(choice), ""));
+  if (option > 0) kolmafia.runChoice(option);
+  // Some choices can be walked away from.
+  if (kolmafia.handlingChoice()) kolmafia.visitUrl("main.php");
+  if (kolmafia.handlingChoice()) {
+    throw new Error("Stuck in choice ".concat(kolmafia.lastChoice(), "; answer it by hand and rerun."));
+  }
+}
+
+/**
+ * Fight the monster a summon just set up, and answer the choice it leaves.
+ * A genie wish can leave the fight for the next page load, and runCombat()
+ * does nothing until mafia has seen the fight page, so load it first.
+ */
+function fightSummon() {
+  if (kolmafia.currentRound() === 0) kolmafia.visitUrl("main.php");
+  kolmafia.runCombat();
+  leaveChoice();
+}
+
 /** A fax from OnlyFax; EasyFax, mafia's default bot, is gone. */
 var fax = monster => kolmafia.faxbot(monster, "OnlyFax");
 
@@ -11677,13 +11716,15 @@ var fax = monster => kolmafia.faxbot(monster, "OnlyFax");
  */
 function summon(monster, wishGear) {
   if (canReminisce(monster) && !monstersReminisced().includes(monster)) {
-    return reminisce(monster);
+    var fought = reminisce(monster);
+    leaveChoice();
+    return fought;
   }
   if (have$8()) kolmafia.equip($slot(_templateObject48$9 || (_templateObject48$9 = _taggedTemplateLiteral(["acc3"]))), $item(_templateObject49$9 || (_templateObject49$9 = _taggedTemplateLiteral(["combat lover's locket"]))));
   if (faxAvailable()) {
     if (fax(monster) || fax(monster)) {
       kolmafia.use($item(_templateObject50$8 || (_templateObject50$8 = _taggedTemplateLiteral(["photocopied monster"]))));
-      kolmafia.runCombat();
+      fightSummon();
       return true;
     }
     kolmafia.print("Couldn't fax a ".concat(monster, "; trying other summons and skipping the fax today."), "red");
@@ -11694,14 +11735,13 @@ function summon(monster, wishGear) {
     if (!differentiate(monster)) {
       throw new Error("Couldn't hatch a ".concat(monster, " from a mimic egg. Rerun, and if it happens again ping FS."));
     }
-    // A Force cast during the egg fight can strand the session in choice 1387.
-    if (kolmafia.handlingChoice() && kolmafia.lastChoice() === 1387) kolmafia.runChoice(3);
+    leaveChoice();
   } else if (genieFightsLeft() > 0) {
     wishGear === null || wishGear === void 0 || wishGear();
     var fights = get$1("_genieFightsUsed");
     kolmafia.cliExecute("genie monster ".concat(monster));
     if (get$1("_genieFightsUsed") === fights) return false;
-    kolmafia.runCombat();
+    fightSummon();
   } else {
     return false;
   }
@@ -12029,7 +12069,7 @@ function timeSpinnerFight(monster) {
   }
   kolmafia.runChoice(Number(travel[0]));
   kolmafia.runChoice(1, "monid=".concat(monster.id));
-  kolmafia.runCombat();
+  fightSummon();
   return true;
 }
 function timeSpinnerRefight(location) {
@@ -12972,6 +13012,14 @@ var SebEngine = /*#__PURE__*/function (_Engine) {
       return this.propertyManager;
     }
   }, {
+    key: "execute",
+    value: function execute(task) {
+      // A choice left open by the last task refuses every request after it,
+      // which surfaces later as a maximizer failure or a do() that does nothing.
+      leaveChoice();
+      _superPropGet(SebEngine, "execute", this, 3)([task]);
+    }
+  }, {
     key: "createOutfit",
     value: function createOutfit(task) {
       var _task$before;
@@ -12994,6 +13042,8 @@ var SebEngine = /*#__PURE__*/function (_Engine) {
           do: () => target
         })]);
       }
+      // super.do() only answers a choice that choiceFollowsFight() reports.
+      leaveChoice();
     }
   }, {
     key: "post",
@@ -15000,7 +15050,7 @@ function diverChainReport() {
   return "".concat(kolmafia.availableAmount($item(_templateObject12$1 || (_templateObject12$1 = _taggedTemplateLiteral(["rusty broken diving helmet"])))), " broken helmet, ") + "".concat(kolmafia.availableAmount($item(_templateObject13$1 || (_templateObject13$1 = _taggedTemplateLiteral(["rusty porthole"])))), " porthole, ") + "".concat(kolmafia.availableAmount($item(_templateObject14$1 || (_templateObject14$1 = _taggedTemplateLiteral(["rusty rivet"])))), "/8 rivets");
 }
 var diver = $monster(_templateObject15$1 || (_templateObject15$1 = _taggedTemplateLiteral(["unholy diver"])));
-var summonsLeft = () => countSummons() + genieFightsLeft();
+var summonsLeft = () => countSummons(diver) + genieFightsLeft();
 var diverSummonable = () => differentiableQuantity(diver) > 0 || summonsLeft() > 0;
 
 /** A summoned diver: a mimic egg, the Time-Spinner, then summon(). */
@@ -15020,11 +15070,17 @@ function summonDiver() {
       }
     },
     do: () => {
+      var fought;
       if (differentiableQuantity(diver) > 0) {
-        differentiate(diver);
-        if (kolmafia.handlingChoice() && kolmafia.lastChoice() === 1387) kolmafia.runChoice(3);
-      } else if (!timeSpinnerFight(diver) && summon(diver)) {
-        kolmafia.runCombat();
+        fought = differentiate(diver);
+        leaveChoice();
+      } else {
+        fought = timeSpinnerFight(diver) || summon(diver);
+      }
+      // A spent or broken source makes this unready, so a source still
+      // counted with no fight means something blocked it; retrying won't help.
+      if (!fought && diverSummonable()) {
+        throw new Error("Couldn't summon an unholy diver with ".concat(summonsLeft(), " summons left: ").concat(diverChainReport(), "."));
       }
     },
     post: diverBaseball
