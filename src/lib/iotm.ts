@@ -62,7 +62,7 @@ import {
   forcesAfterHealer,
   seaCowNeeded,
 } from "./progress";
-import { equipSwimTrunks } from "./resources";
+import { equipSwimTrunks, fightSummon } from "./resources";
 import { haveItem, highShiny, debug } from "./state";
 
 // IOTM and game-mechanic helpers. Ported from UnderTheSeaGlobals.ash.
@@ -377,7 +377,7 @@ export function timeSpinnerFight(monster: Monster): boolean {
   }
   runChoice(Number(travel[0]));
   runChoice(1, `monid=${monster.id}`);
-  runCombat();
+  fightSummon();
   return true;
 }
 

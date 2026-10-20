@@ -3,6 +3,7 @@ import {
   buy,
   chew,
   cliExecute,
+  currentRound,
   equip,
   faxbot,
   handlingChoice,
@@ -230,6 +231,37 @@ export function equipSwimTrunks(): void {
   else if (inAftercore()) equip($item`Elf Guard SCUBA tank`);
 }
 
+/**
+ * Answer a choice the game is parked in, from its choiceAdventure setting.
+ * The Force's follow-up (1387) is the usual one: mafia answers it after a
+ * fight it starts itself, like a locket reminisce, but not after one run by
+ * runCombat(), and grimoire's choiceFollowsFight() check misses it. Any other
+ * choice that can't be answered or walked away from stops the run, since
+ * every request after it would be refused.
+ */
+export function leaveChoice(): void {
+  if (!handlingChoice()) return;
+  const choice = lastChoice();
+  const option = Number(get(`choiceAdventure${choice}`, ""));
+  if (option > 0) runChoice(option);
+  // Some choices can be walked away from.
+  if (handlingChoice()) visitUrl("main.php");
+  if (handlingChoice()) {
+    throw new Error(`Stuck in choice ${lastChoice()}; answer it by hand and rerun.`);
+  }
+}
+
+/**
+ * Fight the monster a summon just set up, and answer the choice it leaves.
+ * A genie wish can leave the fight for the next page load, and runCombat()
+ * does nothing until mafia has seen the fight page, so load it first.
+ */
+export function fightSummon(): void {
+  if (currentRound() === 0) visitUrl("main.php");
+  runCombat();
+  leaveChoice();
+}
+
 /** A fax from OnlyFax; EasyFax, mafia's default bot, is gone. */
 const fax = (monster: Monster) => faxbot(monster, "OnlyFax");
 
@@ -243,13 +275,15 @@ export function summon(monster: Monster, wishGear?: () => void): boolean {
     CombatLoversLocket.canReminisce(monster) &&
     !CombatLoversLocket.monstersReminisced().includes(monster)
   ) {
-    return CombatLoversLocket.reminisce(monster);
+    const fought = CombatLoversLocket.reminisce(monster);
+    leaveChoice();
+    return fought;
   }
   if (CombatLoversLocket.have()) equip($slot`acc3`, $item`combat lover's locket`);
   if (faxAvailable()) {
     if (fax(monster) || fax(monster)) {
       use($item`photocopied monster`);
-      runCombat();
+      fightSummon();
       return true;
     }
     print(`Couldn't fax a ${monster}; trying other summons and skipping the fax today.`, "red");
@@ -262,14 +296,13 @@ export function summon(monster: Monster, wishGear?: () => void): boolean {
         `Couldn't hatch a ${monster} from a mimic egg. Rerun, and if it happens again ping FS.`,
       );
     }
-    // A Force cast during the egg fight can strand the session in choice 1387.
-    if (handlingChoice() && lastChoice() === 1387) runChoice(3);
+    leaveChoice();
   } else if (genieFightsLeft() > 0) {
     wishGear?.();
     const fights = get("_genieFightsUsed");
     cliExecute(`genie monster ${monster}`);
     if (get("_genieFightsUsed") === fights) return false;
-    runCombat();
+    fightSummon();
   } else {
     return false;
   }

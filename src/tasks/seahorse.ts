@@ -7,13 +7,11 @@ import {
   getIngredients,
   elementalResistance,
   equip,
-  handlingChoice,
   haveEffect,
   haveFamiliar,
   haveSkill,
   Item,
   itemAmount,
-  lastChoice,
   myAdventures,
   myBuffedstat,
   myFamiliar,
@@ -25,7 +23,6 @@ import {
   restoreHp,
   retrieveItem,
   runChoice,
-  runCombat,
   storageAmount,
   takeStorage,
   toSlot,
@@ -76,6 +73,7 @@ import {
   baseballPlayers,
   equipSwimTrunks,
   lassoShadow,
+  leaveChoice,
   mapMonster,
   momNCyber,
   ncForce,
@@ -234,7 +232,7 @@ function diverChainReport(): string {
 }
 
 const diver = $monster`unholy diver`;
-const summonsLeft = () => countSummons() + genieFightsLeft();
+const summonsLeft = () => countSummons(diver) + genieFightsLeft();
 const diverSummonable = () => ChestMimic.differentiableQuantity(diver) > 0 || summonsLeft() > 0;
 
 /** A summoned diver: a mimic egg, the Time-Spinner, then summon(). */
@@ -258,11 +256,19 @@ function summonDiver(): TaskBody {
       }
     },
     do: () => {
+      let fought: boolean;
       if (ChestMimic.differentiableQuantity(diver) > 0) {
-        ChestMimic.differentiate(diver);
-        if (handlingChoice() && lastChoice() === 1387) runChoice(3);
-      } else if (!timeSpinnerFight(diver) && summon(diver)) {
-        runCombat();
+        fought = ChestMimic.differentiate(diver);
+        leaveChoice();
+      } else {
+        fought = timeSpinnerFight(diver) || summon(diver);
+      }
+      // A spent or broken source makes this unready, so a source still
+      // counted with no fight means something blocked it; retrying won't help.
+      if (!fought && diverSummonable()) {
+        throw new Error(
+          `Couldn't summon an unholy diver with ${summonsLeft()} summons left: ${diverChainReport()}.`,
+        );
       }
     },
     post: diverBaseball,
