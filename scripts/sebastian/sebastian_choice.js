@@ -922,7 +922,7 @@ createSingleConstant(kolmafia.Thrall, kolmafia.toThrall);
  */
 createPluralConstant(kolmafia.Thrall);
 
-var _templateObject19$1;
+var _templateObject19;
 
 /** Whether the seb_debug preference asks for the run's routine narration. */
 function debugMode() {
@@ -940,7 +940,7 @@ function debug(message) {
 
 // ─── BANG POTIONS ─────────────────────────────────────────────────────────────
 
-$items(_templateObject19$1 || (_templateObject19$1 = _taggedTemplateLiteral(["milky potion, swirly potion, bubbly potion, smoky potion, cloudy potion, effervescent potion, fizzy potion, dark potion, murky potion"])));
+$items(_templateObject19 || (_templateObject19 = _taggedTemplateLiteral(["milky potion, swirly potion, bubbly potion, smoky potion, cloudy potion, effervescent potion, fizzy potion, dark potion, murky potion"])));
 
 var _templateObject13;
 function cheatsheetsNeeded() {
@@ -956,20 +956,20 @@ var _templateObject$1;
 // eslint-disable-next-line libram/verify-constants
 $familiar(_templateObject$1 || (_templateObject$1 = _taggedTemplateLiteral(["Sword of S Words"])));
 
-var _templateObject17, _templateObject18, _templateObject19, _templateObject20, _templateObject21, _templateObject22, _templateObject23, _templateObject24, _templateObject25, _templateObject26, _templateObject27, _templateObject28, _templateObject29, _templateObject30, _templateObject31, _templateObject32, _templateObject33, _templateObject46, _templateObject47, _templateObject48, _templateObject49, _templateObject50, _templateObject51;
+var _templateObject24, _templateObject25, _templateObject26, _templateObject27, _templateObject28, _templateObject29, _templateObject30, _templateObject31, _templateObject32, _templateObject33, _templateObject34, _templateObject35, _templateObject36, _templateObject37, _templateObject38, _templateObject39, _templateObject40, _templateObject53, _templateObject54, _templateObject55, _templateObject56, _templateObject57, _templateObject58;
 
 // ─── WANTED MONSTERS ──────────────────────────────────────────────────────────
 
 /** The monster the Peridot, Map the Monsters and the Time-Spinner pick in each zone. */
-var WANTED_MONSTER = new Map([[$location(_templateObject17 || (_templateObject17 = _taggedTemplateLiteral(["An Octopus's Garden"]))), 740], [$location(_templateObject18 || (_templateObject18 = _taggedTemplateLiteral(["The Wreck of the Edgar Fitzsimmons"]))), 745], [$location(_templateObject19 || (_templateObject19 = _taggedTemplateLiteral(["The Sleazy Back Alley"]))), 159], [$location(_templateObject20 || (_templateObject20 = _taggedTemplateLiteral(["The Haunted Pantry"]))), 145], [$location(_templateObject21 || (_templateObject21 = _taggedTemplateLiteral(["The Overgrown Lot"]))), 1752], [$location(_templateObject22 || (_templateObject22 = _taggedTemplateLiteral(["The Coral Corral"]))), 775], [$location(_templateObject23 || (_templateObject23 = _taggedTemplateLiteral(["The Marinara Trench"]))), 762], [$location(_templateObject24 || (_templateObject24 = _taggedTemplateLiteral(["Anemone Mine"]))), 765], [$location(_templateObject25 || (_templateObject25 = _taggedTemplateLiteral(["The Dive Bar"]))), 768], [$location(_templateObject26 || (_templateObject26 = _taggedTemplateLiteral(["Cyberzone 1"]))), 2458], [$location(_templateObject27 || (_templateObject27 = _taggedTemplateLiteral(["Mer-kin Library"]))), 840], [$location(_templateObject28 || (_templateObject28 = _taggedTemplateLiteral(["The Mer-Kin Outpost"]))), 773], [$location(_templateObject29 || (_templateObject29 = _taggedTemplateLiteral(["The Caliginous Abyss"]))), 1373], [$location(_templateObject30 || (_templateObject30 = _taggedTemplateLiteral(["Mer-kin Elementary School"]))), 838], [$location(_templateObject31 || (_templateObject31 = _taggedTemplateLiteral(["The Outskirts of Cobb's Knob"]))), 152], [$location(_templateObject32 || (_templateObject32 = _taggedTemplateLiteral(["Madness Bakery"]))), 1750]]);
+var WANTED_MONSTER = new Map([[$location(_templateObject24 || (_templateObject24 = _taggedTemplateLiteral(["An Octopus's Garden"]))), 740], [$location(_templateObject25 || (_templateObject25 = _taggedTemplateLiteral(["The Wreck of the Edgar Fitzsimmons"]))), 745], [$location(_templateObject26 || (_templateObject26 = _taggedTemplateLiteral(["The Sleazy Back Alley"]))), 159], [$location(_templateObject27 || (_templateObject27 = _taggedTemplateLiteral(["The Haunted Pantry"]))), 145], [$location(_templateObject28 || (_templateObject28 = _taggedTemplateLiteral(["The Overgrown Lot"]))), 1752], [$location(_templateObject29 || (_templateObject29 = _taggedTemplateLiteral(["The Coral Corral"]))), 775], [$location(_templateObject30 || (_templateObject30 = _taggedTemplateLiteral(["The Marinara Trench"]))), 762], [$location(_templateObject31 || (_templateObject31 = _taggedTemplateLiteral(["Anemone Mine"]))), 765], [$location(_templateObject32 || (_templateObject32 = _taggedTemplateLiteral(["The Dive Bar"]))), 768], [$location(_templateObject33 || (_templateObject33 = _taggedTemplateLiteral(["Cyberzone 1"]))), 2458], [$location(_templateObject34 || (_templateObject34 = _taggedTemplateLiteral(["Mer-kin Library"]))), 840], [$location(_templateObject35 || (_templateObject35 = _taggedTemplateLiteral(["The Mer-Kin Outpost"]))), 773], [$location(_templateObject36 || (_templateObject36 = _taggedTemplateLiteral(["The Caliginous Abyss"]))), 1373], [$location(_templateObject37 || (_templateObject37 = _taggedTemplateLiteral(["Mer-kin Elementary School"]))), 838], [$location(_templateObject38 || (_templateObject38 = _taggedTemplateLiteral(["The Outskirts of Cobb's Knob"]))), 152], [$location(_templateObject39 || (_templateObject39 = _taggedTemplateLiteral(["Madness Bakery"]))), 1750]]);
 function zoneTarget(location) {
-  if (location === $location(_templateObject33 || (_templateObject33 = _taggedTemplateLiteral(["Mer-kin Elementary School"]))) && cheatsheetsNeeded()) return 852;
+  if (location === $location(_templateObject40 || (_templateObject40 = _taggedTemplateLiteral(["Mer-kin Elementary School"]))) && cheatsheetsNeeded()) return 852;
   return WANTED_MONSTER.get(location) ?? 0;
 }
 
 // ─── BANISHES ─────────────────────────────────────────────────────────────────
 
-[[$item(_templateObject46 || (_templateObject46 = _taggedTemplateLiteral(["spring shoes"]))), $skill(_templateObject47 || (_templateObject47 = _taggedTemplateLiteral(["Spring Kick"])))], [$item(_templateObject48 || (_templateObject48 = _taggedTemplateLiteral(["Monodent of the Sea"]))), $skill(_templateObject49 || (_templateObject49 = _taggedTemplateLiteral(["Sea *dent: Throw a Lightning Bolt"])))], [$item(_templateObject50 || (_templateObject50 = _taggedTemplateLiteral(["Heartstone"]))), $skill(_templateObject51 || (_templateObject51 = _taggedTemplateLiteral(["Heartstone: %banish"])))]];
+[[$item(_templateObject53 || (_templateObject53 = _taggedTemplateLiteral(["spring shoes"]))), $skill(_templateObject54 || (_templateObject54 = _taggedTemplateLiteral(["Spring Kick"])))], [$item(_templateObject55 || (_templateObject55 = _taggedTemplateLiteral(["Monodent of the Sea"]))), $skill(_templateObject56 || (_templateObject56 = _taggedTemplateLiteral(["Sea *dent: Throw a Lightning Bolt"])))], [$item(_templateObject57 || (_templateObject57 = _taggedTemplateLiteral(["Heartstone"]))), $skill(_templateObject58 || (_templateObject58 = _taggedTemplateLiteral(["Heartstone: %banish"])))]];
 
 var _templateObject, _templateObject2, _templateObject3, _templateObject4, _templateObject5, _templateObject6, _templateObject7, _templateObject8;
 
