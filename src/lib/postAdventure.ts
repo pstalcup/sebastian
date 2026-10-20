@@ -58,7 +58,14 @@ import {
 
 import { doSWord, swordOfSWords } from "./familiar";
 import { Gear } from "./gear";
-import { eatSushi, isBanished, trainset, useAutumnaton } from "./iotm";
+import {
+  eatSushi,
+  isBanished,
+  sodaBreadAffordable,
+  sodaBreadFor,
+  trainset,
+  useAutumnaton,
+} from "./iotm";
 import { diverHuntActive, seaCowNeeded, tailpiece } from "./progress";
 import { pulledToday, pullSequence } from "./pulls";
 import { dreadSeedCheck } from "./seedfinder";
@@ -274,10 +281,14 @@ function seaPathUpkeep(): void {
   }
   if (haveEffect($effect`Driving Waterproofly`) === 0 && AsdonMartin.installed()) {
     // libram fuels from inventory first, then buys (soda bread in ronin).
-    // Without fuel the run goes on undriven rather than stopping.
-    if (!AsdonMartin.drive($effect`Driving Waterproofly`, 1, true)) {
+    // A drive takes 37 fuel; the bread for it only gets bought when meat
+    // allows. Without fuel the run goes on undriven rather than stopping.
+    if (
+      !sodaBreadAffordable(sodaBreadFor(37)) ||
+      !AsdonMartin.drive($effect`Driving Waterproofly`, 1, true)
+    ) {
       print(
-        `SEB: couldn't fuel the Asdon (${getFuel()} fuel), skipping Driving Waterproofly.`,
+        `SEB: couldn't fuel the Asdon (${getFuel()} fuel, ${myMeat()} meat), skipping Driving Waterproofly.`,
         "red",
       );
     }
