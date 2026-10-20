@@ -32,6 +32,9 @@ import {
   equippedItem,
   buy,
   Slot,
+  getFuel,
+  myMeat,
+  npcPrice,
 } from "kolmafia";
 import {
   $coinmaster,
@@ -47,6 +50,7 @@ import {
   AutumnAton,
   EternityCodpiece,
   get,
+  getAverageAdventures,
   getBanishedMonsters,
   Leprecondo,
   Mining,
@@ -287,6 +291,50 @@ export function mineNum(): Mining.MiningCoordinate {
   throw new Error(
     "Generic mining did not find teflon ore, mine manually. TIP: the ores show up in adjacent veins of 5.",
   );
+}
+
+// ─── ASDON MARTIN FUEL ────────────────────────────────────────────────────────
+
+/**
+ * Soda bread loaves that bring the Asdon from its current fuel to `fuel`.
+ */
+export function sodaBreadFor(fuel: number): number {
+  return Math.ceil(Math.max(0, fuel - getFuel()) / getAverageAdventures($item`loaf of soda bread`));
+}
+
+/**
+ * Meat to make the loaves of soda bread not already on hand, the way libram's
+ * AsdonMartin buys them: soda water and wads of dough from NPCs, or 35-dough
+ * all-purpose flowers where the dough isn't sold. Infinity when neither is.
+ */
+function sodaBreadCost(loaves: number): number {
+  const short = Math.max(0, loaves - availableAmount($item`loaf of soda bread`));
+  if (short === 0) return 0;
+  const water = Math.max(0, short - availableAmount($item`soda water`));
+  const dough = Math.max(0, short - availableAmount($item`wad of dough`));
+  const waterPrice = npcPrice($item`soda water`);
+  const doughPrice = npcPrice($item`wad of dough`);
+  const flowerPrice = npcPrice($item`all-purpose flower`);
+  if ((water > 0 && waterPrice === 0) || (dough > 0 && doughPrice === 0 && flowerPrice === 0)) {
+    return Infinity;
+  }
+  const doughCost = doughPrice > 0 ? dough * doughPrice : Math.ceil(dough / 35) * flowerPrice;
+  return water * waterPrice + doughCost;
+}
+
+/**
+ * Whether making `loaves` of soda bread for the Asdon leaves at least
+ * seb_asdonMeatReserve meat (default 1000) for the MP tonics and the rest of
+ * the run.
+ */
+export function sodaBreadAffordable(loaves: number): boolean {
+  const cost = sodaBreadCost(loaves);
+  const reserve = get("seb_asdonMeatReserve", 1000);
+  if (myMeat() - cost >= reserve) return true;
+  debug(
+    `SEB: ${loaves} soda bread would cost ${cost} of ${myMeat()} meat, under the ${reserve} reserve.`,
+  );
+  return false;
 }
 
 // ─── SUSHI AND THE AUTUMN-ATON ────────────────────────────────────────────────

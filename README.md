@@ -35,6 +35,8 @@ high, mid and low "shiny" tiers, and its per-account preferences, renamed from `
 (`seb_godRunGuard`,
 `seb_usePilsners`, `seb_postloopCommand`, `seb_postLoopRunOutEagleBanish`, `seb_postLoopFarmPearls`,
 `seb_postLoopCloverFishy`, `seb_postLoopPrepCodpiece`), which you still set with the mafia CLI.
+sebastian adds `seb_asdonMeatReserve` (default 1000): the Asdon Martin only gets soda bread bought
+for it when the purchase leaves at least that much meat.
 
 A run prints only errors, warnings and a one-line summary of each startup checklist (IOTMs, skills,
 pulls), plus any missing required skill or unbuyable pull. `sebastian sim` prints the full

@@ -52,7 +52,7 @@ import {
 
 import { iotmChecklist, pullChecklist, skillChecklist } from "./lib/checklists";
 import { chosenFamiliar, pickFamiliar, swordOfSWords } from "./lib/familiar";
-import { leprecondo, sourceEducate } from "./lib/iotm";
+import { leprecondo, sodaBreadAffordable, sourceEducate } from "./lib/iotm";
 import { pulledToday } from "./lib/pulls";
 import {
   blackGlass,
@@ -285,7 +285,8 @@ export function initialization(): void {
 
   if (inSeaPath()) dailies();
 
-  // Refuel the Asdon Martin with soda bread, only after the prism breaks.
+  // Refuel the Asdon Martin with soda bread, only after the prism breaks and
+  // only when the bread leaves seb_asdonMeatReserve meat.
   if (
     inAftercore() &&
     AsdonMartin.installed() &&
@@ -293,6 +294,7 @@ export function initialization(): void {
     !get("_missileLauncherUsed") &&
     !get("_sebMissileFailed", false) &&
     getFuel() < 100 &&
+    sodaBreadAffordable(17) &&
     retrieveItem(17, $item`loaf of soda bread`)
   ) {
     AsdonMartin.insertFuel($item`loaf of soda bread`, 17);
