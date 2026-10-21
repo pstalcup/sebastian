@@ -79,14 +79,7 @@ import {
   YOG_HEALINGS_NEEDED,
 } from "./lib/progress";
 import { bczSweatReady } from "./lib/resources";
-import {
-  bangAlcoholKnown,
-  debug,
-  haveItem,
-  highShiny,
-  lowShiny,
-  unknownBangPotions,
-} from "./lib/state";
+import { debug, haveItem, highShiny, lowShiny, unknownBangPotions } from "./lib/state";
 
 // The combat consult script. Ported from UnderTheSeaCCS.ash and the fight
 // helpers of UnderTheSeaGlobals.ash onto libram macros; the run's CCS is
@@ -1219,19 +1212,22 @@ function killDiver(): Macro {
 }
 
 /**
- * Unknown bang potions thrown in the first rounds, two at a time with
- * Funkslinging, until the booze one turns up: the rest are safe to drink.
+ * Every unknown bang potion thrown at a some fish, two at a time with
+ * Funkslinging. Those fights come early, and seedfinder needs all nine
+ * potions to name the seed: without them it searches every seed and aborts.
  */
 function bangPotions(): Macro {
+  const unknown = unknownBangPotions();
+  const throws: (Item | [Item, Item])[] = [];
+  for (let i = 0; i < unknown.length; i += 2) {
+    const [a, b] = unknown.slice(i, i + 2);
+    if (b && haveSkill($skill`Ambidextrous Funkslinging`)) throws.push([a, b]);
+    else throws.push(a, ...(b ? [b] : []));
+  }
+  if (throws.length === 0) return new Macro();
   const macro = new Macro();
-  if (availableAmount($item`murky potion`) === 0 || bangAlcoholKnown()) return macro;
-  const [a, b] = unknownBangPotions();
-  if (!a) return macro;
-  const pair = haveSkill($skill`Ambidextrous Funkslinging`) && b ? ([a, b] as [Item, Item]) : a;
-  return macro.ifNot(
-    $monster`sea cowboy`,
-    Macro.while_(`!pastround 4 && ${Macro.makeBALLSPredicate(pair)}`, Macro.item(pair)),
-  );
+  for (const pair of throws) macro.if_(Macro.makeBALLSPredicate(pair), Macro.item(pair));
+  return Macro.if_($monster`some fish`, macro);
 }
 
 /**
