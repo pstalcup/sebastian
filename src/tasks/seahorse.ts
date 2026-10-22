@@ -758,7 +758,7 @@ export const TeflonQuest: SebQuest = {
         canAdventure($location`Anemone Mine`),
       completed: () => !teflonNeeded(),
       ...mineAnemone(freeDig),
-      limit: { tries: 5 },
+      limit: { skip: 5 },
     },
     {
       name: "Teflon: lodestone",
