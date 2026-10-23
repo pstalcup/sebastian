@@ -4,6 +4,7 @@ import { get, PropertiesManager } from "libram";
 
 import { postAdventure, refreshMPRecovery } from "./lib/postAdventure";
 import { leaveChoice } from "./lib/resources";
+import { requestStop, stopRequested } from "./lib/stop";
 
 export type SebTask = Task & {
   /**
@@ -79,13 +80,30 @@ export const CHOICE_SCRIPT = "sebastian_choice.js";
 
 export class SebEngine extends Engine<never, SebTask> {
   private adventured = false;
+  private lastTask?: string;
 
   /** Public so postloop mode can set its own properties for the engine to restore. */
   get properties(): PropertiesManager {
     return this.propertyManager;
   }
 
+  /**
+   * Honors a stop asked for from the relay page, between tasks so no task is
+   * cut off partway. The stop throws, so halfloop sees a run that didn't
+   * finish, with the reason in _lastScriptError.
+   */
+  getNextTask(): SebTask | undefined {
+    if (stopRequested()) {
+      requestStop(false);
+      throw new Error(
+        `Stopped at the player's request${this.lastTask ? ` after ${this.lastTask}` : ""}. Rerun sebastian to pick up from here.`,
+      );
+    }
+    return super.getNextTask();
+  }
+
   execute(task: SebTask): void {
+    this.lastTask = task.name;
     // A choice left open by the last task refuses every request after it,
     // which surfaces later as a maximizer failure or a do() that does nothing.
     leaveChoice();
