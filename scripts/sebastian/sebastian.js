@@ -11159,6 +11159,130 @@ var args = Args.create("sebastian", "A grimoire port of UnderTheSea, the 11,037 
   })
 });
 
+// The mini log: one line per task the run executes, with the turn it started
+// on and what it spent, kept in one file per KoL day in mafia's data folder.
+// The relay page (src/relay.ts) reads it back and shows it turn by turn.
+//
+// What a task spent is the difference in the day's counters across it: the
+// daily (underscore) properties mafia keeps for every limited resource, the
+// day's pulls, turns and meat. Counters this file knows go under a heading;
+// any other daily counter that moved is listed by its property name, so a
+// resource nobody thought to name still shows up.
+
+/** A resource heading, and the daily properties that count it. */
+var CATEGORIES = {
+  "Free kills": ["_shatteringPunchUsed", "_gingerbreadMobHitUsed", "_chestXRayUsed", "_missileLauncherUsed", "_firedJokestersGun", "_shadowBricksUsed", "_assertYourAuthorityCast", "_clubEmTimeUsed", "_bczSweatBulletsCasts", "_saberForceUses"],
+  "Free runs and banishes": ["_navelRunaways", "_banderRunaways", "_feelHatredUsed", "_snokebombUsed", "_latteBanishUsed", "_reflexHammerUsed", "_kgbTranquilizerDartUses", "_cosmicBowlingSkillsUsed", "_springKickUsed", "_mcHugeLargeAvalancheUses"],
+  "Summons and wishes": ["_photocopyUsed", "_genieFightsUsed", "_genieWishesUsed", "_monkeyPawWishesUsed", "_backUpUses", "_mimicEggsObtained", "_monsterHabitatsFightsLeft"]
+};
+var CATEGORY_OF = new Map(Object.entries(CATEGORIES).flatMap(_ref => {
+  var _ref2 = _slicedToArray(_ref, 2),
+    heading = _ref2[0],
+    names = _ref2[1];
+  return names.map(name => [name, heading]);
+}));
+
+/** Daily properties that move on their own and spend nothing. */
+function ignored(name) {
+  return /^_seb|^_lastScript|turn|last|concoction|refresh/i.test(name);
+}
+/** Every counter the log compares, as it stands now. */
+function counters() {
+  var result = {
+    Turns: kolmafia.myTurncount(),
+    Meat: kolmafia.myMeat(),
+    Pulls: get$1("_roninStoragePulls").split(",").filter(Boolean).length
+  };
+  for (var _i = 0, _Object$keys = Object.keys(kolmafia.getAllProperties("_", false)); _i < _Object$keys.length; _i++) {
+    var name = _Object$keys[_i];
+    if (!name.startsWith("_") || ignored(name)) continue;
+    var value = get$1(name);
+    if (typeof value === "number") result[name] = value;else if (typeof value === "boolean") result[name] = value ? 1 : 0;
+  }
+  return result;
+}
+
+/** What one task spent, by heading, then by counter. */
+
+function spentBetween(before, after) {
+  var spent = {};
+  var add = (heading, name, amount) => {
+    spent[heading] ?? (spent[heading] = {});
+    spent[heading][name] = amount;
+  };
+  for (var _i2 = 0, _Object$keys2 = Object.keys(after); _i2 < _Object$keys2.length; _i2++) {
+    var name = _Object$keys2[_i2];
+    var delta = after[name] - (before[name] ?? 0);
+    if (delta === 0) continue;
+    if (name === "Turns" || name === "Pulls") add(name, name, delta);else if (name === "Meat") add("Meat", "Meat", delta);else add(CATEGORY_OF.get(name) ?? "Other daily counters", name, delta);
+  }
+  return spent;
+}
+
+/** The KoL day a log covers: the ascension and its day count. */
+function logDay() {
+  return "".concat(kolmafia.myAscensions(), "-").concat(kolmafia.myDaycount());
+}
+
+/** The log file for a day, in mafia's data folder. */
+function logFile(day) {
+  return "sebastian_minilog_".concat(kolmafia.myName(), "_").concat(day, ".txt");
+}
+
+/** The file listing the days that have a log, oldest first. */
+function indexFile() {
+  return "sebastian_minilog_".concat(kolmafia.myName(), "_days.txt");
+}
+function append(entry) {
+  var day = logDay();
+  var file = logFile(day);
+  var existing = kolmafia.fileToBuffer(file);
+  if (!existing) {
+    var index = kolmafia.fileToBuffer(indexFile());
+    if (!index.split("\n").some(line => line.split("\t")[0] === day)) {
+      kolmafia.bufferToFile("".concat(index).concat(day, "\t").concat(kolmafia.todayToString(), "\n"), indexFile());
+    }
+  }
+  kolmafia.bufferToFile("".concat(existing).concat(JSON.stringify(entry), "\n"), file);
+}
+
+/**
+ * Run an action and log what it spent. A failure to write the log is printed
+ * and otherwise ignored, so the log can never stop a run; the action's own
+ * error is logged and rethrown.
+ */
+function logged(task, action) {
+  var before;
+  var turn = 0;
+  try {
+    before = counters();
+    turn = before.Turns;
+  } catch (e) {
+    kolmafia.print("SEB: couldn't read counters for the mini log: ".concat(e), "red");
+  }
+  var error;
+  try {
+    return action();
+  } catch (e) {
+    error = "".concat(e);
+    throw e;
+  } finally {
+    if (before) {
+      try {
+        append({
+          turn,
+          task,
+          time: kolmafia.timeToString(),
+          spent: spentBetween(before, counters()),
+          error
+        });
+      } catch (e) {
+        kolmafia.print("SEB: couldn't write the mini log: ".concat(e), "red");
+      }
+    }
+  }
+}
+
 var _templateObject$i, _templateObject2$i, _templateObject3$i, _templateObject4$i, _templateObject5$i, _templateObject6$i, _templateObject7$i, _templateObject8$i, _templateObject9$i, _templateObject0$i, _templateObject1$i, _templateObject10$i, _templateObject11$i, _templateObject12$h, _templateObject13$g, _templateObject14$g, _templateObject15$g, _templateObject16$g, _templateObject17$g, _templateObject18$g, _templateObject19$f;
 
 // Account state and small lookups shared by the whole script. Ported from the
@@ -13001,9 +13125,13 @@ function requestStop(stop) {
   _set(STOP_PROPERTY, stop);
 }
 
-/** The gCLI link that asks for a stop. Clicking it opens the relay page. */
+/**
+ * The gCLI links to the relay page: one asks for a stop, the other opens the
+ * page on the day's mini log.
+ */
 function printStopLink() {
   kolmafia.printHtml("<a href=\"/".concat(RELAY_PAGE, "?action=stop\">Click here to stop sebastian after the current task.</a>"));
+  kolmafia.printHtml("<a href=\"/".concat(RELAY_PAGE, "\">Click here for today's sebastian mini log.</a>"));
 }
 
 /**
@@ -13109,7 +13237,7 @@ var SebEngine = /*#__PURE__*/function (_Engine) {
       // A choice left open by the last task refuses every request after it,
       // which surfaces later as a maximizer failure or a do() that does nothing.
       leaveChoice();
-      _superPropGet(SebEngine, "execute", this, 3)([task]);
+      logged(task.name, () => _superPropGet(SebEngine, "execute", this, 3)([task]));
     }
   }, {
     key: "createOutfit",
@@ -16718,9 +16846,11 @@ function main(command) {
   kolmafia.print("Starting UnderTheSea");
   printStopLink();
   try {
-    initialization();
-    // Priming, in case the last run aborted mid-combat.
-    postAdventure();
+    logged("Initialization", () => {
+      initialization();
+      // Priming, in case the last run aborted mid-combat.
+      postAdventure();
+    });
     engine.run();
     if (startedInPath && !inSeaPath()) {
       kolmafia.print("SEB: the king is free, so this run is done. Aftercore takes its own run.", "blue");

@@ -27,6 +27,54 @@ function _createClass(e, r, t) {
     writable: false
   }), e;
 }
+function _createForOfIteratorHelper(r, e) {
+  var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"];
+  if (!t) {
+    if (Array.isArray(r) || (t = _unsupportedIterableToArray(r)) || e) {
+      t && (r = t);
+      var n = 0,
+        F = function () {};
+      return {
+        s: F,
+        n: function () {
+          return n >= r.length ? {
+            done: true
+          } : {
+            done: false,
+            value: r[n++]
+          };
+        },
+        e: function (r) {
+          throw r;
+        },
+        f: F
+      };
+    }
+    throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+  }
+  var o,
+    a = true,
+    u = false;
+  return {
+    s: function () {
+      t = t.call(r);
+    },
+    n: function () {
+      var r = t.next();
+      return a = r.done, r;
+    },
+    e: function (r) {
+      u = true, o = r;
+    },
+    f: function () {
+      try {
+        a || null == t.return || t.return();
+      } finally {
+        if (u) throw o;
+      }
+    }
+  };
+}
 function _defineProperty(e, r, t) {
   return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, {
     value: t,
@@ -554,6 +602,81 @@ var PropertiesManager = /*#__PURE__*/function () {
 }();
 _defineProperty(PropertiesManager, "EMPTY_PREFERENCE", Symbol("empty preference"));
 
+// The mini log: one line per task the run executes, with the turn it started
+// on and what it spent, kept in one file per KoL day in mafia's data folder.
+// The relay page (src/relay.ts) reads it back and shows it turn by turn.
+//
+// What a task spent is the difference in the day's counters across it: the
+// daily (underscore) properties mafia keeps for every limited resource, the
+// day's pulls, turns and meat. Counters this file knows go under a heading;
+// any other daily counter that moved is listed by its property name, so a
+// resource nobody thought to name still shows up.
+
+/** A resource heading, and the daily properties that count it. */
+var CATEGORIES = {
+  "Free kills": ["_shatteringPunchUsed", "_gingerbreadMobHitUsed", "_chestXRayUsed", "_missileLauncherUsed", "_firedJokestersGun", "_shadowBricksUsed", "_assertYourAuthorityCast", "_clubEmTimeUsed", "_bczSweatBulletsCasts", "_saberForceUses"],
+  "Free runs and banishes": ["_navelRunaways", "_banderRunaways", "_feelHatredUsed", "_snokebombUsed", "_latteBanishUsed", "_reflexHammerUsed", "_kgbTranquilizerDartUses", "_cosmicBowlingSkillsUsed", "_springKickUsed", "_mcHugeLargeAvalancheUses"],
+  "Summons and wishes": ["_photocopyUsed", "_genieFightsUsed", "_genieWishesUsed", "_monkeyPawWishesUsed", "_backUpUses", "_mimicEggsObtained", "_monsterHabitatsFightsLeft"]
+};
+new Map(Object.entries(CATEGORIES).flatMap(_ref => {
+  var _ref2 = _slicedToArray(_ref, 2),
+    heading = _ref2[0],
+    names = _ref2[1];
+  return names.map(name => [name, heading]);
+}));
+
+/** The KoL day a log covers: the ascension and its day count. */
+function logDay() {
+  return "".concat(kolmafia.myAscensions(), "-").concat(kolmafia.myDaycount());
+}
+
+/** The log file for a day, in mafia's data folder. */
+function logFile(day) {
+  return "sebastian_minilog_".concat(kolmafia.myName(), "_").concat(day, ".txt");
+}
+
+/** The file listing the days that have a log, oldest first. */
+function indexFile() {
+  return "sebastian_minilog_".concat(kolmafia.myName(), "_days.txt");
+}
+
+/** The days with a log, newest first, each with the date it was written. */
+function loggedDays() {
+  return kolmafia.fileToBuffer(indexFile()).split("\n").filter(Boolean).map(line => {
+    var _line$split = line.split("\t"),
+      _line$split2 = _slicedToArray(_line$split, 2),
+      day = _line$split2[0],
+      date = _line$split2[1];
+    return {
+      day,
+      date: date ?? ""
+    };
+  }).reverse();
+}
+
+/** A day's entries, in the order they ran. Lines that don't parse are skipped. */
+function readLog(day) {
+  var entries = [];
+  var _iterator = _createForOfIteratorHelper(kolmafia.fileToBuffer(logFile(day)).split("\n")),
+    _step;
+  try {
+    for (_iterator.s(); !(_step = _iterator.n()).done;) {
+      var line = _step.value;
+      if (!line) continue;
+      try {
+        entries.push(JSON.parse(line));
+      } catch (_unused) {
+        // A line cut off mid-write.
+      }
+    }
+  } catch (err) {
+    _iterator.e(err);
+  } finally {
+    _iterator.f();
+  }
+  return entries;
+}
+
 // A stop the player asks for while the run is going. The run's own thread is
 // busy, and mafia queues every CLI command typed or clicked until the script
 // ends, so the request comes in through the relay script (src/relay.ts),
@@ -562,6 +685,8 @@ _defineProperty(PropertiesManager, "EMPTY_PREFERENCE", Symbol("empty preference"
 
 /** Set to true to stop the run before its next task. */
 var STOP_PROPERTY = "_sebStopAfterTask";
+/** The relay page that sets and clears STOP_PROPERTY. */
+var RELAY_PAGE = "relay_sebastian.js";
 function stopRequested() {
   return get(STOP_PROPERTY, false);
 }
@@ -571,17 +696,149 @@ function requestStop(stop) {
 
 // The relay page behind the stop link: relay_sebastian.js, in the relay
 // browser's script menu. It runs in the relay server's thread, so it answers
-// while the run is going.
+// while the run is going. Below the stop button it shows a day's mini log
+// (src/lib/minilog.ts), one row per turn, each opening to the tasks that ran
+// on it and what they spent.
 
+function escape(text) {
+  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
 function button(action, label) {
   return "<form method=\"get\" action=\"\"><input type=\"hidden\" name=\"action\" value=\"".concat(action, "\"><input type=\"submit\" value=\"").concat(label, "\"></form>");
 }
+var STYLE = "\n:root { --bg: #f6f7f9; --card: #fff; --text: #1d2330; --muted: #6b7385; --line: #e2e5eb;\n  --accent: #2f6fde; --chip: #eef2fb; --bad: #c4362c; --badbg: #fdeceb; }\n@media (prefers-color-scheme: dark) {\n  :root { --bg: #15181e; --card: #1e222a; --text: #e4e7ee; --muted: #9098a8; --line: #2e333d;\n    --accent: #7aa7ff; --chip: #26304a; --bad: #ff7a70; --badbg: #3a1f1d; }\n}\nbody { background: var(--bg); color: var(--text); font: 14px/1.45 system-ui, sans-serif; margin: 0; padding: 16px; }\nmain { max-width: 860px; margin: 0 auto; }\nh1 { font-size: 20px; margin: 0 0 12px; }\nh2 { font-size: 15px; margin: 20px 0 8px; }\na { color: var(--accent); }\n.card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; margin-bottom: 12px; }\n.card form { display: inline; }\n.muted { color: var(--muted); }\n.days a, .days b { margin-right: 10px; white-space: nowrap; }\n.chips { display: flex; flex-wrap: wrap; gap: 6px; }\n.chip { background: var(--chip); border-radius: 999px; padding: 1px 9px; font-size: 12px; white-space: nowrap; }\n.chip.bad { background: var(--badbg); color: var(--bad); }\ndetails.turn { background: var(--card); border: 1px solid var(--line); border-radius: 8px; margin-bottom: 6px; }\ndetails.turn > summary { cursor: pointer; padding: 8px 12px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; list-style: none; }\ndetails.turn > summary::-webkit-details-marker { display: none; }\ndetails.turn > summary::before { content: \"\\25B8\"; color: var(--muted); }\ndetails.turn[open] > summary::before { content: \"\\25BE\"; }\n.num { font-weight: 600; min-width: 72px; font-variant-numeric: tabular-nums; }\n.action { border-top: 1px solid var(--line); padding: 8px 12px 8px 34px; }\n.action .head { display: flex; gap: 10px; flex-wrap: wrap; align-items: baseline; margin-bottom: 4px; }\n.action .task { font-weight: 600; }\n.group { margin: 2px 0; }\n.group .label { color: var(--muted); font-size: 12px; margin-right: 6px; }\n.error { color: var(--bad); font-size: 12px; margin-top: 4px; white-space: pre-wrap; }\n.tools { margin: 8px 0; font-size: 13px; }\n.tools a { margin-right: 12px; cursor: pointer; }\n";
+
+/** The headings in the order they read best, then any others. */
+var ORDER = ["Turns", "Pulls", "Free kills", "Free runs and banishes", "Summons and wishes"];
+function headings(spent) {
+  var rest = Object.keys(spent).filter(heading => !ORDER.includes(heading)).sort();
+  return [].concat(_toConsumableArray(ORDER.filter(heading => heading in spent)), _toConsumableArray(rest));
+}
+function total(counts) {
+  return Object.values(counts).reduce((sum, n) => sum + n, 0);
+}
+function signed(n) {
+  return n > 0 ? "".concat(n) : "".concat(n).replace("-", "−");
+}
+
+/** The spent totals added up across entries. */
+function sum(spents) {
+  var result = {};
+  var _iterator = _createForOfIteratorHelper(spents),
+    _step;
+  try {
+    for (_iterator.s(); !(_step = _iterator.n()).done;) {
+      var spent = _step.value;
+      for (var _i = 0, _Object$entries = Object.entries(spent); _i < _Object$entries.length; _i++) {
+        var _Object$entries$_i = _slicedToArray(_Object$entries[_i], 2),
+          heading = _Object$entries$_i[0],
+          counts = _Object$entries$_i[1];
+        result[heading] ?? (result[heading] = {});
+        for (var _i2 = 0, _Object$entries2 = Object.entries(counts); _i2 < _Object$entries2.length; _i2++) {
+          var _Object$entries2$_i = _slicedToArray(_Object$entries2[_i2], 2),
+            name = _Object$entries2$_i[0],
+            n = _Object$entries2$_i[1];
+          result[heading][name] = (result[heading][name] ?? 0) + n;
+        }
+      }
+    }
+  } catch (err) {
+    _iterator.e(err);
+  } finally {
+    _iterator.f();
+  }
+  return result;
+}
+
+/** The heading as a count's noun: "1 turn", "2 free kills". */
+function noun(heading, n) {
+  var word = heading.toLowerCase();
+  return n === 1 && /^(turns|pulls|free kills)$/.test(word) ? word.slice(0, -1) : word;
+}
+
+/** One chip per heading: its total, with the counters behind it on hover. */
+function summaryChips(spent) {
+  var skip = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
+  return headings(spent).filter(heading => !skip.includes(heading)).map(heading => {
+    var counts = spent[heading];
+    var detail = Object.entries(counts).map(_ref => {
+      var _ref2 = _slicedToArray(_ref, 2),
+        name = _ref2[0],
+        n = _ref2[1];
+      return "".concat(name, ": ").concat(signed(n));
+    }).join(", ");
+    var label = heading === "Other daily counters" ? "".concat(Object.keys(counts).length, " other counters") : "".concat(signed(total(counts)), " ").concat(noun(heading, total(counts)));
+    return "<span class=\"chip\" title=\"".concat(escape(detail), "\">").concat(escape(label), "</span>");
+  }).join("");
+}
+
+/** Every counter an action moved, grouped under its heading. */
+function detailGroups(spent) {
+  var groups = headings(spent).map(heading => {
+    var chips = Object.entries(spent[heading]).map(_ref3 => {
+      var _ref4 = _slicedToArray(_ref3, 2),
+        name = _ref4[0],
+        n = _ref4[1];
+      var text = name === heading ? signed(n) : "".concat(name, " ").concat(signed(n));
+      return "<span class=\"chip\">".concat(escape(text), "</span>");
+    }).join("");
+    return "<div class=\"group chips\"><span class=\"label\">".concat(escape(heading), "</span>").concat(chips, "</div>");
+  });
+  return groups.length ? groups.join("") : "<div class=\"muted\">Nothing spent.</div>";
+}
+function actionRow(entry) {
+  return "<div class=\"action\"><div class=\"head\"><span class=\"task\">".concat(escape(entry.task), "</span><span class=\"muted\">").concat(escape(entry.time), "</span></div>").concat(detailGroups(entry.spent)).concat(entry.error ? "<div class=\"error\">".concat(escape(entry.error), "</div>") : "", "</div>");
+}
+function turnRow(turn, entries) {
+  var spent = sum(entries.map(entry => entry.spent));
+  var failed = entries.some(entry => entry.error);
+  var count = "".concat(entries.length, " action").concat(entries.length === 1 ? "" : "s");
+  return "<details class=\"turn\"><summary><span class=\"num\">Turn ".concat(turn, "</span><span class=\"muted\">").concat(count, "</span><span class=\"chips\">").concat(summaryChips(spent)).concat(failed ? "<span class=\"chip bad\">error</span>" : "", "</span></summary>").concat(entries.map(actionRow).join(""), "</details>");
+}
+function logSection(day) {
+  var days = loggedDays();
+  var dayLinks = days.map(_ref5 => {
+    var d = _ref5.day,
+      date = _ref5.date;
+    var _d$split = d.split("-"),
+      _d$split2 = _slicedToArray(_d$split, 2),
+      ascension = _d$split2[0],
+      daycount = _d$split2[1];
+    var label = "Run ".concat(ascension, ", day ").concat(daycount).concat(date ? " (".concat(date.replace(/^(\d{4})(\d{2})(\d{2})$/, "$1-$2-$3"), ")") : "");
+    return d === day ? "<b>".concat(escape(label), "</b>") : "<a href=\"/".concat(RELAY_PAGE, "?day=").concat(encodeURIComponent(d), "\">").concat(escape(label), "</a>");
+  }).join("");
+  var entries = readLog(day);
+  if (!entries.length) {
+    return "<h2>Mini log</h2>".concat(dayLinks ? "<div class=\"card days\">".concat(dayLinks, "</div>") : "", "<div class=\"card muted\">Nothing logged for this day yet. Each task sebastian runs adds a line here when it finishes.</div>");
+  }
+  var byTurn = new Map();
+  var _iterator2 = _createForOfIteratorHelper(entries),
+    _step2;
+  try {
+    for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+      var entry = _step2.value;
+      var list = byTurn.get(entry.turn) ?? [];
+      list.push(entry);
+      byTurn.set(entry.turn, list);
+    }
+  } catch (err) {
+    _iterator2.e(err);
+  } finally {
+    _iterator2.f();
+  }
+  var turns = _toConsumableArray(byTurn.keys()).sort((a, b) => a - b);
+  var daySpent = sum(entries.map(entry => entry.spent));
+  return "<h2>Mini log</h2>\n<div class=\"card days\">".concat(dayLinks, "</div>\n<div class=\"card\"><div class=\"muted\" style=\"margin-bottom:6px\">").concat(entries.length, " actions over turns ").concat(turns[0], " to ").concat(turns[turns.length - 1], ". Totals for the day:</div><div class=\"chips\">").concat(summaryChips(daySpent), "</div></div>\n<div class=\"tools\"><a onclick=\"document.querySelectorAll('details.turn').forEach(d=>d.open=true)\">Expand all</a><a onclick=\"document.querySelectorAll('details.turn').forEach(d=>d.open=false)\">Collapse all</a><a href=\"/").concat(RELAY_PAGE, "?day=").concat(encodeURIComponent(day), "\">Refresh</a></div>\n").concat(turns.map(turn => turnRow(turn, byTurn.get(turn) ?? [])).join("\n"));
+}
 function main() {
-  var action = kolmafia.formFields()["action"];
+  var fields = kolmafia.formFields();
+  var action = fields["action"];
   if (action === "stop") requestStop(true);
   if (action === "cancel") requestStop(false);
+  // The day names a file, so only the ascension-daycount shape is read.
+  var day = /^\d+-\d+$/.test(fields["day"] ?? "") ? fields["day"] : logDay();
   var status = stopRequested() ? "sebastian will stop before its next task. The task running now finishes first." : "No stop is requested. sebastian runs until it is done.";
-  kolmafia.write("<html><head><title>sebastian</title></head><body style=\"font-family: sans-serif\"><h3>sebastian</h3><p>".concat(status, "</p>").concat(stopRequested() ? button("cancel", "Keep running") : button("stop", "Stop after the current task"), "</body></html>"));
+  kolmafia.write("<html><head><title>sebastian</title><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><style>".concat(STYLE, "</style></head><body><main><h1>sebastian</h1><div class=\"card\"><p style=\"margin:0 0 8px\">").concat(status, "</p>").concat(stopRequested() ? button("cancel", "Keep running") : button("stop", "Stop after the current task"), "</div>").concat(logSection(day), "</main></body></html>"));
 }
 
 exports.main = main;
