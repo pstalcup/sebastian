@@ -14142,7 +14142,7 @@ function oldGuyTurn() {
   kolmafia.visitUrl("place.php?whichplace=sea_oldman&action=oldman_oldman&preaction=pickreward&whichreward=6313");
 }
 
-var _templateObject$4, _templateObject2$4, _templateObject3$4, _templateObject4$4, _templateObject5$4, _templateObject6$4, _templateObject7$4, _templateObject8$4, _templateObject9$4, _templateObject0$4, _templateObject1$4, _templateObject10$4, _templateObject11$4, _templateObject12$4, _templateObject13$4, _templateObject14$4, _templateObject15$4, _templateObject16$4, _templateObject17$4, _templateObject18$4, _templateObject19$4, _templateObject20$4, _templateObject21$4, _templateObject22$4, _templateObject23$4, _templateObject24$4, _templateObject25$4, _templateObject26$4, _templateObject27$4, _templateObject28$4, _templateObject29$4, _templateObject30$4, _templateObject31$4, _templateObject32$4, _templateObject33$4, _templateObject34$4, _templateObject35$4, _templateObject36$4, _templateObject37$4, _templateObject38$4, _templateObject39$4, _templateObject40$4, _templateObject41$4, _templateObject42$4, _templateObject43$4, _templateObject44$4, _templateObject45$4, _templateObject46$4, _templateObject47$4, _templateObject48$4, _templateObject49$4, _templateObject50$3, _templateObject51$3, _templateObject52$3, _templateObject53$3, _templateObject54$3, _templateObject55$2, _templateObject56$2, _templateObject57$2, _templateObject58$2, _templateObject59$2, _templateObject60$2, _templateObject61$2, _templateObject62$2, _templateObject63$2, _templateObject64$2, _templateObject65$2, _templateObject66$2, _templateObject67$2, _templateObject68$2, _templateObject69$2, _templateObject70$2, _templateObject71$2, _templateObject72$2, _templateObject73$2, _templateObject74$2, _templateObject75$2, _templateObject76$2, _templateObject77$2, _templateObject78$2, _templateObject79$2, _templateObject80$2, _templateObject81$2, _templateObject82$2, _templateObject83$2, _templateObject84$2, _templateObject85$2, _templateObject86$2, _templateObject87$2, _templateObject88$2, _templateObject89$2, _templateObject90$2, _templateObject91$2, _templateObject92$2, _templateObject93$2, _templateObject94$2, _templateObject95$2, _templateObject96$2, _templateObject97$2, _templateObject98$2, _templateObject99$2, _templateObject100$2, _templateObject101$2, _templateObject102$2, _templateObject103$2, _templateObject104$2, _templateObject105$2, _templateObject106$2, _templateObject107$2, _templateObject108$2;
+var _templateObject$4, _templateObject2$4, _templateObject3$4, _templateObject4$4, _templateObject5$4, _templateObject6$4, _templateObject7$4, _templateObject8$4, _templateObject9$4, _templateObject0$4, _templateObject1$4, _templateObject10$4, _templateObject11$4, _templateObject12$4, _templateObject13$4, _templateObject14$4, _templateObject15$4, _templateObject16$4, _templateObject17$4, _templateObject18$4, _templateObject19$4, _templateObject20$4, _templateObject21$4, _templateObject22$4, _templateObject23$4, _templateObject24$4, _templateObject25$4, _templateObject26$4, _templateObject27$4, _templateObject28$4, _templateObject29$4, _templateObject30$4, _templateObject31$4, _templateObject32$4, _templateObject33$4, _templateObject34$4, _templateObject35$4, _templateObject36$4, _templateObject37$4, _templateObject38$4, _templateObject39$4, _templateObject40$4, _templateObject41$4, _templateObject42$4, _templateObject43$4, _templateObject44$4, _templateObject45$4, _templateObject46$4, _templateObject47$4, _templateObject48$4, _templateObject49$4, _templateObject50$3, _templateObject51$3, _templateObject52$3, _templateObject53$3, _templateObject54$3, _templateObject55$2, _templateObject56$2, _templateObject57$2, _templateObject58$2, _templateObject59$2, _templateObject60$2, _templateObject61$2, _templateObject62$2, _templateObject63$2, _templateObject64$2, _templateObject65$2, _templateObject66$2, _templateObject67$2, _templateObject68$2, _templateObject69$2, _templateObject70$2, _templateObject71$2, _templateObject72$2, _templateObject73$2, _templateObject74$2, _templateObject75$2, _templateObject76$2, _templateObject77$2, _templateObject78$2, _templateObject79$2, _templateObject80$2, _templateObject81$2, _templateObject82$2, _templateObject83$2, _templateObject84$2, _templateObject85$2, _templateObject86$2, _templateObject87$2, _templateObject88$2, _templateObject89$2, _templateObject90$2, _templateObject91$2, _templateObject92$2, _templateObject93$2, _templateObject94$2, _templateObject95$2, _templateObject96$2, _templateObject97$2, _templateObject98$2, _templateObject99$2, _templateObject100$2, _templateObject101$2, _templateObject102$2, _templateObject103$2, _templateObject104$2, _templateObject105$2, _templateObject106$2, _templateObject107$2, _templateObject108$2, _templateObject109$2;
 
 // How the run farms each zone, as task bodies: the outfit, the setup and one
 // turn. Tasks elsewhere pair these with their own ready() and completed().
@@ -14430,14 +14430,23 @@ function digAnemone() {
 
 // ─── GYMNASIUM AND SKATE PARK ─────────────────────────────────────────────────
 
-/** @param wanderers false keeps wanderer sources off, so the turn is a gym fight. */
+/**
+ * A gym fight. Only the skate park war wants a noncombat forced from it
+ * (ncForce): every other gym task is after the fight itself, so it leaves
+ * the forcing gear off, keeps wanderers off when asked, and spends a forced
+ * noncombat left over from earlier before it comes back to the gym.
+ */
 function gymnasium() {
-  var wanderers = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
-  return {
+  var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+  var _options$wanderers = options.wanderers,
+    wanderers = _options$wanderers === void 0 ? true : _options$wanderers,
+    _options$ncForce = options.ncForce,
+    ncForce = _options$ncForce === void 0 ? false : _options$ncForce;
+  var fight = {
     outfit: () => {
       var gear = new Gear("combat,sea", gym).forRole("combat");
       if (!wanderers) gear.noWanderers();
-      if (get$1("skateParkStatus") === "war") {
+      if (ncForce) {
         if (leftSkiAvailable()) gear.ifEquip($item(_templateObject79$2 || (_templateObject79$2 = _taggedTemplateLiteral(["McHugeLarge left ski"]))));else if (parkaForceAvailable()) {
           gear.ifEquip($item(_templateObject80$2 || (_templateObject80$2 = _taggedTemplateLiteral(["Jurassic Parka"])))).mode({
             parka: "spikolodon"
@@ -14448,24 +14457,32 @@ function gymnasium() {
     },
     prepare: () => {
       mood("combat");
-      if (get$1("noncombatForcerActive")) {
-        throw new Error("Sneak active while trying to adventure in gymnasium, get rid of it");
-      }
+      // The combat script casts the spikes or the Avalanche only on this.
+      _set("_sebGymForce", ncForce);
     },
     do: gym
   };
+  if (ncForce) return fight;
+  return branch(() => get$1("noncombatForcerActive"), spendForcedNC(), fight);
 }
-var skateBoard = () => highShiny() ? $item(_templateObject81$2 || (_templateObject81$2 = _taggedTemplateLiteral(["skate board"]))) : $item(_templateObject82$2 || (_templateObject82$2 = _taggedTemplateLiteral(["skate blade"])));
+
+/** A forced noncombat that would take a gym turn: the skate park's in the war, else the Knob's. */
+function spendForcedNC() {
+  return branch(() => get$1("skateParkStatus") === "war", skateParkWar(), {
+    do: $location(_templateObject81$2 || (_templateObject81$2 = _taggedTemplateLiteral(["The Outskirts of Cobb's Knob"])))
+  });
+}
+var skateBoard = () => highShiny() ? $item(_templateObject82$2 || (_templateObject82$2 = _taggedTemplateLiteral(["skate board"]))) : $item(_templateObject83$2 || (_templateObject83$2 = _taggedTemplateLiteral(["skate blade"])));
 
 /** The skate park noncombat under a forcer, the gym first to spend a free one. */
 function skateParkTurn() {
   return {
     before: () => {
-      if (!parkaForceAvailable() && !leftSkiAvailable() && haveItem($item(_templateObject83$2 || (_templateObject83$2 = _taggedTemplateLiteral(["Allied Radio Backpack"]))))) {
+      if (!parkaForceAvailable() && !leftSkiAvailable() && haveItem($item(_templateObject84$2 || (_templateObject84$2 = _taggedTemplateLiteral(["Allied Radio Backpack"]))))) {
         kolmafia.cliExecute("alliedradio misc sniper");
       }
       var board = skateBoard();
-      if ((kolmafia.pullsRemaining() > reservedPulls() || board === $item(_templateObject84$2 || (_templateObject84$2 = _taggedTemplateLiteral(["skate board"])))) && kolmafia.availableAmount(board) === 0) {
+      if ((kolmafia.pullsRemaining() > reservedPulls() || board === $item(_templateObject85$2 || (_templateObject85$2 = _taggedTemplateLiteral(["skate board"])))) && kolmafia.availableAmount(board) === 0) {
         pullSequence(board);
       }
     },
@@ -14473,7 +14490,7 @@ function skateParkTurn() {
       if (get$1("noncombatForcerActive")) return {};
       var gear = new Gear("-combat, sea, -weapon", skatePark).forRole("-combat");
       if (kolmafia.availableAmount(skateBoard()) > 0) gear.need(skateBoard());
-      return gear.bathysphere($item(_templateObject85$2 || (_templateObject85$2 = _taggedTemplateLiteral(["toy Cupid bow"])))).outfit();
+      return gear.bathysphere($item(_templateObject86$2 || (_templateObject86$2 = _taggedTemplateLiteral(["toy Cupid bow"])))).outfit();
     },
     prepare: () => {
       if (!get$1("noncombatForcerActive")) {
@@ -14494,7 +14511,9 @@ function skateParkTurn() {
  * with a visit there and the next completed() check sees the war's real state.
  */
 function skateParkWar() {
-  var body = branch(() => !get$1("noncombatForcerActive") && (parkaForceAvailable() || leftSkiAvailable()), gymnasium(), skateParkTurn());
+  var body = branch(() => !get$1("noncombatForcerActive") && (parkaForceAvailable() || leftSkiAvailable()), gymnasium({
+    ncForce: true
+  }), skateParkTurn());
   return withHooks(body, {
     before: ncForce,
     post: () => kolmafia.visitUrl("sea_skatepark.php")
@@ -14505,24 +14524,24 @@ function skateParkWar() {
 
 /** Hallpasses go in the closet, so the lounge noncombat doesn't eat one. */
 function closetHallpasses() {
-  var passes = kolmafia.availableAmount($item(_templateObject86$2 || (_templateObject86$2 = _taggedTemplateLiteral(["Mer-kin hallpass"]))));
-  if (passes > 0) kolmafia.putCloset(passes, $item(_templateObject87$2 || (_templateObject87$2 = _taggedTemplateLiteral(["Mer-kin hallpass"]))));
+  var passes = kolmafia.availableAmount($item(_templateObject87$2 || (_templateObject87$2 = _taggedTemplateLiteral(["Mer-kin hallpass"]))));
+  if (passes > 0) kolmafia.putCloset(passes, $item(_templateObject88$2 || (_templateObject88$2 = _taggedTemplateLiteral(["Mer-kin hallpass"]))));
 }
 function getCheatsheet() {
   return {
     before: closetHallpasses,
     outfit: () => {
       var modifier = "item drop,sea";
-      if (kolmafia.availableAmount($item(_templateObject88$2 || (_templateObject88$2 = _taggedTemplateLiteral(["Mer-kin bunwig"])))) === 0) {
+      if (kolmafia.availableAmount($item(_templateObject89$2 || (_templateObject89$2 = _taggedTemplateLiteral(["Mer-kin bunwig"])))) === 0) {
         modifier += ", hat drop";
       }
       var gear = new Gear(modifier, school$1).forRole("itdrop");
-      if (get$1("_backUpUses") < 11 && haveItem($item(_templateObject89$2 || (_templateObject89$2 = _taggedTemplateLiteral(["backup camera"]))))) {
-        gear.need($item(_templateObject90$2 || (_templateObject90$2 = _taggedTemplateLiteral(["backup camera"]))));
-      } else if (kolmafia.haveSkill($skill(_templateObject91$2 || (_templateObject91$2 = _taggedTemplateLiteral(["Double-Fisted Skull Smashing"]))))) {
-        gear.need($item(_templateObject92$2 || (_templateObject92$2 = _taggedTemplateLiteral(["Monodent of the Sea"]))));
+      if (get$1("_backUpUses") < 11 && haveItem($item(_templateObject90$2 || (_templateObject90$2 = _taggedTemplateLiteral(["backup camera"]))))) {
+        gear.need($item(_templateObject91$2 || (_templateObject91$2 = _taggedTemplateLiteral(["backup camera"]))));
+      } else if (kolmafia.haveSkill($skill(_templateObject92$2 || (_templateObject92$2 = _taggedTemplateLiteral(["Double-Fisted Skull Smashing"]))))) {
+        gear.need($item(_templateObject93$2 || (_templateObject93$2 = _taggedTemplateLiteral(["Monodent of the Sea"]))));
       }
-      return gear.saber().cloake().ifEquip(divingHelmet(), tailpiece(), $item(_templateObject93$2 || (_templateObject93$2 = _taggedTemplateLiteral(["blood cubic zirconia"]))), $item(_templateObject94$2 || (_templateObject94$2 = _taggedTemplateLiteral(["legendary seal-clubbing club"]))), $item(_templateObject95$2 || (_templateObject95$2 = _taggedTemplateLiteral(["M\xF6bius ring"])))).bathysphere($item(_templateObject96$2 || (_templateObject96$2 = _taggedTemplateLiteral(["toy Cupid bow"])))).outfit();
+      return gear.saber().cloake().ifEquip(divingHelmet(), tailpiece(), $item(_templateObject94$2 || (_templateObject94$2 = _taggedTemplateLiteral(["blood cubic zirconia"]))), $item(_templateObject95$2 || (_templateObject95$2 = _taggedTemplateLiteral(["legendary seal-clubbing club"]))), $item(_templateObject96$2 || (_templateObject96$2 = _taggedTemplateLiteral(["M\xF6bius ring"])))).bathysphere($item(_templateObject97$2 || (_templateObject97$2 = _taggedTemplateLiteral(["toy Cupid bow"])))).outfit();
     },
     choices: {
       1589: "1&victim=852"
@@ -14546,27 +14565,27 @@ function merkinLib() {
   return {
     outfit: () => {
       var scroll7 = get$1("dreadScroll7") === 0;
-      var kill = kolmafia.availableAmount($item(_templateObject97$2 || (_templateObject97$2 = _taggedTemplateLiteral(["Mer-kin killscroll"]))));
-      var heal = kolmafia.availableAmount($item(_templateObject98$2 || (_templateObject98$2 = _taggedTemplateLiteral(["Mer-kin healscroll"]))));
-      var worktea = kolmafia.availableAmount($item(_templateObject99$2 || (_templateObject99$2 = _taggedTemplateLiteral(["Mer-kin worktea"]))));
-      var knucklebone = kolmafia.availableAmount($item(_templateObject100$2 || (_templateObject100$2 = _taggedTemplateLiteral(["Mer-kin knucklebone"]))));
-      var gear = new Gear(heal < 2 ? "item drop,sea" : dropsItems, library$1).forRole(scroll7 ? "itdrop" : "exp").need($item(_templateObject101$2 || (_templateObject101$2 = _taggedTemplateLiteral(["Mer-kin scholar mask"]))), $item(_templateObject102$2 || (_templateObject102$2 = _taggedTemplateLiteral(["Mer-kin scholar tailpiece"]))));
-      if (lowShiny()) gear.ifEquip($item(_templateObject103$2 || (_templateObject103$2 = _taggedTemplateLiteral(["Congressional Medal of Insanity"]))));
-      if (get$1("_backUpUses") < 11 && haveItem($item(_templateObject104$2 || (_templateObject104$2 = _taggedTemplateLiteral(["backup camera"])))) && !highShiny()) {
-        gear.need($item(_templateObject105$2 || (_templateObject105$2 = _taggedTemplateLiteral(["backup camera"]))));
+      var kill = kolmafia.availableAmount($item(_templateObject98$2 || (_templateObject98$2 = _taggedTemplateLiteral(["Mer-kin killscroll"]))));
+      var heal = kolmafia.availableAmount($item(_templateObject99$2 || (_templateObject99$2 = _taggedTemplateLiteral(["Mer-kin healscroll"]))));
+      var worktea = kolmafia.availableAmount($item(_templateObject100$2 || (_templateObject100$2 = _taggedTemplateLiteral(["Mer-kin worktea"]))));
+      var knucklebone = kolmafia.availableAmount($item(_templateObject101$2 || (_templateObject101$2 = _taggedTemplateLiteral(["Mer-kin knucklebone"]))));
+      var gear = new Gear(heal < 2 ? "item drop,sea" : dropsItems, library$1).forRole(scroll7 ? "itdrop" : "exp").need($item(_templateObject102$2 || (_templateObject102$2 = _taggedTemplateLiteral(["Mer-kin scholar mask"]))), $item(_templateObject103$2 || (_templateObject103$2 = _taggedTemplateLiteral(["Mer-kin scholar tailpiece"]))));
+      if (lowShiny()) gear.ifEquip($item(_templateObject104$2 || (_templateObject104$2 = _taggedTemplateLiteral(["Congressional Medal of Insanity"]))));
+      if (get$1("_backUpUses") < 11 && haveItem($item(_templateObject105$2 || (_templateObject105$2 = _taggedTemplateLiteral(["backup camera"])))) && !highShiny()) {
+        gear.need($item(_templateObject106$2 || (_templateObject106$2 = _taggedTemplateLiteral(["backup camera"]))));
       }
       // One Force charge on the researcher lands both scrolls and frees their
       // reserved pulls. Both are weapons, so the saber only gets the slot by
       // keeping the monodent out while a truly spare charge exists.
-      var saberForResearcher = (kill === 0 || heal === 0) && saberForcesFree() > 0 && haveItem($item(_templateObject106$2 || (_templateObject106$2 = _taggedTemplateLiteral(["Fourth of May Cosplay Saber"]))));
+      var saberForResearcher = (kill === 0 || heal === 0) && saberForcesFree() > 0 && haveItem($item(_templateObject107$2 || (_templateObject107$2 = _taggedTemplateLiteral(["Fourth of May Cosplay Saber"]))));
       if (!saberForResearcher && (heal === 0 || (kill === 0 || worktea === 0 || knucklebone === 0) && scroll7)) {
-        gear.need($item(_templateObject107$2 || (_templateObject107$2 = _taggedTemplateLiteral(["Monodent of the Sea"]))));
+        gear.need($item(_templateObject108$2 || (_templateObject108$2 = _taggedTemplateLiteral(["Monodent of the Sea"]))));
       } else if (!saberForResearcher) {
         gear.delay();
       }
       gear.saber().cloake();
       if (heal < 2 || worktea === 0 && scroll7 || knucklebone === 0 && scroll7 || kill === 0 && get$1("dreadScroll5") === 0) {
-        gear.ifEquip($item(_templateObject108$2 || (_templateObject108$2 = _taggedTemplateLiteral(["blood cubic zirconia"]))));
+        gear.ifEquip($item(_templateObject109$2 || (_templateObject109$2 = _taggedTemplateLiteral(["blood cubic zirconia"]))));
       } else {
         gear.delay();
       }
@@ -16324,7 +16343,9 @@ _objectSpread2({
   name: "Gym for the scroll hints",
   ready: () => !highPriest() && libraryDone(),
   completed: () => scroll(5) !== 0 && scroll(2) !== 0
-}, gymnasium(false)), {}, {
+}, gymnasium({
+  wanderers: false
+})), {}, {
   limit: {
     tries: 5
   }

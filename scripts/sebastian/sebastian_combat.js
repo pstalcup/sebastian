@@ -3314,13 +3314,18 @@ function library(plan) {
 }
 function gymnasium(plan) {
   plan.step(throwScrollHints());
-  if (get("skateParkStatus") === "war") {
+  // Only the skate park war's gym turn wants the next adventure forced to a
+  // noncombat; every other gym task is there for the fight.
+  if (get("_sebGymForce", false)) {
     plan.trySkill($skill(_templateObject250 || (_templateObject250 = _taggedTemplateLiteral(["Launch spikolodon spikes"]))), $skill(_templateObject251 || (_templateObject251 = _taggedTemplateLiteral(["McHugeLarge Avalanche"]))));
   }
+  // While a scroll hint is owed the fight is fought out, not run from.
+  var hintOwed = get("dreadScroll2") === 0 || get("dreadScroll5") === 0;
   if (freeMonster(foe)) {
     if (bczGazeReady()) plan.trySkill(gaze);
   } else {
-    plan.step(freeRun(true)).step(freeKill(false));
+    if (!hintOwed) plan.step(freeRun(true));
+    plan.step(freeKill(false));
   }
   plan.step(cleanUp());
 }
@@ -3546,6 +3551,7 @@ function main(round, monster, page) {
   // pass planned for the new one.
   for (var pass = 0; kolmafia.currentRound() > 0 && pass < 6; pass++) {
     var macro = plan(page);
+    debug("Macro vs ".concat(foe, ": ").concat(macro));
     var swapped = macro.swapped;
     page = macro.submit();
     if (!swapped && kolmafia.currentRound() > 0) {
