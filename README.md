@@ -26,6 +26,13 @@ sebastian postloop # only the postloop steps (pilsners, pearls, the eagle re-aim
 sebastian boss=Shub # an aftercore sea run for one boss (Yogurt, Shub or Dad)
 ```
 
+To stop a run cleanly, click the "stop sebastian after the current task" link the run prints when it
+starts, or open `relay_sebastian.js` from the relay browser's script menu and press the button. The
+task running now finishes, then the run stops with an error saying it stopped at your request, and a
+rerun picks up from there. Typing a command in the CLI can't do this: mafia holds every command until
+the running script ends. The request is the daily property `_sebStopAfterTask`, which the page can
+also take back before the run reaches it.
+
 A run started in the path stops once the council frees the king; it never carries on into the
 aftercore sea quest. An aftercore run needs its boss, from `boss=` or `_sebAftercoreBoss`, and stops
 with an error when neither is set.
@@ -53,7 +60,8 @@ the run's routine narration (buff levels, resources about to be spent, combat pl
   the game keeps none), so rerunning after an abort picks up where the last run stopped.
   `src/tasks/zones.ts` holds how each zone is farmed, shared by the tasks that farm it.
 - `src/combat.ts` is the combat consult script (`sebastian_combat.js`) and `src/choice.ts` the
-  choice adventure script (`sebastian_choice.js`), each its own bundle.
+  choice adventure script (`sebastian_choice.js`), each its own bundle. `src/relay.ts` is the relay
+  page that asks a running run to stop (`relay/relay_sebastian.js`).
 - `src/lib` holds the shared helpers: gear, familiars, moods, pulls, IOTM helpers and progress
   checks. `src/lib/seedfinder.ts` is the only bridge to ASH.
 
@@ -64,7 +72,7 @@ with Yarn through corepack:
 
 ```
 yarn install
-yarn run build          # writes the three scripts to dist/scripts/sebastian
+yarn run build          # writes the three scripts to dist/scripts/sebastian, the stop page to dist/relay
 yarn run install-mafia  # symlinks the build into your KoLmafia folder
 yarn run watch          # rebuilds on save
 yarn run check          # typecheck

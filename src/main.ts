@@ -9,6 +9,7 @@ import { iotmChecklist, pullChecklist, skillChecklist } from "./lib/checklists";
 import { setDropsItems } from "./lib/gear";
 import { postAdventure } from "./lib/postAdventure";
 import { inSeaPath } from "./lib/state";
+import { printStopLink } from "./lib/stop";
 import { GuildQuest } from "./tasks/guild";
 import { LassoQuest, MonkeesQuest } from "./tasks/monkees";
 import { OutpostQuest } from "./tasks/outpost";
@@ -47,6 +48,7 @@ export function main(command?: string): void {
     // seb_postLoop* pref, so with none set this only sets up and tears down.
     const engine = new SebEngine(getTasks([PostloopQuest]), { ccs: SEB_CCS });
     print("Starting UnderTheSea (postloop only)");
+    printStopLink();
     try {
       // A run killed mid-walk can leave these set.
       engine.properties.set({ _sebPearlFarm: false, _sebScreechReaim: false });
@@ -98,6 +100,7 @@ export function main(command?: string): void {
   );
 
   print("Starting UnderTheSea");
+  printStopLink();
   try {
     initialization();
     // Priming, in case the last run aborted mid-combat.

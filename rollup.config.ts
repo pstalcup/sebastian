@@ -60,12 +60,21 @@ const baseSettings = {
 } satisfies RollupOptions;
 
 // Mafia runs each script on its own, so every entry is a separate build with
-// nothing shared between them: the run, its combat script and its choice script.
+// nothing shared between them: the run, its combat script and its choice script,
+// plus the relay page that asks a running run to stop, which mafia looks for
+// in relay/.
 export default [
-  { sebastian: "src/main.ts" },
-  { sebastian_combat: "src/combat.ts" },
-  { sebastian_choice: "src/choice.ts" },
-].map((input) => ({
-  input,
-  ...baseSettings,
-}));
+  ...[
+    { sebastian: "src/main.ts" },
+    { sebastian_combat: "src/combat.ts" },
+    { sebastian_choice: "src/choice.ts" },
+  ].map((input) => ({
+    input,
+    ...baseSettings,
+  })),
+  {
+    input: { relay_sebastian: "src/relay.ts" },
+    ...baseSettings,
+    output: { ...baseSettings.output, dir: "dist/relay" },
+  },
+];
