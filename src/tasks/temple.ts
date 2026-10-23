@@ -510,7 +510,7 @@ const dreadscrollTasks: SebTask[] = [
     ready: () => !highPriest() && libraryDone(),
     completed: () => scroll(5) !== 0 && scroll(2) !== 0,
     // Runs until the hints are in, with wanderers off so each turn is a gym fight.
-    ...gymnasium(false),
+    ...gymnasium({ wanderers: false }),
     limit: { tries: 5 },
   },
   {
