@@ -12667,6 +12667,17 @@ function seedfinder(statement) {
   return kolmafia.cliExecute("ash import <".concat(SEEDFINDER, ">; ").concat(statement));
 }
 
+/**
+ * Whether any seed clue beyond the scroll itself exists yet: an identified bang
+ * potion or a mapped Daily Dungeon. Until then find_seeds() can only brute-force
+ * every seed, so a check after each adventure is wasted work.
+ */
+function dreadCluesFound() {
+  return BANG_POTIONS.some(potion => bangPotionEffect(potion) !== "") ||
+  // "????_????_????" (or "") until a room is seen
+  /[^?_]/.test(get$1("dailyDungeonRooms"));
+}
+
 /** Fill in every dreadscroll answer once the clues pin down a single seed. */
 function dreadSeedCheck() {
   seedfinder("SeedData[int] s = find_seeds(); " + "if (count(s) == 1) { foreach i, seed in s for x from 1 to 8 if (get_property(\"dreadScroll\" + x) == \"0\") set_property(\"dreadScroll\" + x, seed.dreadscroll[x - 1]); } ".concat(debugMode() ? 'else print(count(s) + " possible seeds right now");' : ""));
@@ -12923,7 +12934,7 @@ function postAdventure() {
     kolmafia.useSkill($skill(_templateObject87$3 || (_templateObject87$3 = _taggedTemplateLiteral(["Disco Nap"]))));
   }
   if (get$1("NCtoC", false)) _set("NCtoC", false);
-  if (!get$1("isMerkinHighPriest") && get$1("seahorseName") !== "") {
+  if (!get$1("isMerkinHighPriest") && get$1("seahorseName") !== "" && dreadCluesFound()) {
     dreadSeedCheck();
   }
   if (available$1()) useAutumnaton();
