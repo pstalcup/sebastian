@@ -1058,13 +1058,18 @@ function library(plan: Plan): void {
 
 function gymnasium(plan: Plan): void {
   plan.step(throwScrollHints());
-  if (get("skateParkStatus") === "war") {
+  // Only the skate park war's gym turn wants the next adventure forced to a
+  // noncombat; every other gym task is there for the fight.
+  if (get("_sebGymForce", false)) {
     plan.trySkill($skill`Launch spikolodon spikes`, $skill`McHugeLarge Avalanche`);
   }
+  // While a scroll hint is owed the fight is fought out, not run from.
+  const hintOwed = get("dreadScroll2") === 0 || get("dreadScroll5") === 0;
   if (freeMonster(foe)) {
     if (bczGazeReady()) plan.trySkill(gaze);
   } else {
-    plan.step(freeRun(true)).step(freeKill(false));
+    if (!hintOwed) plan.step(freeRun(true));
+    plan.step(freeKill(false));
   }
   plan.step(cleanUp());
 }
@@ -1335,6 +1340,7 @@ export function main(round: number, monster: Monster, page: string): void {
   // pass planned for the new one.
   for (let pass = 0; currentRound() > 0 && pass < 6; pass++) {
     const macro = plan(page);
+    debug(`Macro vs ${foe}: ${macro}`);
     const swapped = macro.swapped;
     page = macro.submit();
     if (!swapped && currentRound() > 0) {

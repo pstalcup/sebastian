@@ -29,6 +29,7 @@ import {
   Mining,
   PeridotOfPeril,
   questStep,
+  set,
 } from "libram";
 
 import { branch, TaskBody, withHooks } from "../engine";
@@ -416,13 +417,19 @@ export function digAnemone(): void {
 
 // ─── GYMNASIUM AND SKATE PARK ─────────────────────────────────────────────────
 
-/** @param wanderers false keeps wanderer sources off, so the turn is a gym fight. */
-export function gymnasium(wanderers = true): TaskBody {
-  return {
+/**
+ * A gym fight. Only the skate park war wants a noncombat forced from it
+ * (ncForce): every other gym task is after the fight itself, so it leaves
+ * the forcing gear off, keeps wanderers off when asked, and spends a forced
+ * noncombat left over from earlier before it comes back to the gym.
+ */
+export function gymnasium(options: { wanderers?: boolean; ncForce?: boolean } = {}): TaskBody {
+  const { wanderers = true, ncForce = false } = options;
+  const fight: TaskBody = {
     outfit: () => {
       const gear = new Gear("combat,sea", gym).forRole("combat");
       if (!wanderers) gear.noWanderers();
-      if (get("skateParkStatus") === "war") {
+      if (ncForce) {
         if (leftSkiAvailable()) gear.ifEquip($item`McHugeLarge left ski`);
         else if (parkaForceAvailable()) {
           gear.ifEquip($item`Jurassic Parka`).mode({ parka: "spikolodon" });
@@ -438,12 +445,20 @@ export function gymnasium(wanderers = true): TaskBody {
     },
     prepare: () => {
       mood("combat");
-      if (get("noncombatForcerActive")) {
-        throw new Error("Sneak active while trying to adventure in gymnasium, get rid of it");
-      }
+      // The combat script casts the spikes or the Avalanche only on this.
+      set("_sebGymForce", ncForce);
     },
     do: gym,
   };
+  if (ncForce) return fight;
+  return branch(() => get("noncombatForcerActive"), spendForcedNC(), fight);
+}
+
+/** A forced noncombat that would take a gym turn: the skate park's in the war, else the Knob's. */
+function spendForcedNC(): TaskBody {
+  return branch(() => get("skateParkStatus") === "war", skateParkWar(), {
+    do: $location`The Outskirts of Cobb's Knob`,
+  });
 }
 
 const skateBoard = () => (highShiny() ? $item`skate board` : $item`skate blade`);
@@ -490,7 +505,7 @@ function skateParkTurn(): TaskBody {
 export function skateParkWar(): TaskBody {
   const body = branch(
     () => !get("noncombatForcerActive") && (parkaForceAvailable() || leftSkiAvailable()),
-    gymnasium(),
+    gymnasium({ ncForce: true }),
     skateParkTurn(),
   );
   return withHooks(body, {
