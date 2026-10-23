@@ -416,10 +416,12 @@ export function digAnemone(): void {
 
 // ─── GYMNASIUM AND SKATE PARK ─────────────────────────────────────────────────
 
-export function gymnasium(): TaskBody {
+/** @param wanderers false keeps wanderer sources off, so the turn is a gym fight. */
+export function gymnasium(wanderers = true): TaskBody {
   return {
     outfit: () => {
       const gear = new Gear("combat,sea", gym).forRole("combat");
+      if (!wanderers) gear.noWanderers();
       if (get("skateParkStatus") === "war") {
         if (leftSkiAvailable()) gear.ifEquip($item`McHugeLarge left ski`);
         else if (parkaForceAvailable()) {
