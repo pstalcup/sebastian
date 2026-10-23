@@ -69,6 +69,7 @@ export class Gear {
   private readonly required: Item[] = [];
   private modes: Modes = {};
   private role?: FamiliarRole;
+  private wanderers = true;
   familiar?: Familiar;
 
   /**
@@ -201,6 +202,15 @@ export class Gear {
     return this;
   }
 
+  /**
+   * Keep wanderer sources (the Kramco's goblins, the Möbius ring's
+   * noncombats) off, for a turn that must be the zone's own fight.
+   */
+  noWanderers(): this {
+    this.wanderers = false;
+    return this;
+  }
+
   /** Delay burning: the Kramco, then a free run. */
   delay(): this {
     if (haveItem($item`Kramco Sausage-o-Matic™`) && !highShiny()) {
@@ -272,8 +282,12 @@ export class Gear {
     } else if (this.familiar) {
       outfit.equip(this.familiar);
     }
-    for (const item of this.items) outfit.equip(item);
-    if (highShiny() && mobiusNCReady()) outfit.equip($item`Möbius ring`);
+    const wanderGear = $items`Kramco Sausage-o-Matic™, Möbius ring`;
+    for (const item of this.items) {
+      if (this.wanderers || !wanderGear.includes(item)) outfit.equip(item);
+    }
+    if (this.wanderers && highShiny() && mobiusNCReady()) outfit.equip($item`Möbius ring`);
+    if (!this.wanderers) outfit.avoid.push(...wanderGear);
     outfit.modifier.push(this.modifier);
     outfit.setModes(this.modes);
     if (this.role === "itdrop") outfit.afterDress(() => mummery());

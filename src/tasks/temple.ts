@@ -419,7 +419,9 @@ const schoolDone = () =>
   schoolRoute() === "vocabulary" ? vocabulary() >= 90 : !loungeRoute() || loungePieces();
 const haveDreadscroll = () => availableAmount($item`Mer-kin dreadscroll`) > 0;
 const libraryDone = () => haveDreadscroll() && [1, 6, 8].every((n) => scroll(n) !== 0);
-const hintsDone = () => [1, 2, 3, 4, 5, 6, 8].every((n) => scroll(n) !== 0);
+/** Every dreadscroll hint but 7. */
+const HINTS = [1, 2, 3, 4, 5, 6, 8];
+const hintsDone = () => HINTS.every((n) => scroll(n) !== 0);
 
 function sushiClue(): void {
   if (availableAmount($item`Mer-kin worktea`) === 0) pullSequence($item`Mer-kin worktea`);
@@ -507,15 +509,16 @@ const dreadscrollTasks: SebTask[] = [
     name: "Gym for the scroll hints",
     ready: () => !highPriest() && libraryDone(),
     completed: () => scroll(5) !== 0 && scroll(2) !== 0,
-    ...gymnasium(),
-    limit: { skip: 1 },
+    // Runs until the hints are in, with wanderers off so each turn is a gym fight.
+    ...gymnasium(false),
+    limit: { tries: 5 },
   },
   {
     name: "Every hint in",
     ready: () => !highPriest() && libraryDone(),
     completed: hintsDone,
     ...action(() => {
-      const missed = [1, 3, 4, 6, 8].find((n) => scroll(n) === 0);
+      const missed = HINTS.find((n) => scroll(n) === 0);
       if (missed) throw new Error(`Missed dreadscroll ${missed} hint`);
     }),
     limit: { tries: 1 },
