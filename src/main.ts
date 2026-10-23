@@ -7,6 +7,7 @@ import { COMBAT_SCRIPT, SEB_CCS, SebEngine, SebQuest } from "./engine";
 import { initialization } from "./initialization";
 import { iotmChecklist, pullChecklist, skillChecklist } from "./lib/checklists";
 import { setDropsItems } from "./lib/gear";
+import { logged } from "./lib/minilog";
 import { postAdventure } from "./lib/postAdventure";
 import { inSeaPath } from "./lib/state";
 import { printStopLink } from "./lib/stop";
@@ -102,9 +103,11 @@ export function main(command?: string): void {
   print("Starting UnderTheSea");
   printStopLink();
   try {
-    initialization();
-    // Priming, in case the last run aborted mid-combat.
-    postAdventure();
+    logged("Initialization", () => {
+      initialization();
+      // Priming, in case the last run aborted mid-combat.
+      postAdventure();
+    });
     engine.run();
     if (startedInPath && !inSeaPath()) {
       print("SEB: the king is free, so this run is done. Aftercore takes its own run.", "blue");

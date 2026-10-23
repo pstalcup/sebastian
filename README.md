@@ -33,6 +33,14 @@ rerun picks up from there. Typing a command in the CLI can't do this: mafia hold
 the running script ends. The request is the daily property `_sebStopAfterTask`, which the page can
 also take back before the run reaches it.
 
+The same page keeps a mini log of each day. After every task the run appends a line to
+`sebastian_minilog_<player>_<ascension>-<day>.txt` in mafia's `data` folder: the task, the turn it
+started on, and what it spent, measured as the change in the day's counters (turns, pulls, meat, free
+kills, free runs and banishes, summons and wishes, and any other daily property that moved). The page
+lists the turns from the first one logged; click a turn to see each task that ran on it and what it
+spent. The run prints a link to it at startup, and the page links every day that has a log. The
+relay server has to be running to open it.
+
 A run started in the path stops once the council frees the king; it never carries on into the
 aftercore sea quest. An aftercore run needs its boss, from `boss=` or `_sebAftercoreBoss`, and stops
 with an error when neither is set.
@@ -61,7 +69,8 @@ the run's routine narration (buff levels, resources about to be spent, combat pl
   `src/tasks/zones.ts` holds how each zone is farmed, shared by the tasks that farm it.
 - `src/combat.ts` is the combat consult script (`sebastian_combat.js`) and `src/choice.ts` the
   choice adventure script (`sebastian_choice.js`), each its own bundle. `src/relay.ts` is the relay
-  page that asks a running run to stop (`relay/relay_sebastian.js`).
+  page that asks a running run to stop and shows the mini log (`relay/relay_sebastian.js`), which
+  `src/lib/minilog.ts` writes.
 - `src/lib` holds the shared helpers: gear, familiars, moods, pulls, IOTM helpers and progress
   checks. `src/lib/seedfinder.ts` is the only bridge to ASH.
 

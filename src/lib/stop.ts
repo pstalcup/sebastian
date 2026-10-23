@@ -20,9 +20,13 @@ export function requestStop(stop: boolean): void {
   set(STOP_PROPERTY, stop);
 }
 
-/** The gCLI link that asks for a stop. Clicking it opens the relay page. */
+/**
+ * The gCLI links to the relay page: one asks for a stop, the other opens the
+ * page on the day's mini log.
+ */
 export function printStopLink(): void {
   printHtml(
     `<a href="/${RELAY_PAGE}?action=stop">Click here to stop sebastian after the current task.</a>`,
   );
+  printHtml(`<a href="/${RELAY_PAGE}">Click here for today's sebastian mini log.</a>`);
 }
