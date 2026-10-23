@@ -12984,6 +12984,28 @@ function adv(location) {
   postAdventure();
 }
 
+// A stop the player asks for while the run is going. The run's own thread is
+// busy, and mafia queues every CLI command typed or clicked until the script
+// ends, so the request comes in through the relay script (src/relay.ts),
+// which runs in the relay server's thread and sets this daily property. The
+// engine reads it before it picks each task.
+
+/** Set to true to stop the run before its next task. */
+var STOP_PROPERTY = "_sebStopAfterTask";
+/** The relay page that sets and clears STOP_PROPERTY. */
+var RELAY_PAGE = "relay_sebastian.js";
+function stopRequested() {
+  return get$1(STOP_PROPERTY, false);
+}
+function requestStop(stop) {
+  _set(STOP_PROPERTY, stop);
+}
+
+/** The gCLI link that asks for a stop. Clicking it opens the relay page. */
+function printStopLink() {
+  kolmafia.printHtml("<a href=\"/".concat(RELAY_PAGE, "?action=stop\">Click here to stop sebastian after the current task.</a>"));
+}
+
 /**
  * How a task acts, without when: the outfit, setup and turn. Several tasks
  * farm the same zone the same way under different conditions, so they share
@@ -13065,9 +13087,25 @@ var SebEngine = /*#__PURE__*/function (_Engine) {
     function get() {
       return this.propertyManager;
     }
+
+    /**
+     * Honors a stop asked for from the relay page, between tasks so no task is
+     * cut off partway. The stop throws, so halfloop sees a run that didn't
+     * finish, with the reason in _lastScriptError.
+     */
+  }, {
+    key: "getNextTask",
+    value: function getNextTask() {
+      if (stopRequested()) {
+        requestStop(false);
+        throw new Error("Stopped at the player's request".concat(this.lastTask ? " after ".concat(this.lastTask) : "", ". Rerun sebastian to pick up from here."));
+      }
+      return _superPropGet(SebEngine, "getNextTask", this, 3)([]);
+    }
   }, {
     key: "execute",
     value: function execute(task) {
+      this.lastTask = task.name;
       // A choice left open by the last task refuses every request after it,
       // which surfaces later as a maximizer failure or a do() that does nothing.
       leaveChoice();
@@ -16639,6 +16677,7 @@ function main(command) {
       ccs: SEB_CCS
     });
     kolmafia.print("Starting UnderTheSea (postloop only)");
+    printStopLink();
     try {
       // A run killed mid-walk can leave these set.
       _engine.properties.set({
@@ -16677,6 +16716,7 @@ function main(command) {
     ccs: SEB_CCS
   });
   kolmafia.print("Starting UnderTheSea");
+  printStopLink();
   try {
     initialization();
     // Priming, in case the last run aborted mid-combat.
