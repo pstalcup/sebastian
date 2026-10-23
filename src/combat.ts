@@ -10,6 +10,7 @@ import {
   haveFamiliar,
   haveSkill,
   Item,
+  itemAmount,
   lastMonster,
   Monster,
   monsterAttack,
@@ -87,13 +88,14 @@ import { debug, haveItem, highShiny, lowShiny, unknownBangPotions } from "./lib/
 //
 // Each pass plans the rest of the fight from what is known now (the monster,
 // the zone, gear, properties) and submits it as one macro. Checks the
-// original made on the fight page ("is this skill offered?") become the
-// macro's own hasskill and hascombatitem tests, and the fight simply stops
-// running steps once it is over. Anything that swaps the monster (a re-roll,
-// a backup, a waffle) ends the pass, and the next pass plans for the new
-// monster, as the original re-entered itself through run_combat(). Yog-Urt
-// and Shub's deleveling react to HP and stats round by round, so those submit
-// one round's macro at a time.
+// original made on the fight page ("is this skill offered?") are made here
+// in JS, where the plan can see the answer (owned, daily uses left, the
+// monster), so a spent resource never reaches the macro. The fight simply
+// stops running steps once it is over. Anything that swaps the monster (a
+// re-roll, a backup, a waffle) ends the pass, and the next pass plans for
+// the new monster, as the original re-entered itself through run_combat().
+// Yog-Urt and Shub's deleveling react to HP and stats round by round, so
+// those submit one round's macro at a time.
 
 /**
  * Stops the run from inside a fight, recording why for halfloop first. A throw
@@ -123,14 +125,88 @@ class Plan extends Macro {
     return this;
   }
 
-  /** Fish won't call over some fish, so Talk to Some Fish drops out against the fish phylum. */
+  /**
+   * Fish won't call over some fish, so Talk to Some Fish drops out against
+   * the fish phylum. The talk itself turns the monster into some fish, so a
+   * later talk in the same macro still needs the in-fight check.
+   */
   trySkill(...skills: (Skill | string)[]): this {
     for (const skill of skills) {
-      if (skill === talkToFish) this.ifNot($phylum`fish`, Macro.trySkill(skill));
-      else super.trySkill(skill);
+      if (skill !== talkToFish) super.trySkill(skill);
+      else if (foe.phylum !== $phylum`fish`) this.ifNot($phylum`fish`, Macro.trySkill(skill));
     }
     return this;
   }
+}
+
+// ─── READY CHECKS ─────────────────────────────────────────────────────────────
+
+// KoL aborts a macro once it has run 69 lines without an action, and lines
+// stepped over inside a false if count. A try that can't fire still costs
+// its if, its cast and its endif, so the long try-lists below leave out
+// everything JS can already tell is spent. BALLS keeps only what can change
+// in the fight: MP, the monster after a swap, items thrown earlier.
+
+/** Owned, and with a use left today, as far as mafia's properties tell. */
+function skillReady(skill: Skill): boolean {
+  if (!haveSkill(skill)) return false;
+  switch (skill) {
+    case $skill`Spring Away`:
+      return haveEffect($effect`Everything Looks Green`) === 0;
+    case $skill`Bowl a Curveball`:
+      return itemAmount($item`cosmic bowling ball`) > 0;
+    case $skill`Creepy Grin`:
+      return !get("_vmaskBanisherUsed");
+    case $skill`Throw Latte on Opponent`:
+      return !get("_latteBanishUsed");
+    case $skill`Feel Hatred`:
+      return get("_feelHatredUsed") < 3;
+    case $skill`Snokebomb`:
+      return get("_snokebombUsed") < 3;
+    case $skill`Spit jurassic acid`:
+      return (
+        haveEquipped($item`Jurassic Parka`) &&
+        get("parkaMode") === "dilophosaur" &&
+        haveEffect($effect`Everything Looks Yellow`) === 0
+      );
+    case $skill`Assert your Authority`:
+      return get("_assertYourAuthorityCast") < 3;
+    case $skill`Club 'Em Back in Time`:
+      return get("_clubEmTimeUsed") < 5;
+    case $skill`Darts: Aim for the Bullseye`:
+      return (
+        haveEquipped($item`Everfull Dart Holster`) &&
+        haveEffect($effect`Everything Looks Red`) === 0
+      );
+    case $skill`BCZ: Sweat Bullets`:
+      return bczSweatReady();
+    case $skill`Chest X-Ray`:
+      return haveEquipped($item`Lil' Doctor™ bag`) && get("_chestXRayUsed") < 3;
+    case $skill`Shattering Punch`:
+      return get("_shatteringPunchUsed") < 3;
+    case $skill`Gingerbread Mob Hit`:
+      return !get("_gingerbreadMobHitUsed");
+    case $skill`Launch spikolodon spikes`:
+      return get("_spikolodonSpikeUses") < 5;
+    case $skill`McHugeLarge Avalanche`:
+      return get("_mcHugeLargeAvalancheUses") < 3;
+    default:
+      return true;
+  }
+}
+
+/**
+ * A try-list skill, left out of the macro when it can't fire. The cast keeps
+ * its hasskill guard: when JS is wrong, a skill KoL doesn't offer must not
+ * end the macro.
+ */
+function trySkillIfReady(skill: Skill): Macro {
+  return Macro.externalIf(skillReady(skill), Macro.trySkill(skill));
+}
+
+/** A try-list item, left out of the macro when none is in inventory. */
+function itemIfHeld(item: Item): Macro {
+  return Macro.externalIf(itemAmount(item) > 0, Macro.item(item));
 }
 
 // ─── FREE KILLS AND RUNS ──────────────────────────────────────────────────────
@@ -157,9 +233,9 @@ function freeKill(drop: boolean): Macro {
   if (highShiny()) {
     if (!colosseum) {
       for (let i = 0; i < get("_dartsLeft"); i++) {
-        macro.trySkill($skill`Darts: Aim for the Bullseye`);
+        macro.step(trySkillIfReady($skill`Darts: Aim for the Bullseye`));
       }
-      macro.trySkill($skill`Spit jurassic acid`);
+      macro.step(trySkillIfReady($skill`Spit jurassic acid`));
     }
     return macro;
   }
@@ -168,18 +244,15 @@ function freeKill(drop: boolean): Macro {
   for (const skill of $skills`Spit jurassic acid, Assert your Authority, Club 'Em Back in Time, Darts: Aim for the Bullseye, BCZ: Sweat Bullets, Chest X-Ray, Shattering Punch, Gingerbread Mob Hit`) {
     const club = skill === $skill`Club 'Em Back in Time`;
     if (colosseum && !club) continue;
-    if (club && ((!colosseum && !lowShiny()) || drop || get("_clubEmTimeUsed") >= 5)) continue;
-    if (skill === $skill`BCZ: Sweat Bullets` && !bczSweatReady()) {
-      continue;
-    }
-    macro.trySkill(skill);
+    if (club && ((!colosseum && !lowShiny()) || drop)) continue;
+    macro.step(trySkillIfReady(skill));
   }
 
   for (const item of $items`shadow brick, groveling gravel`) {
     if (item === $item`groveling gravel` && drop) continue;
     if (item === $item`shadow brick` && get("_shadowBricksUsed") === 13) continue;
     if (colosseum) continue;
-    macro.tryItem(item);
+    macro.step(itemIfHeld(item));
   }
 
   if (saberForcesFree() > 0 && haveEquipped(saber)) {
@@ -213,10 +286,11 @@ function freeRunAny(banish: boolean): Macro {
     ) {
       return macro;
     }
+    if (!skillReady(skill)) continue;
     // Spring Kick banishes first, then Spring Away runs.
     const cast =
       banish && skill === $skill`Spring Away`
-        ? Macro.trySkill($skill`Spring Kick`).skill(skill)
+        ? trySkillIfReady($skill`Spring Kick`).skill(skill)
         : Macro.skill(skill);
     macro.if_(skill, cast);
   }
@@ -225,8 +299,12 @@ function freeRunAny(banish: boolean): Macro {
   for (const item of $items`glob of Blank-Out, peppermint parasol, anchor bomb, stuffed yam stinkbomb, handful of split pea soup, Mer-kin pinkslip, ink bladder`) {
     if (!banish && banishItems.includes(item)) continue;
     if (item === $item`peppermint parasol` && get("parasolUsed") >= 3) continue;
-    if (item === $item`Mer-kin pinkslip`) macro.if_($phylum`mer-kin`, Macro.tryItem(item));
-    else macro.tryItem(item);
+    if (item !== $item`Mer-kin pinkslip`) macro.step(itemIfHeld(item));
+    // A Talk to Some Fish earlier in the macro can turn a mer-kin into some
+    // fish, so the phylum is checked in the fight as well.
+    else if (foe.phylum === $phylum`mer-kin` && itemAmount(item) > 0) {
+      macro.if_($phylum`mer-kin`, Macro.item(item));
+    }
   }
   return macro;
 }
@@ -273,7 +351,11 @@ function finishFreeFight(): Macro {
 /** Finish the enemy with Saucegeyser while MP lasts. */
 function cleanUp(): Macro {
   const macro = new Macro();
-  macro.if_("underwater", Macro.tryItem($item`pulled red taffy`));
+  // A shadow rift can be underwater or not, so that stays a fight check.
+  macro.externalIf(
+    itemAmount($item`pulled red taffy`) > 0,
+    Macro.if_("underwater", Macro.item($item`pulled red taffy`)),
+  );
   const yog = $monster`Yog-Urt, Elder Goddess of Hatred`;
   const geyser = haveSkill($skill`Saucegeyser`) && foe !== yog;
   const spell = geyser ? $skill`Saucegeyser` : $skill`Saucestorm`;
@@ -282,9 +364,9 @@ function cleanUp(): Macro {
   const castable = `hasskill ${spell.id} && !mpbelow ${mpCost(spell)}`;
   const round = geyser
     ? Macro.if_(castable, Macro.skill(spell))
-    : Macro.trySkill($skill`Stuffed Mortar Shell`).if_(castable, Macro.skill(spell));
+    : trySkillIfReady($skill`Stuffed Mortar Shell`).if_(castable, Macro.skill(spell));
   // One cast, then more while there's MP for them.
-  macro.step(round).while_(castable, round);
+  if (haveSkill(spell)) macro.step(round).while_(castable, round);
   // Out of MP with a free fight still live: finish it without a banish.
   if (freeMonster(foe)) macro.step(finishFreeFight());
   // Out of MP otherwise: a swing still spends the round, and the next
@@ -367,11 +449,12 @@ function otoscope(): Macro {
     (diverForceReady() && haveEquipped(saber)) ||
     get("_otoscopeUsed") >= 3 ||
     !haveEquipped($item`Lil' Doctor™ bag`) ||
-    diverPartsComplete()
+    diverPartsComplete() ||
+    foe !== $monster`unholy diver`
   ) {
     return new Macro();
   }
-  return Macro.if_($monster`unholy diver`, Macro.trySkill($skill`Otoscope`));
+  return Macro.trySkill($skill`Otoscope`);
 }
 
 /** Stench jelly off any stench monster, for one forced noncombat. */
@@ -406,8 +489,8 @@ function lectureOnRelativity(): Macro {
     ...(diverPartsComplete() ? [] : [$monster`unholy diver`]),
     ...(seaCowNeeded() ? [$monster`sea cow`] : []),
   ];
-  if (wanted.length === 0) return new Macro();
-  return Macro.if_(wanted, Macro.trySkill($skill`lecture on relativity`));
+  if (!wanted.includes(foe)) return new Macro();
+  return Macro.trySkill($skill`lecture on relativity`);
 }
 
 /** Feel Nostalgic, on a fight being won, for a copied table still owed something. */
@@ -573,14 +656,17 @@ const someFish = $monster`some fish`;
 
 /** The scroll hints the dreadscroll wants, thrown at mer-kin. */
 function throwScrollHints(): Macro {
-  const macro = new Macro();
+  const heal = $item`Mer-kin healscroll`;
+  const kill = $item`Mer-kin killscroll`;
+  // The while keeps its item check: each throw spends one.
   const throwAll = (scroll: Item) =>
     Macro.while_(`${Macro.makeBALLSPredicate(scroll)} && !pastround 20`, Macro.item(scroll));
-  return macro
-    .externalIf(get("dreadScroll2") === 0, throwAll($item`Mer-kin healscroll`))
+  // These come before anything that could swap the monster, so foe is the one fought.
+  return new Macro()
+    .externalIf(get("dreadScroll2") === 0 && itemAmount(heal) > 0, throwAll(heal))
     .externalIf(
-      get("dreadScroll5") === 0,
-      Macro.if_($phylum`mer-kin`, throwAll($item`Mer-kin killscroll`)),
+      get("dreadScroll5") === 0 && foe.phylum === $phylum`mer-kin` && itemAmount(kill) > 0,
+      throwAll(kill),
     );
 }
 
@@ -1061,7 +1147,9 @@ function gymnasium(plan: Plan): void {
   // Only the skate park war's gym turn wants the next adventure forced to a
   // noncombat; every other gym task is there for the fight.
   if (get("_sebGymForce", false)) {
-    plan.trySkill($skill`Launch spikolodon spikes`, $skill`McHugeLarge Avalanche`);
+    plan
+      .step(trySkillIfReady($skill`Launch spikolodon spikes`))
+      .step(trySkillIfReady($skill`McHugeLarge Avalanche`));
   }
   // While a scroll hint is owed the fight is fought out, not run from.
   const hintOwed = get("dreadScroll2") === 0 || get("dreadScroll5") === 0;
@@ -1222,17 +1310,19 @@ function killDiver(): Macro {
  * potions to name the seed: without them it searches every seed and aborts.
  */
 function bangPotions(): Macro {
-  const unknown = unknownBangPotions();
+  // Only what's in inventory can be thrown.
+  const unknown = unknownBangPotions().filter((potion) => itemAmount(potion) > 0);
   const throws: (Item | [Item, Item])[] = [];
   for (let i = 0; i < unknown.length; i += 2) {
     const [a, b] = unknown.slice(i, i + 2);
     if (b && haveSkill($skill`Ambidextrous Funkslinging`)) throws.push([a, b]);
     else throws.push(a, ...(b ? [b] : []));
   }
-  if (throws.length === 0) return new Macro();
+  // Planned before anything that could swap the monster, so foe is the one fought.
+  if (throws.length === 0 || foe !== $monster`some fish`) return new Macro();
   const macro = new Macro();
-  for (const pair of throws) macro.if_(Macro.makeBALLSPredicate(pair), Macro.item(pair));
-  return Macro.if_($monster`some fish`, macro);
+  for (const pair of throws) macro.item(pair);
+  return macro;
 }
 
 /**
@@ -1267,6 +1357,57 @@ function screechReaim(page: string, plan: Plan): void {
     );
   }
   plan.step(freeKill(false)).step(cleanUp());
+}
+
+// ─── THE NO-ACTION LIMIT ──────────────────────────────────────────────────────
+
+/** KoL aborts a macro that runs this many lines without an action. */
+const NO_ACTION_LIMIT = 69;
+/** The safety net's cap, with room for the lines KoL counts that this doesn't see. */
+const LINE_CAP = 60;
+const ACTIONS = ["attack", "skill", "use", "runaway", "pickpocket", "steal", "jiggle"];
+
+/**
+ * Lines before the macro's first sure action: one outside any if or while,
+ * or inside ifs that only test hasskill or hascombatitem, which JS has
+ * already checked before writing them. A false if's lines count toward
+ * KoL's limit, so a long run of guarded tries before this point can end
+ * the macro without a single action.
+ */
+function linesBeforeAction(macro: Macro): number {
+  const lines = macro
+    .toString()
+    .split(";")
+    .map((line) => line.trim())
+    .filter((line) => line !== "");
+  const owned = /^(hasskill|hascombatitem|hastwocombatitems)\b/;
+  // For each open if or while: whether its test only checks what's owned.
+  const open: boolean[] = [];
+  for (const [i, line] of lines.entries()) {
+    const [word, ...rest] = line.split(" ");
+    const keyword = word.toLowerCase();
+    if (keyword === "if" || keyword === "while") {
+      const terms = rest.join(" ").split("&&");
+      open.push(keyword === "if" && terms.every((term) => owned.test(term.trim())));
+    } else if (keyword === "endif" || keyword === "endwhile") {
+      open.pop();
+    } else if (ACTIONS.includes(keyword) && open.every((sure) => sure)) {
+      return i;
+    }
+  }
+  return lines.length;
+}
+
+/** The finisher alone: Saucegeyser while MP lasts, then attacks. */
+function finisher(): Plan {
+  foe = lastMonster();
+  return new Plan().step(cleanUp());
+}
+
+/** KoL's abort for a macro that ran out of lines with no action taken. */
+function tookNoAction(page: string): boolean {
+  const message = "without any actions being taken";
+  return get("lastMacroError").includes(message) || page.includes(message);
 }
 
 // ─── ONE PASS ─────────────────────────────────────────────────────────────────
@@ -1337,12 +1478,30 @@ export function main(round: number, monster: Monster, page: string): void {
   }
 
   // Each pass is one macro; a pass that swaps the monster is followed by a
-  // pass planned for the new one.
+  // pass planned for the new one. A pass whose macro took no action at all
+  // is followed by the finisher alone, never the same macro again.
+  let stalled = false;
   for (let pass = 0; currentRound() > 0 && pass < 6; pass++) {
-    const macro = plan(page);
+    let macro = stalled ? finisher() : plan(page);
+    const lead = linesBeforeAction(macro);
+    if (lead > LINE_CAP) {
+      print(
+        `SEB: the macro vs ${foe} runs ${lead} lines before a sure action, past KoL's ` +
+          `limit of ${NO_ACTION_LIMIT}. Finishing the fight with Saucegeyser and attacks instead.`,
+        "orange",
+      );
+      debug(`Dropped macro vs ${foe}: ${macro}`);
+      macro = finisher();
+    }
     debug(`Macro vs ${foe}: ${macro}`);
     const swapped = macro.swapped;
+    set("lastMacroError", "");
     page = macro.submit();
+    if (tookNoAction(page)) {
+      if (stalled) break;
+      print(`SEB: the macro vs ${foe} took no action. Retrying with the finisher only.`, "orange");
+      stalled = true;
+    }
     if (!swapped && currentRound() > 0) {
       // The plan ran out with the fight still on; the next pass tries again
       // from where it stands, as mafia would have re-consulted the script.
