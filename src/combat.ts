@@ -79,14 +79,7 @@ import {
   YOG_HEALINGS_NEEDED,
 } from "./lib/progress";
 import { bczSweatReady } from "./lib/resources";
-import {
-  bangAlcoholKnown,
-  debug,
-  haveItem,
-  highShiny,
-  lowShiny,
-  unknownBangPotions,
-} from "./lib/state";
+import { debug, haveItem, highShiny, lowShiny, unknownBangPotions } from "./lib/state";
 
 // The combat consult script. Ported from UnderTheSeaCCS.ash and the fight
 // helpers of UnderTheSeaGlobals.ash onto libram macros; the run's CCS is
@@ -282,15 +275,21 @@ function cleanUp(): Macro {
   const macro = new Macro();
   macro.if_("underwater", Macro.tryItem($item`pulled red taffy`));
   const yog = $monster`Yog-Urt, Elder Goddess of Hatred`;
-  const storm = Macro.trySkill($skill`Stuffed Mortar Shell`).skill($skill`Saucestorm`);
-  const round = haveSkill($skill`Saucegeyser`)
-    ? Macro.if_(yog, storm).ifNot(yog, Macro.skill($skill`Saucegeyser`))
-    : storm;
+  const geyser = haveSkill($skill`Saucegeyser`) && foe !== yog;
+  const spell = geyser ? $skill`Saucegeyser` : $skill`Saucestorm`;
+  // A skill line KoL can't pay for does nothing, so a macro of only those
+  // ends with no action and the fight sits at the same round.
+  const castable = `hasskill ${spell.id} && !mpbelow ${mpCost(spell)}`;
+  const round = geyser
+    ? Macro.if_(castable, Macro.skill(spell))
+    : Macro.trySkill($skill`Stuffed Mortar Shell`).if_(castable, Macro.skill(spell));
   // One cast, then more while there's MP for them.
-  macro.step(round).while_("!mpbelow 24", round);
+  macro.step(round).while_(castable, round);
   // Out of MP with a free fight still live: finish it without a banish.
   if (freeMonster(foe)) macro.step(finishFreeFight());
-  return macro;
+  // Out of MP otherwise: a swing still spends the round, and the next
+  // consult casts again once MP is back.
+  return macro.attack();
 }
 
 // ─── FIGHT OPENERS ────────────────────────────────────────────────────────────
@@ -609,9 +608,11 @@ function madnessBakery(plan: Plan): void {
 
 function shadowRift(plan: Plan): void {
   if (myPrimestat() === $stat`Moxie`) plan.step("pickpocket");
+  // The wave makes the rift underwater, but a rift turn can turn up a monster
+  // from a dry zone, where the lasso does nothing and the round never ends.
   plan.externalIf(
     get("_seadentWaveUsed") && get("lassoTrainingCount") < 20,
-    Macro.tryItem($item`sea lasso`),
+    Macro.if_("underwater", Macro.tryItem($item`sea lasso`)),
   );
   if (foe === $monster`shadow slab`) {
     plan.tryItem($item`Septapus summoning charm`);
@@ -623,7 +624,6 @@ function shadowRift(plan: Plan): void {
       }
     }
   }
-  if (foe === $monster`tumbleweed`) stop("Unexpected mob encountered in shadow rift");
   // Talk to the fish once the pickpocket is spent, or while scales are short.
   if (myPrimestat() !== $stat`Moxie` || availableAmount($item`pristine fish scale`) < 6) {
     plan.trySkill(talkToFish);
@@ -1212,19 +1212,22 @@ function killDiver(): Macro {
 }
 
 /**
- * Unknown bang potions thrown in the first rounds, two at a time with
- * Funkslinging, until the booze one turns up: the rest are safe to drink.
+ * Every unknown bang potion thrown at a some fish, two at a time with
+ * Funkslinging. Those fights come early, and seedfinder needs all nine
+ * potions to name the seed: without them it searches every seed and aborts.
  */
 function bangPotions(): Macro {
+  const unknown = unknownBangPotions();
+  const throws: (Item | [Item, Item])[] = [];
+  for (let i = 0; i < unknown.length; i += 2) {
+    const [a, b] = unknown.slice(i, i + 2);
+    if (b && haveSkill($skill`Ambidextrous Funkslinging`)) throws.push([a, b]);
+    else throws.push(a, ...(b ? [b] : []));
+  }
+  if (throws.length === 0) return new Macro();
   const macro = new Macro();
-  if (availableAmount($item`murky potion`) === 0 || bangAlcoholKnown()) return macro;
-  const [a, b] = unknownBangPotions();
-  if (!a) return macro;
-  const pair = haveSkill($skill`Ambidextrous Funkslinging`) && b ? ([a, b] as [Item, Item]) : a;
-  return macro.ifNot(
-    $monster`sea cowboy`,
-    Macro.while_(`!pastround 4 && ${Macro.makeBALLSPredicate(pair)}`, Macro.item(pair)),
-  );
+  for (const pair of throws) macro.if_(Macro.makeBALLSPredicate(pair), Macro.item(pair));
+  return Macro.if_($monster`some fish`, macro);
 }
 
 /**
