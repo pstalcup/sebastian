@@ -16,7 +16,7 @@ function seedfinder(statement: string): boolean {
 /**
  * Whether any seed clue beyond the scroll itself exists yet: an identified bang
  * potion or a mapped Daily Dungeon. Until then find_seeds() can only brute-force
- * every seed, so a check after each adventure is wasted work.
+ * every seed, so the checks below return early without it.
  */
 export function dreadCluesFound(): boolean {
   return (
@@ -28,6 +28,7 @@ export function dreadCluesFound(): boolean {
 
 /** Fill in every dreadscroll answer once the clues pin down a single seed. */
 export function dreadSeedCheck(): void {
+  if (!dreadCluesFound()) return;
   seedfinder(
     `SeedData[int] s = find_seeds(); ` +
       `if (count(s) == 1) { foreach i, seed in s for x from 1 to 8 if (get_property("dreadScroll" + x) == "0") set_property("dreadScroll" + x, seed.dreadscroll[x - 1]); } ${
@@ -43,6 +44,7 @@ export function dreadSeedCheck(): void {
 export function isKBandSushiEnough(): boolean {
   const flag = "_sebKBandSushiEnough";
   set(flag, false);
+  if (!dreadCluesFound()) return false;
   seedfinder(
     "SeedData[int] s = find_seeds(); boolean ok = count(s) > 0; boolean [string] seen; " +
       'foreach i, seed in s { string key = seed.dreadscroll[3] + ":" + seed.dreadscroll[6]; if (seen contains key) ok = false; seen[key] = true; } ' +

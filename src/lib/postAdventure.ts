@@ -68,7 +68,7 @@ import {
 } from "./iotm";
 import { diverHuntActive, seaCowNeeded, tailpiece } from "./progress";
 import { pulledToday, pullSequence } from "./pulls";
-import { dreadCluesFound, dreadSeedCheck } from "./seedfinder";
+import { dreadSeedCheck } from "./seedfinder";
 import {
   haveItem,
   highShiny,
@@ -392,7 +392,7 @@ export function postAdventure(): void {
   }
   if (get("NCtoC", false)) set("NCtoC", false);
 
-  if (!get("isMerkinHighPriest") && get("seahorseName") !== "" && dreadCluesFound()) {
+  if (!get("isMerkinHighPriest") && get("seahorseName") !== "") {
     dreadSeedCheck();
   }
   if (AutumnAton.available()) useAutumnaton();
