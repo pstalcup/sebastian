@@ -15508,7 +15508,7 @@ var TeflonQuest = {
     completed: () => !teflonNeeded()
   }, mineAnemone(freeDig)), {}, {
     limit: {
-      tries: 5
+      skip: 5
     }
   }), _objectSpread2(_objectSpread2({
     name: "Teflon: lodestone",
