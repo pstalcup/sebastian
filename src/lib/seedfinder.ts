@@ -1,7 +1,7 @@
 import { cliExecute } from "kolmafia";
 import { get, set } from "libram";
 
-import { debugMode } from "./state";
+import { BANG_POTIONS, bangPotionEffect, debugMode } from "./state";
 
 // The one ASH dependency left: seedfinder, which solves the dreadscroll from
 // the clues found so far. It is an ASH library with no TypeScript port, so it
@@ -11,6 +11,19 @@ const SEEDFINDER = "seedfinder/seedfinder.ash";
 
 function seedfinder(statement: string): boolean {
   return cliExecute(`ash import <${SEEDFINDER}>; ${statement}`);
+}
+
+/**
+ * Whether any seed clue beyond the scroll itself exists yet: an identified bang
+ * potion or a mapped Daily Dungeon. Until then find_seeds() can only brute-force
+ * every seed, so a check after each adventure is wasted work.
+ */
+export function dreadCluesFound(): boolean {
+  return (
+    BANG_POTIONS.some((potion) => bangPotionEffect(potion) !== "") ||
+    // "????_????_????" (or "") until a room is seen
+    /[^?_]/.test(get("dailyDungeonRooms"))
+  );
 }
 
 /** Fill in every dreadscroll answer once the clues pin down a single seed. */
