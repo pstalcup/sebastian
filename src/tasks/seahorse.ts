@@ -758,8 +758,6 @@ export const TeflonQuest: SebQuest = {
         canAdventure($location`Anemone Mine`),
       completed: () => !teflonNeeded(),
       ...mineAnemone(freeDig),
-      // Five swings can come up short of the back row, and then the lodestone
-      // task after this one takes over.
       limit: { skip: 5 },
     },
     {
