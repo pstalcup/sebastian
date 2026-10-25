@@ -1305,11 +1305,35 @@ function killDiver(): Macro {
 }
 
 /**
- * Every unknown bang potion thrown at a some fish, two at a time with
- * Funkslinging. Those fights come early, and seedfinder needs all nine
- * potions to name the seed: without them it searches every seed and aborts.
+ * Whether this fight can spend its first rounds on bang potions: a free
+ * fight, some fish, or one whose monster can't hurt much over those rounds.
+ * Never a boss or a Colosseum round, nor a fight whose opener must land
+ * first (a Force, the Otoscope, a lecture) or that owes a fish talk.
  */
-function bangPotions(): Macro {
+function bangPotionFight(rounds: number, openerPlanned: boolean): boolean {
+  if (openerPlanned || foe.boss) return false;
+  if (
+    $locations`Mer-kin Colosseum, Mer-kin Temple, Mer-kin Temple (Center Door), Mer-kin Temple (Left Door), Mer-kin Temple (Right Door)`.includes(
+      myLocation(),
+    )
+  ) {
+    return false;
+  }
+  if ($monsters`unholy diver, sea cowboy, Dad Sea Monkee`.includes(foe)) return false;
+  if (foe === $monster`some fish`) return true;
+  if (someFishCurveball()) return false;
+  if (freeMonster(foe)) return true;
+  // Easy: what it hits for over the throws leaves well over half our HP.
+  return expectedDamage(foe) * (rounds + 1) < myHp() / 2;
+}
+
+/**
+ * Every unknown bang potion on hand, two a round with Funkslinging, in the
+ * first rounds of a fight that can spare them. Each one identified narrows
+ * seedfinder, which fills every dreadscroll answer once the seed is pinned
+ * down: six known before the seahorse is tamed is usually enough.
+ */
+function bangPotions(openerPlanned: boolean): Macro {
   // Only what's in inventory can be thrown.
   const unknown = unknownBangPotions().filter((potion) => itemAmount(potion) > 0);
   const throws: (Item | [Item, Item])[] = [];
@@ -1318,8 +1342,10 @@ function bangPotions(): Macro {
     if (b && haveSkill($skill`Ambidextrous Funkslinging`)) throws.push([a, b]);
     else throws.push(a, ...(b ? [b] : []));
   }
-  // Planned before anything that could swap the monster, so foe is the one fought.
-  if (throws.length === 0 || foe !== $monster`some fish`) return new Macro();
+  // Decided here, not in BALLS: a false if's lines count toward KoL's
+  // no-action limit. Planned before anything that could swap the monster,
+  // so foe is the one fought.
+  if (throws.length === 0 || !bangPotionFight(throws.length, openerPlanned)) return new Macro();
   const macro = new Macro();
   for (const pair of throws) macro.item(pair);
   return macro;
@@ -1425,11 +1451,15 @@ function plan(page: string): Plan {
     return plan.step(freeKill(false)).step(cleanUp());
   }
 
-  plan.step(forces()).step(becomeBat()).step(otoscope()).step(extractJelly());
+  const force = forces();
+  const scope = otoscope();
+  plan.step(force).step(becomeBat()).step(scope).step(extractJelly());
   const reroll = replaceEnemy();
   if (reroll) return plan.swap(reroll);
 
-  plan.step(lectureOnRelativity()).step(bangPotions());
+  const lecture = lectureOnRelativity();
+  const openerPlanned = [force, scope, lecture].some((macro) => macro.components.length > 0);
+  plan.step(lecture).step(bangPotions(openerPlanned));
   plan.externalIf(
     (highShiny() || !haveItem($item`closed-circuit pay phone`)) &&
       availableAmount($item`sea lasso`) > 5 &&
