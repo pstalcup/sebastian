@@ -12817,10 +12817,14 @@ function dreadCluesFound() {
   /[^?_]/.test(get$1("dailyDungeonRooms"));
 }
 
-/** Fill in every dreadscroll answer once the clues pin down a single seed. */
+/**
+ * Fill in each dreadscroll answer that every seed left agrees on: all eight
+ * once the clues pin down a single seed, and any the candidates share before
+ * then. Each answer filled narrows the next search.
+ */
 function dreadSeedCheck() {
   if (!dreadCluesFound()) return;
-  seedfinder("SeedData[int] s = find_seeds(); " + "if (count(s) == 1) { foreach i, seed in s for x from 1 to 8 if (get_property(\"dreadScroll\" + x) == \"0\") set_property(\"dreadScroll\" + x, seed.dreadscroll[x - 1]); } ".concat(debugMode() ? 'else print(count(s) + " possible seeds right now");' : ""));
+  seedfinder("SeedData[int] s = find_seeds(); string filled = ''; " + "if (count(s) > 0) for x from 1 to 8 { " + 'if (get_property("dreadScroll" + x) != "0") continue; ' + "int answer = 0; boolean agree = true; " + "foreach i, seed in s { if (answer == 0) answer = seed.dreadscroll[x - 1]; else if (answer != seed.dreadscroll[x - 1]) agree = false; } " + "if (agree && answer > 0) { set_property(\"dreadScroll\" + x, answer); filled += \" \" + x; } } ".concat(debugMode() ? 'print("SEB: " + count(s) + " possible seeds; dreadscroll filled:" + (filled == "" ? " none" : filled), "blue");' : ""));
 }
 
 /**

@@ -2534,7 +2534,7 @@ function combatBan() {
   return $skill.none;
 }
 
-var _templateObject, _templateObject2, _templateObject3, _templateObject4, _templateObject5, _templateObject6, _templateObject7, _templateObject8, _templateObject9, _templateObject0, _templateObject1, _templateObject10, _templateObject11, _templateObject12, _templateObject13, _templateObject14, _templateObject15, _templateObject16, _templateObject17, _templateObject18, _templateObject19, _templateObject20, _templateObject21, _templateObject22, _templateObject23, _templateObject24, _templateObject25, _templateObject26, _templateObject27, _templateObject28, _templateObject29, _templateObject30, _templateObject31, _templateObject32, _templateObject33, _templateObject34, _templateObject35, _templateObject36, _templateObject37, _templateObject38, _templateObject39, _templateObject40, _templateObject41, _templateObject42, _templateObject43, _templateObject44, _templateObject45, _templateObject46, _templateObject47, _templateObject48, _templateObject49, _templateObject50, _templateObject51, _templateObject52, _templateObject53, _templateObject54, _templateObject55, _templateObject56, _templateObject57, _templateObject58, _templateObject59, _templateObject60, _templateObject61, _templateObject62, _templateObject63, _templateObject64, _templateObject65, _templateObject66, _templateObject67, _templateObject68, _templateObject69, _templateObject70, _templateObject71, _templateObject72, _templateObject73, _templateObject74, _templateObject75, _templateObject76, _templateObject77, _templateObject78, _templateObject79, _templateObject80, _templateObject81, _templateObject82, _templateObject83, _templateObject84, _templateObject85, _templateObject86, _templateObject87, _templateObject88, _templateObject89, _templateObject90, _templateObject91, _templateObject92, _templateObject93, _templateObject94, _templateObject95, _templateObject96, _templateObject97, _templateObject98, _templateObject99, _templateObject100, _templateObject101, _templateObject102, _templateObject103, _templateObject104, _templateObject105, _templateObject106, _templateObject107, _templateObject108, _templateObject109, _templateObject110, _templateObject111, _templateObject112, _templateObject113, _templateObject114, _templateObject115, _templateObject116, _templateObject117, _templateObject118, _templateObject119, _templateObject120, _templateObject121, _templateObject122, _templateObject123, _templateObject124, _templateObject125, _templateObject126, _templateObject127, _templateObject128, _templateObject129, _templateObject130, _templateObject131, _templateObject132, _templateObject133, _templateObject134, _templateObject135, _templateObject136, _templateObject137, _templateObject138, _templateObject139, _templateObject140, _templateObject141, _templateObject142, _templateObject143, _templateObject144, _templateObject145, _templateObject146, _templateObject147, _templateObject148, _templateObject149, _templateObject150, _templateObject151, _templateObject152, _templateObject153, _templateObject154, _templateObject155, _templateObject156, _templateObject157, _templateObject158, _templateObject159, _templateObject160, _templateObject161, _templateObject162, _templateObject163, _templateObject164, _templateObject165, _templateObject166, _templateObject167, _templateObject168, _templateObject169, _templateObject170, _templateObject171, _templateObject172, _templateObject173, _templateObject174, _templateObject175, _templateObject176, _templateObject177, _templateObject178, _templateObject179, _templateObject180, _templateObject181, _templateObject182, _templateObject183, _templateObject184, _templateObject185, _templateObject186, _templateObject187, _templateObject188, _templateObject189, _templateObject190, _templateObject191, _templateObject192, _templateObject193, _templateObject194, _templateObject195, _templateObject196, _templateObject197, _templateObject198, _templateObject199, _templateObject200, _templateObject201, _templateObject202, _templateObject203, _templateObject204, _templateObject205, _templateObject206, _templateObject207, _templateObject208, _templateObject209, _templateObject210, _templateObject211, _templateObject212, _templateObject213, _templateObject214, _templateObject215, _templateObject216, _templateObject217, _templateObject218, _templateObject219, _templateObject220, _templateObject221, _templateObject222, _templateObject223, _templateObject224, _templateObject225, _templateObject226, _templateObject227, _templateObject228, _templateObject229, _templateObject230, _templateObject231, _templateObject232, _templateObject233, _templateObject234, _templateObject235, _templateObject236, _templateObject237, _templateObject238, _templateObject239, _templateObject240, _templateObject241, _templateObject242, _templateObject243, _templateObject244, _templateObject245, _templateObject246, _templateObject247, _templateObject248, _templateObject249, _templateObject250, _templateObject251, _templateObject252, _templateObject253, _templateObject254, _templateObject255, _templateObject256, _templateObject257, _templateObject258, _templateObject259, _templateObject260, _templateObject261, _templateObject262, _templateObject263, _templateObject264, _templateObject265, _templateObject266, _templateObject267, _templateObject268, _templateObject269, _templateObject270, _templateObject271, _templateObject272, _templateObject273, _templateObject274, _templateObject275, _templateObject276, _templateObject277, _templateObject278, _templateObject279, _templateObject280, _templateObject281, _templateObject282, _templateObject283, _templateObject284, _templateObject285, _templateObject286, _templateObject287, _templateObject288, _templateObject289, _templateObject290, _templateObject291, _templateObject292, _templateObject293, _templateObject294, _templateObject295, _templateObject296, _templateObject297, _templateObject298, _templateObject299, _templateObject300, _templateObject301, _templateObject302, _templateObject303, _templateObject304, _templateObject305, _templateObject306, _templateObject307, _templateObject308, _templateObject309, _templateObject310, _templateObject311, _templateObject312, _templateObject313, _templateObject314, _templateObject315, _templateObject316, _templateObject317, _templateObject318, _templateObject319, _templateObject320, _templateObject321, _templateObject322, _templateObject323, _templateObject324, _templateObject325, _templateObject326, _templateObject327, _templateObject328, _templateObject329, _templateObject330, _templateObject331, _templateObject332, _templateObject333, _templateObject334, _templateObject335, _templateObject336, _templateObject337;
+var _templateObject, _templateObject2, _templateObject3, _templateObject4, _templateObject5, _templateObject6, _templateObject7, _templateObject8, _templateObject9, _templateObject0, _templateObject1, _templateObject10, _templateObject11, _templateObject12, _templateObject13, _templateObject14, _templateObject15, _templateObject16, _templateObject17, _templateObject18, _templateObject19, _templateObject20, _templateObject21, _templateObject22, _templateObject23, _templateObject24, _templateObject25, _templateObject26, _templateObject27, _templateObject28, _templateObject29, _templateObject30, _templateObject31, _templateObject32, _templateObject33, _templateObject34, _templateObject35, _templateObject36, _templateObject37, _templateObject38, _templateObject39, _templateObject40, _templateObject41, _templateObject42, _templateObject43, _templateObject44, _templateObject45, _templateObject46, _templateObject47, _templateObject48, _templateObject49, _templateObject50, _templateObject51, _templateObject52, _templateObject53, _templateObject54, _templateObject55, _templateObject56, _templateObject57, _templateObject58, _templateObject59, _templateObject60, _templateObject61, _templateObject62, _templateObject63, _templateObject64, _templateObject65, _templateObject66, _templateObject67, _templateObject68, _templateObject69, _templateObject70, _templateObject71, _templateObject72, _templateObject73, _templateObject74, _templateObject75, _templateObject76, _templateObject77, _templateObject78, _templateObject79, _templateObject80, _templateObject81, _templateObject82, _templateObject83, _templateObject84, _templateObject85, _templateObject86, _templateObject87, _templateObject88, _templateObject89, _templateObject90, _templateObject91, _templateObject92, _templateObject93, _templateObject94, _templateObject95, _templateObject96, _templateObject97, _templateObject98, _templateObject99, _templateObject100, _templateObject101, _templateObject102, _templateObject103, _templateObject104, _templateObject105, _templateObject106, _templateObject107, _templateObject108, _templateObject109, _templateObject110, _templateObject111, _templateObject112, _templateObject113, _templateObject114, _templateObject115, _templateObject116, _templateObject117, _templateObject118, _templateObject119, _templateObject120, _templateObject121, _templateObject122, _templateObject123, _templateObject124, _templateObject125, _templateObject126, _templateObject127, _templateObject128, _templateObject129, _templateObject130, _templateObject131, _templateObject132, _templateObject133, _templateObject134, _templateObject135, _templateObject136, _templateObject137, _templateObject138, _templateObject139, _templateObject140, _templateObject141, _templateObject142, _templateObject143, _templateObject144, _templateObject145, _templateObject146, _templateObject147, _templateObject148, _templateObject149, _templateObject150, _templateObject151, _templateObject152, _templateObject153, _templateObject154, _templateObject155, _templateObject156, _templateObject157, _templateObject158, _templateObject159, _templateObject160, _templateObject161, _templateObject162, _templateObject163, _templateObject164, _templateObject165, _templateObject166, _templateObject167, _templateObject168, _templateObject169, _templateObject170, _templateObject171, _templateObject172, _templateObject173, _templateObject174, _templateObject175, _templateObject176, _templateObject177, _templateObject178, _templateObject179, _templateObject180, _templateObject181, _templateObject182, _templateObject183, _templateObject184, _templateObject185, _templateObject186, _templateObject187, _templateObject188, _templateObject189, _templateObject190, _templateObject191, _templateObject192, _templateObject193, _templateObject194, _templateObject195, _templateObject196, _templateObject197, _templateObject198, _templateObject199, _templateObject200, _templateObject201, _templateObject202, _templateObject203, _templateObject204, _templateObject205, _templateObject206, _templateObject207, _templateObject208, _templateObject209, _templateObject210, _templateObject211, _templateObject212, _templateObject213, _templateObject214, _templateObject215, _templateObject216, _templateObject217, _templateObject218, _templateObject219, _templateObject220, _templateObject221, _templateObject222, _templateObject223, _templateObject224, _templateObject225, _templateObject226, _templateObject227, _templateObject228, _templateObject229, _templateObject230, _templateObject231, _templateObject232, _templateObject233, _templateObject234, _templateObject235, _templateObject236, _templateObject237, _templateObject238, _templateObject239, _templateObject240, _templateObject241, _templateObject242, _templateObject243, _templateObject244, _templateObject245, _templateObject246, _templateObject247, _templateObject248, _templateObject249, _templateObject250, _templateObject251, _templateObject252, _templateObject253, _templateObject254, _templateObject255, _templateObject256, _templateObject257, _templateObject258, _templateObject259, _templateObject260, _templateObject261, _templateObject262, _templateObject263, _templateObject264, _templateObject265, _templateObject266, _templateObject267, _templateObject268, _templateObject269, _templateObject270, _templateObject271, _templateObject272, _templateObject273, _templateObject274, _templateObject275, _templateObject276, _templateObject277, _templateObject278, _templateObject279, _templateObject280, _templateObject281, _templateObject282, _templateObject283, _templateObject284, _templateObject285, _templateObject286, _templateObject287, _templateObject288, _templateObject289, _templateObject290, _templateObject291, _templateObject292, _templateObject293, _templateObject294, _templateObject295, _templateObject296, _templateObject297, _templateObject298, _templateObject299, _templateObject300, _templateObject301, _templateObject302, _templateObject303, _templateObject304, _templateObject305, _templateObject306, _templateObject307, _templateObject308, _templateObject309, _templateObject310, _templateObject311, _templateObject312, _templateObject313, _templateObject314, _templateObject315, _templateObject316, _templateObject317, _templateObject318, _templateObject319, _templateObject320, _templateObject321, _templateObject322, _templateObject323, _templateObject324, _templateObject325, _templateObject326, _templateObject327, _templateObject328, _templateObject329, _templateObject330, _templateObject331, _templateObject332, _templateObject333, _templateObject334, _templateObject335, _templateObject336, _templateObject337, _templateObject338, _templateObject339;
 
 // The combat consult script. Ported from UnderTheSeaCCS.ash and the fight
 // helpers of UnderTheSeaGlobals.ash onto libram macros; the run's CCS is
@@ -3522,11 +3522,31 @@ function killDiver() {
 }
 
 /**
- * Every unknown bang potion thrown at a some fish, two at a time with
- * Funkslinging. Those fights come early, and seedfinder needs all nine
- * potions to name the seed: without them it searches every seed and aborts.
+ * Whether this fight can spend its first rounds on bang potions: a free
+ * fight, some fish, or one whose monster can't hurt much over those rounds.
+ * Never a boss or a Colosseum round, nor a fight whose opener must land
+ * first (a Force, the Otoscope, a lecture) or that owes a fish talk.
  */
-function bangPotions() {
+function bangPotionFight(rounds, openerPlanned) {
+  if (openerPlanned || foe.boss) return false;
+  if ($locations(_templateObject323 || (_templateObject323 = _taggedTemplateLiteral(["Mer-kin Colosseum, Mer-kin Temple, Mer-kin Temple (Center Door), Mer-kin Temple (Left Door), Mer-kin Temple (Right Door)"]))).includes(kolmafia.myLocation())) {
+    return false;
+  }
+  if ($monsters(_templateObject324 || (_templateObject324 = _taggedTemplateLiteral(["unholy diver, sea cowboy, Dad Sea Monkee"]))).includes(foe)) return false;
+  if (foe === $monster(_templateObject325 || (_templateObject325 = _taggedTemplateLiteral(["some fish"])))) return true;
+  if (someFishCurveball()) return false;
+  if (freeMonster(foe)) return true;
+  // Easy: what it hits for over the throws leaves well over half our HP.
+  return kolmafia.expectedDamage(foe) * (rounds + 1) < kolmafia.myHp() / 2;
+}
+
+/**
+ * Every unknown bang potion on hand, two a round with Funkslinging, in the
+ * first rounds of a fight that can spare them. Each one identified narrows
+ * seedfinder, which fills every dreadscroll answer once the seed is pinned
+ * down: six known before the seahorse is tamed is usually enough.
+ */
+function bangPotions(openerPlanned) {
   // Only what's in inventory can be thrown.
   var unknown = unknownBangPotions().filter(potion => kolmafia.itemAmount(potion) > 0);
   var throws = [];
@@ -3535,10 +3555,12 @@ function bangPotions() {
       _unknown$slice2 = _slicedToArray(_unknown$slice, 2),
       a = _unknown$slice2[0],
       b = _unknown$slice2[1];
-    if (b && kolmafia.haveSkill($skill(_templateObject323 || (_templateObject323 = _taggedTemplateLiteral(["Ambidextrous Funkslinging"]))))) throws.push([a, b]);else throws.push.apply(throws, [a].concat(_toConsumableArray(b ? [b] : [])));
+    if (b && kolmafia.haveSkill($skill(_templateObject326 || (_templateObject326 = _taggedTemplateLiteral(["Ambidextrous Funkslinging"]))))) throws.push([a, b]);else throws.push.apply(throws, [a].concat(_toConsumableArray(b ? [b] : [])));
   }
-  // Planned before anything that could swap the monster, so foe is the one fought.
-  if (throws.length === 0 || foe !== $monster(_templateObject324 || (_templateObject324 = _taggedTemplateLiteral(["some fish"])))) return new Macro();
+  // Decided here, not in BALLS: a false if's lines count toward KoL's
+  // no-action limit. Planned before anything that could swap the monster,
+  // so foe is the one fought.
+  if (throws.length === 0 || !bangPotionFight(throws.length, openerPlanned)) return new Macro();
   var macro = new Macro();
   for (var _i2 = 0, _throws = throws; _i2 < _throws.length; _i2++) {
     var pair = _throws[_i2];
@@ -3552,7 +3574,7 @@ function bangPotions() {
  * and returns "true" or "false"; "" without the eagle or a skill list.
  */
 function noteScreechReady(page) {
-  if (kolmafia.myFamiliar() !== $familiar(_templateObject325 || (_templateObject325 = _taggedTemplateLiteral(["Patriotic Eagle"]))) || kolmafia.currentRound() < 1) return "";
+  if (kolmafia.myFamiliar() !== $familiar(_templateObject327 || (_templateObject327 = _taggedTemplateLiteral(["Patriotic Eagle"]))) || kolmafia.currentRound() < 1) return "";
   var start = page.indexOf("<select name=whichskill>");
   if (start < 0) start = page.indexOf('<select name="whichskill">');
   if (start < 0) return "";
@@ -3567,7 +3589,7 @@ function noteScreechReady(page) {
 function screechReaim(page, plan) {
   // Only the zone's natives are safe to banish. A result left unset tells
   // the caller no cast was attempted.
-  var orc = foe.phylum === $phylum(_templateObject326 || (_templateObject326 = _taggedTemplateLiteral(["orc"])));
+  var orc = foe.phylum === $phylum(_templateObject328 || (_templateObject328 = _taggedTemplateLiteral(["orc"])));
   if (get("_sebScreechFired") === "" && orc && noteScreechReady(page) === "false") {
     _set("_sebScreechFired", "unready");
   } else if (get("_sebScreechFired") === "" && orc) {
@@ -3653,18 +3675,22 @@ function plan(page) {
     noteScreechReady(page);
     return plan.step(freeKill(false)).step(cleanUp());
   }
-  plan.step(forces()).step(becomeBat()).step(otoscope()).step(extractJelly());
+  var force = forces();
+  var scope = otoscope();
+  plan.step(force).step(becomeBat()).step(scope).step(extractJelly());
   var reroll = replaceEnemy();
   if (reroll) return plan.swap(reroll);
-  plan.step(lectureOnRelativity()).step(bangPotions());
-  plan.externalIf((highShiny() || !haveItem($item(_templateObject327 || (_templateObject327 = _taggedTemplateLiteral(["closed-circuit pay phone"]))))) && kolmafia.availableAmount($item(_templateObject328 || (_templateObject328 = _taggedTemplateLiteral(["sea lasso"])))) > 5 && get("lassoTrainingCount") < 6, Macro.if_("underwater", Macro.tryItem($item(_templateObject329 || (_templateObject329 = _taggedTemplateLiteral(["sea lasso"]))))));
+  var lecture = lectureOnRelativity();
+  var openerPlanned = [force, scope, lecture].some(macro => macro.components.length > 0);
+  plan.step(lecture).step(bangPotions(openerPlanned));
+  plan.externalIf((highShiny() || !haveItem($item(_templateObject329 || (_templateObject329 = _taggedTemplateLiteral(["closed-circuit pay phone"]))))) && kolmafia.availableAmount($item(_templateObject330 || (_templateObject330 = _taggedTemplateLiteral(["sea lasso"])))) > 5 && get("lassoTrainingCount") < 6, Macro.if_("underwater", Macro.tryItem($item(_templateObject331 || (_templateObject331 = _taggedTemplateLiteral(["sea lasso"]))))));
   // A copied diver surfaces wherever the route is adventuring, and that
   // zone's logic would spend it on its own target. While the helmet chain is
   // short, kill it as a diver. The wreck has its own diver logic.
-  if (foe === $monster(_templateObject330 || (_templateObject330 = _taggedTemplateLiteral(["unholy diver"]))) && diverHuntActive() && kolmafia.myLocation() !== $location(_templateObject331 || (_templateObject331 = _taggedTemplateLiteral(["The Wreck of the Edgar Fitzsimmons"])))) {
+  if (foe === $monster(_templateObject332 || (_templateObject332 = _taggedTemplateLiteral(["unholy diver"]))) && diverHuntActive() && kolmafia.myLocation() !== $location(_templateObject333 || (_templateObject333 = _taggedTemplateLiteral(["The Wreck of the Edgar Fitzsimmons"])))) {
     // Bounded at 20: taming spends a lasso at exactly that count.
-    if (kolmafia.haveEquipped($item(_templateObject332 || (_templateObject332 = _taggedTemplateLiteral(["sea cowboy hat"])))) && kolmafia.haveEquipped($item(_templateObject333 || (_templateObject333 = _taggedTemplateLiteral(["sea chaps"])))) && get("lassoTrainingCount") < 20) {
-      plan.tryItem($item(_templateObject334 || (_templateObject334 = _taggedTemplateLiteral(["sea lasso"]))));
+    if (kolmafia.haveEquipped($item(_templateObject334 || (_templateObject334 = _taggedTemplateLiteral(["sea cowboy hat"])))) && kolmafia.haveEquipped($item(_templateObject335 || (_templateObject335 = _taggedTemplateLiteral(["sea chaps"])))) && get("lassoTrainingCount") < 20) {
+      plan.tryItem($item(_templateObject336 || (_templateObject336 = _taggedTemplateLiteral(["sea lasso"]))));
     }
     return plan.step(killDiver());
   }
@@ -3676,13 +3702,13 @@ function plan(page) {
 function main(round, monster, page) {
   // Yog-Urt and Shub react round by round. Any stray opener under More Like
   // a Suckrament costs a heal round or kills.
-  if (kolmafia.lastMonster() === $monster(_templateObject335 || (_templateObject335 = _taggedTemplateLiteral(["Yog-Urt, Elder Goddess of Hatred"])))) {
-    if (kolmafia.myLocation() === $location(_templateObject336 || (_templateObject336 = _taggedTemplateLiteral(["Mer-kin Temple (Right Door)"])))) {
+  if (kolmafia.lastMonster() === $monster(_templateObject337 || (_templateObject337 = _taggedTemplateLiteral(["Yog-Urt, Elder Goddess of Hatred"])))) {
+    if (kolmafia.myLocation() === $location(_templateObject338 || (_templateObject338 = _taggedTemplateLiteral(["Mer-kin Temple (Right Door)"])))) {
       yogUrtFight();
       return;
     }
   }
-  if (kolmafia.myLocation() === $location(_templateObject337 || (_templateObject337 = _taggedTemplateLiteral(["Mer-kin Temple (Left Door)"])))) {
+  if (kolmafia.myLocation() === $location(_templateObject339 || (_templateObject339 = _taggedTemplateLiteral(["Mer-kin Temple (Left Door)"])))) {
     shubFight();
     return;
   }
