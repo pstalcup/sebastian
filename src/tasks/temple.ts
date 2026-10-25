@@ -69,7 +69,12 @@ import {
 } from "../lib/progress";
 import { pulledToday, pullSequence, reservedPulls } from "../lib/pulls";
 import { baseballPlayers, equipSwimTrunks } from "../lib/resources";
-import { dreadSeedCheck, isKBandSushiEnough } from "../lib/seedfinder";
+import {
+  dreadCluesFound,
+  dreadSeedCheck,
+  dreadSeedChecked,
+  isKBandSushiEnough,
+} from "../lib/seedfinder";
 import { debug, haveItem, highShiny, inAftercore, inSeaPath, lowShiny } from "../lib/state";
 
 import { aftercoreBoss, tamed } from "./seahorse";
@@ -454,11 +459,7 @@ const dreadscrollTasks: SebTask[] = [
     name: "Library",
     ready: () => !highPriest() && schoolDone(),
     completed: libraryDone,
-    ...withHooks(merkinLib(), {
-      post: () => {
-        if (haveDreadscroll()) dreadSeedCheck();
-      },
-    }),
+    ...merkinLib(),
   },
   {
     name: "Knucklebone clue",
@@ -467,7 +468,6 @@ const dreadscrollTasks: SebTask[] = [
     ...action(() => {
       if (itemAmount($item`Mer-kin knucklebone`) === 0) pullSequence($item`Mer-kin knucklebone`);
       use($item`Mer-kin knucklebone`);
-      dreadSeedCheck();
     }),
     limit: { tries: 1 },
   },
@@ -475,10 +475,7 @@ const dreadscrollTasks: SebTask[] = [
     name: "Sushi clue",
     ready: () => !highPriest() && haveDreadscroll() && vocabulary() < 90,
     completed: () => scroll(7) !== 0,
-    ...action(() => {
-      sushiClue();
-      dreadSeedCheck();
-    }),
+    ...action(sushiClue),
     limit: { skip: 1 },
   },
   {
@@ -524,6 +521,24 @@ const dreadscrollTasks: SebTask[] = [
     limit: { tries: 1 },
   },
 ];
+
+/**
+ * Runs seedfinder whenever a clue has changed since its last search, ahead of
+ * every quest, so no turn goes to a hint the clues already answer.
+ */
+export const DreadSeedQuest: SebQuest = {
+  name: "Dreadscroll seed",
+  ready: () => tamed() && !highPriest(),
+  tasks: [
+    {
+      name: "Seed check",
+      ready: dreadCluesFound,
+      completed: () => dreadSeedChecked() || [...HINTS, 7].every((n) => scroll(n) !== 0),
+      ...action(dreadSeedCheck),
+      postAdventure: false,
+    },
+  ],
+};
 
 // ─── BECOMING HIGH PRIEST ─────────────────────────────────────────────────────
 

@@ -22,7 +22,13 @@ import {
   TamingQuest,
   TeflonQuest,
 } from "./tasks/seahorse";
-import { AfterYogUrtQuest, FinalBossQuest, ShubQuest, YogUrtQuest } from "./tasks/temple";
+import {
+  AfterYogUrtQuest,
+  DreadSeedQuest,
+  FinalBossQuest,
+  ShubQuest,
+  YogUrtQuest,
+} from "./tasks/temple";
 
 export function main(command?: string): void {
   Args.fill(args, command);
@@ -73,12 +79,14 @@ export function main(command?: string): void {
   const startedInPath = inSeaPath();
   const pathOnly = (quest: SebQuest): SebQuest =>
     startedInPath ? { ...quest, ready: () => inSeaPath() && (quest.ready?.() ?? true) } : quest;
-  // In seaMonkees() order: the early lasso, the guild, the quest, the outpost,
+  // The seed check first, so solved answers land before any turn. Then in
+  // seaMonkees() order: the early lasso, the guild, the quest, the outpost,
   // the seahorse, the temple, then past the prism. Every task reads its state
   // from the game, so a rerun picks up where the last one stopped.
   const engine = new SebEngine(
     getTasks([
       ...[
+        DreadSeedQuest,
         LassoQuest,
         GuildQuest,
         MonkeesQuest,
