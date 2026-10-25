@@ -65,7 +65,9 @@ import {
   divingHelmet,
   libraryReady,
   tailpiece,
+  YOG_HEALING,
   YOG_HEALINGS_NEEDED,
+  yogHealingsShort,
 } from "../lib/progress";
 import { pulledToday, pullSequence, reservedPulls } from "../lib/pulls";
 import { baseballPlayers, equipSwimTrunks } from "../lib/resources";
@@ -109,28 +111,6 @@ const highPriest = () => get("isMerkinHighPriest");
 const beads = () => availableAmount($item`Mer-kin prayerbeads`);
 
 // ─── YOG-URT'S HP CHECK ───────────────────────────────────────────────────────
-
-/** Healing items Yog-Urt's fight throws, in the order it throws them, and what each heals. */
-const YOG_HEALING: [Item, number][] = [
-  [$item`sea gel`, 500],
-  [$item`Mer-kin healscroll`, 300],
-  [$item`waterlogged scroll of healing`, 250],
-  [$item`soggy used band-aid`, 1000],
-  [$item`New Age healing crystal`, 500],
-];
-
-function yogHealingsNeeded(): number {
-  return YOG_HEALINGS_NEEDED[beads()] ?? 0;
-}
-
-function yogHealingsOwned(): number {
-  return YOG_HEALING.filter(([item]) => availableAmount(item) > 0).length;
-}
-
-/** Healings short of what the fight needs, more than pulls can cover. */
-function yogHealingsShort(): boolean {
-  return yogHealingsNeeded() - yogHealingsOwned() > pullsRemaining();
-}
 
 /** Maximum HP per point of buffed Muscle, from what's worn. */
 function trueHPPercent(): number {
@@ -528,7 +508,7 @@ const dreadscrollTasks: SebTask[] = [
  */
 export const DreadSeedQuest: SebQuest = {
   name: "Dreadscroll seed",
-  ready: () => tamed() && !highPriest(),
+  ready: () => !highPriest(),
   tasks: [
     {
       name: "Seed check",
