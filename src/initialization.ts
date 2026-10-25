@@ -258,7 +258,7 @@ function dailies(): void {
 }
 
 export function initialization(): void {
-  if (getRevision() < 29057) throw new Error("Please update mafia to newer than 29057");
+  if (getRevision() < 29389) throw new Error("Please update mafia to r29389 or newer");
   // A pearl farm or screech re-aim that aborted mid-loop leaves these set,
   // and the CCS reads them.
   set("_sebPearlFarm", false);

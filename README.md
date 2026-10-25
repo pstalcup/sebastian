@@ -10,14 +10,7 @@ of [UnderTheSea](https://github.com/Astro3207/UnderTheSea) onto
 git checkout pstalcup/sebastian release
 ```
 
-The one ASH dependency left is [seedfinder](https://github.com/VeeArrKoL/seedfinder), which solves the
-dreadscroll, as it was for the original:
-
-```
-git checkout VeeArrKoL/seedfinder
-```
-
-Then:
+It needs KoLmafia r29389 or newer, which solves the dreadscroll from the ascension seed. Then:
 
 ```
 sebastian          # the whole run, from startup through the prism

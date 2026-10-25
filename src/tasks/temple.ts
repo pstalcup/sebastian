@@ -153,7 +153,7 @@ function yogHpCheck(): boolean {
 /**
  * The long way to the dreadscroll (cheatsheets, the teacher, the bunwig, the
  * vocabulary) or the short way, when the knucklebone and sushi pin the seed
- * (the lounge's scholar pieces). Picked once a day, since it asks seedfinder.
+ * (the lounge's scholar pieces). Picked once a day, since it runs a seed search.
  */
 function schoolRoute(): "vocabulary" | "lounge" {
   let value = get("_sebSchoolRoute");
@@ -503,7 +503,7 @@ const dreadscrollTasks: SebTask[] = [
 ];
 
 /**
- * Runs seedfinder whenever a clue has changed since its last search, ahead of
+ * Searches for the ascension seed whenever a clue has changed since its last search, ahead of
  * every quest, so no turn goes to a hint the clues already answer.
  */
 export const DreadSeedQuest: SebQuest = {
