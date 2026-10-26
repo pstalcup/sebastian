@@ -59,6 +59,7 @@ import {
   TrainSet,
 } from "libram";
 
+import { solveDig } from "./minesolver";
 import {
   cheatsheetsNeeded,
   diverForceReady,
@@ -242,13 +243,31 @@ function towards(state: string, target: Square): Square | undefined {
 }
 
 /**
- * The mine square (column, row) to dig for teflon ore. Teflon sits in the back
- * row, so the shaft goes straight up column 3 and then up to any sparkle it
- * shows there, before spreading out sideways.
+ * The mine square (column, row) to dig for teflon ore. The vein solver picks
+ * the square most likely to reach teflon given everything the wall shows; if
+ * no vein layout fits the wall, fall back to the shaft heuristic.
  */
 export function mineNum(): Mining.MiningCoordinate {
   Mining.visit(Mining.Mine.ANEMONE);
   const state = Mining.getState(Mining.Mine.ANEMONE);
+  const detection = Mining.hasObjectDetection(Mining.Mine.ANEMONE);
+  const solved = solveDig(state, get("mineLayout3"), detection);
+  if (solved) {
+    debug(
+      `Mine: dig (${solved.square.join(",")}), P(teflon) ${(solved.p * 100).toFixed(0)}%, score ${solved.score.toFixed(2)}${detection ? " (Object Detection)" : ""}`,
+    );
+    return at(solved.square);
+  }
+  debug("Mine: no vein layout fits this wall, digging by the shaft heuristic.");
+  return shaftDig(state);
+}
+
+/**
+ * The shaft heuristic: teflon sits in the back rows, so the shaft goes
+ * straight up column 3 and then up to any sparkle it shows there, before
+ * spreading out sideways.
+ */
+function shaftDig(state: string): Mining.MiningCoordinate {
   const open = (square: Square) => mineSquare(state, square) === "o";
   const sparkles: Square[] = [];
   for (let i = 0; i < 36; i++) {

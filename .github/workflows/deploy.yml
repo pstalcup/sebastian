@@ -46,6 +46,9 @@ jobs:
       - name: Linting
         run: yarn run lint
 
+      - name: Tests
+        run: yarn run test
+
   deploy:
     runs-on: ubuntu-latest
     needs: [testBuild, lint]

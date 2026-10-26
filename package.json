@@ -11,6 +11,7 @@
     "format": "eslint src --fix && NODE_OPTIONS=\"--experimental-strip-types\" prettier --write .",
     "lint": "eslint src && NODE_OPTIONS=\"--experimental-strip-types\" prettier --check .",
     "watch": "rollup -c rollup.config.ts --configPlugin @rollup/plugin-typescript --watch",
+    "test": "node --import jiti/register --test \"test/**/*.test.ts\"",
     "install-mafia": "yarn run build && create-kolmafia-script --install"
   },
   "dependencies": {
