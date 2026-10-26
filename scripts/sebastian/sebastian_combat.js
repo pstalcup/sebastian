@@ -3546,7 +3546,7 @@ function bangPotionFight(rounds, openerPlanned) {
 /**
  * Every unknown bang potion on hand, two a round with Funkslinging, in the
  * first rounds of a fight that can spare them. Each one identified narrows
- * seedfinder, which fills every dreadscroll answer once the seed is pinned
+ * the seed search, which fills every dreadscroll answer once the seed is pinned
  * down: six known before the seahorse is tamed is usually enough.
  */
 function bangPotions(openerPlanned) {

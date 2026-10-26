@@ -12815,30 +12815,38 @@ var Gear = /*#__PURE__*/function () {
   }]);
 }();
 
-// The one ASH dependency left: seedfinder, which solves the dreadscroll from
-// the clues found so far. It is an ASH library with no TypeScript port, so it
-// is called through a one-statement ASH bridge, as the original imported it.
+// The dreadscroll answers come from the ascension seed, which mafia solves from
+// the clues found so far (bang potions, the Daily Dungeon, the scroll itself
+// and the other seeded prefs).
 
-var SEEDFINDER = "seedfinder/seedfinder.ash";
-function seedfinder(statement) {
-  return kolmafia.cliExecute("ash import <".concat(SEEDFINDER, ">; ").concat(statement));
-}
+// possibleAscensionSeeds() stops at this many, so a list this long is cut short.
+var MAX_SEEDS = 1000;
+var ANY_SEED = 1_000_000;
+var SCROLLS = [1, 2, 3, 4, 5, 6, 7, 8];
 
 /**
- * Whether any seed clue beyond the scroll itself exists yet: an identified bang
- * potion or a mapped Daily Dungeon. Until then find_seeds() can only brute-force
- * every seed, so the checks below return early without it.
+ * Whether the clues are enough for a seed search to come back complete. Until
+ * then possibleAscensionSeeds() would scan every seed only to hit its cap, so
+ * the checks below return early without it.
  */
 function dreadCluesFound() {
-  return BANG_POTIONS.some(potion => bangPotionEffect(potion) !== "") ||
-  // "????_????_????" (or "") until a room is seen
-  /[^?_]/.test(get$1("dailyDungeonRooms"));
+  return kolmafia.estimatedAscensionSeedPossibilities() < MAX_SEEDS;
+}
+
+/** Every seed the clues allow, or null if there are too many to list. */
+function seedsLeft() {
+  if (!dreadCluesFound()) return null;
+  var seeds = Object.values(kolmafia.possibleAscensionSeeds());
+  return seeds.length < MAX_SEEDS ? seeds : null;
+}
+function dreadScroll(seed, n) {
+  return Number(kolmafia.ascensionSeedProperties(seed)["dreadScroll".concat(n)]);
 }
 var CHECKED = "_sebDreadSeedChecked";
 
-/** Every clue seedfinder reads, so a change shows a new search is worth running. */
+/** Every pref mafia predicts from the seed, so a change shows a new search is worth running. */
 function clueState() {
-  return [].concat(_toConsumableArray(BANG_POTIONS.map(bangPotionEffect)), [get$1("dailyDungeonRooms")], _toConsumableArray([1, 2, 3, 4, 5, 6, 7, 8].map(n => get$1("dreadScroll".concat(n), 0)))).join("|");
+  return Object.keys(kolmafia.ascensionSeedProperties(ANY_SEED)).sort().map(pref => get$1(pref, "")).join("|");
 }
 
 /** Whether the seed has been searched for since the clues last changed. */
@@ -12852,22 +12860,47 @@ function dreadSeedChecked() {
  * then. Each answer filled narrows the next search.
  */
 function dreadSeedCheck() {
-  if (!dreadCluesFound()) return;
-  seedfinder("SeedData[int] s = find_seeds(); string filled = ''; " + "if (count(s) > 0) for x from 1 to 8 { " + 'if (get_property("dreadScroll" + x) != "0") continue; ' + "int answer = 0; boolean agree = true; " + "foreach i, seed in s { if (answer == 0) answer = seed.dreadscroll[x - 1]; else if (answer != seed.dreadscroll[x - 1]) agree = false; } " + "if (agree && answer > 0) { set_property(\"dreadScroll\" + x, answer); filled += \" \" + x; } } ".concat(debugMode() ? 'print("SEB: " + count(s) + " possible seeds; dreadscroll filled:" + (filled == "" ? " none" : filled), "blue");' : ""));
+  var seeds = seedsLeft();
+  if (seeds === null) return;
+  var filled = [];
+  if (seeds.length > 0) {
+    var answers = seeds.map(seed => kolmafia.ascensionSeedProperties(seed));
+    var _iterator = _createForOfIteratorHelper(SCROLLS),
+      _step;
+    try {
+      var _loop = function _loop() {
+        var n = _step.value;
+        if (get$1("dreadScroll".concat(n), 0) !== 0) return 1; // continue
+        var answer = Number(answers[0]["dreadScroll".concat(n)]);
+        if (answer > 0 && answers.every(props => Number(props["dreadScroll".concat(n)]) === answer)) {
+          _set("dreadScroll".concat(n), answer);
+          filled.push(n);
+        }
+      };
+      for (_iterator.s(); !(_step = _iterator.n()).done;) {
+        if (_loop()) continue;
+      }
+    } catch (err) {
+      _iterator.e(err);
+    } finally {
+      _iterator.f();
+    }
+  }
+  debug("".concat(seeds.length, " possible seeds; dreadscroll filled: ").concat(filled.join(" ") || "none"));
   // Recorded after the fill, so answers the search just set don't re-run it.
   _set(CHECKED, clueState());
 }
 
 /**
- * Whether the seeds left all agree on scrolls 4 and 7 (the knucklebone and
- * sushi clues), so the school can be skipped. False with no seeds at all.
+ * Whether no two seeds left share their scroll 4 and 7 answers (the
+ * knucklebone and sushi clues), so those two hints alone pin the seed and the
+ * school can be skipped. False with no seeds at all.
  */
 function isKBandSushiEnough() {
-  var flag = "_sebKBandSushiEnough";
-  _set(flag, false);
-  if (!dreadCluesFound()) return false;
-  seedfinder("SeedData[int] s = find_seeds(); boolean ok = count(s) > 0; boolean [string] seen; " + 'foreach i, seed in s { string key = seed.dreadscroll[3] + ":" + seed.dreadscroll[6]; if (seen contains key) ok = false; seen[key] = true; } ' + "set_property(\"".concat(flag, "\", ok);"));
-  return get$1(flag, false);
+  var seeds = seedsLeft();
+  if (seeds === null || seeds.length === 0) return false;
+  var keys = seeds.map(seed => "".concat(dreadScroll(seed, 4), ":").concat(dreadScroll(seed, 7)));
+  return new Set(keys).size === keys.length;
 }
 
 var _templateObject$b, _templateObject2$b, _templateObject3$b, _templateObject4$b, _templateObject5$b, _templateObject6$b, _templateObject7$b, _templateObject8$b, _templateObject9$b, _templateObject0$b, _templateObject1$b, _templateObject10$b, _templateObject11$b, _templateObject12$b, _templateObject13$a, _templateObject14$a, _templateObject15$a, _templateObject16$a, _templateObject17$a, _templateObject18$a, _templateObject19$a, _templateObject20$9, _templateObject21$9, _templateObject22$9, _templateObject23$9, _templateObject24$9, _templateObject25$9, _templateObject26$9, _templateObject27$9, _templateObject28$9, _templateObject29$9, _templateObject30$9, _templateObject31$9, _templateObject32$9, _templateObject33$9, _templateObject34$9, _templateObject35$9, _templateObject36$9, _templateObject37$8, _templateObject38$8, _templateObject39$8, _templateObject40$8, _templateObject41$8, _templateObject42$7, _templateObject43$7, _templateObject44$7, _templateObject45$7, _templateObject46$7, _templateObject47$7, _templateObject48$7, _templateObject49$7, _templateObject50$6, _templateObject51$6, _templateObject52$6, _templateObject53$6, _templateObject54$5, _templateObject55$4, _templateObject56$3, _templateObject57$3, _templateObject58$3, _templateObject59$3, _templateObject60$3, _templateObject61$3, _templateObject62$3, _templateObject63$3, _templateObject64$3, _templateObject65$3, _templateObject66$3, _templateObject67$3, _templateObject68$3, _templateObject69$3, _templateObject70$3, _templateObject71$3, _templateObject72$3, _templateObject73$3, _templateObject74$3, _templateObject75$3, _templateObject76$3, _templateObject77$3, _templateObject78$3, _templateObject79$3, _templateObject80$3, _templateObject81$3, _templateObject82$3, _templateObject83$3, _templateObject84$3, _templateObject85$3, _templateObject86$3, _templateObject87$3, _templateObject88$3, _templateObject89$3, _templateObject90$3, _templateObject91$3, _templateObject92$3, _templateObject93$3, _templateObject94$3, _templateObject95$3, _templateObject96$3, _templateObject97$3, _templateObject98$3, _templateObject99$3, _templateObject100$3, _templateObject101$3, _templateObject102$3, _templateObject103$3;
@@ -13697,7 +13730,7 @@ function dailies() {
   if (have$g($item(_templateObject36$7 || (_templateObject36$7 = _taggedTemplateLiteral(["blessed large box"]))))) kolmafia.use($item(_templateObject37$6 || (_templateObject37$6 = _taggedTemplateLiteral(["blessed large box"]))));
 }
 function initialization() {
-  if (kolmafia.getRevision() < 29057) throw new Error("Please update mafia to newer than 29057");
+  if (kolmafia.getRevision() < 29389) throw new Error("Please update mafia to r29389 or newer");
   // A pearl farm or screech re-aim that aborted mid-loop leaves these set,
   // and the CCS reads them.
   _set("_sebPearlFarm", false);
@@ -16160,7 +16193,7 @@ function yogHpCheck() {
 /**
  * The long way to the dreadscroll (cheatsheets, the teacher, the bunwig, the
  * vocabulary) or the short way, when the knucklebone and sushi pin the seed
- * (the lounge's scholar pieces). Picked once a day, since it asks seedfinder.
+ * (the lounge's scholar pieces). Picked once a day, since it runs a seed search.
  */
 function schoolRoute() {
   var value = get$1("_sebSchoolRoute");
@@ -16403,7 +16436,7 @@ _objectSpread2({
 })];
 
 /**
- * Runs seedfinder whenever a clue has changed since its last search, ahead of
+ * Searches for the ascension seed whenever a clue has changed since its last search, ahead of
  * every quest, so no turn goes to a hint the clues already answer.
  */
 var DreadSeedQuest = {
