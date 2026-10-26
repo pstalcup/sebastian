@@ -942,10 +942,13 @@ function debug(message) {
 
 $items(_templateObject19 || (_templateObject19 = _taggedTemplateLiteral(["milky potion, swirly potion, bubbly potion, smoky potion, cloudy potion, effervescent potion, fizzy potion, dark potion, murky potion"])));
 
-var _templateObject13;
+var _templateObject13, _templateObject20, _templateObject21, _templateObject22, _templateObject23, _templateObject24$1;
 function cheatsheetsNeeded() {
   return kolmafia.availableAmount($item(_templateObject13 || (_templateObject13 = _taggedTemplateLiteral(["Mer-kin cheatsheet"])))) < 9 && get("merkinVocabularyMastery") === 0;
 }
+
+/** Healing items Yog-Urt's fight throws, in the order it throws them, and what each heals. */
+[[$item(_templateObject20 || (_templateObject20 = _taggedTemplateLiteral(["sea gel"]))), 500], [$item(_templateObject21 || (_templateObject21 = _taggedTemplateLiteral(["Mer-kin healscroll"]))), 300], [$item(_templateObject22 || (_templateObject22 = _taggedTemplateLiteral(["waterlogged scroll of healing"]))), 250], [$item(_templateObject23 || (_templateObject23 = _taggedTemplateLiteral(["soggy used band-aid"]))), 1000], [$item(_templateObject24$1 || (_templateObject24$1 = _taggedTemplateLiteral(["New Age healing crystal"]))), 500]];
 
 var _templateObject$1;
 
