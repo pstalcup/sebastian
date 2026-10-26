@@ -11511,6 +11511,393 @@ function doSWord() {
   return !haveItem($item(_templateObject18$f || (_templateObject18$f = _taggedTemplateLiteral(["closed-circuit pay phone"])))) && lassos < 4;
 }
 
+// The Anemone Mine vein solver, adapted from xn/SubAqua's src/lib/minesolver.ts
+// (https://github.com/xn/SubAqua, Apache License 2.0); changed to stand alone here.
+// Pure, so it runs under `node --test` as well as in mafia.
+//
+// SubAqua's spading of the generator: a 6x6 wall holds 12 ore (one contiguous vein of
+// four per ore, snaking allowed, veins may touch, rows 1-4 only and row 4 rarely), 3
+// dense meat stacks, 4 cave-ins, 1 marine aquamarine (a plain square unless Grandpa was
+// asked about the mine) and 16 Rocky Walls: so 20 promising squares, or 19 without the
+// aquamarine, i.e. exactly 8 or 7 duds among the 24 non-ore squares, spread about
+// uniformly. That is small enough to solve exactly: enumerate every 4-connected
+// placement over the 24 cells of rows 1-4, weight each (teflon, velcro, vinyl) triple of
+// disjoint placements by the number of ways the duds can fill the non-ore squares
+// consistently with every twinkle and plain square seen, and read off the probability
+// that each square is teflon. Digging is greedy on that probability with a discounted
+// look past the square at what it would expose.
+//
+// Cell indexing is mineState3's: (row-1)*6 + (col-1), row 1 the back and row 6 the open
+// front. Only rows 1-4 hold ore, so a vein is a 24-bit mask.
+
+/** A mine square as [column, row], both 1-6 (KoL's coordinates without the border). */
+
+var COLS = 6;
+var ROWS = 6;
+var CELLS = COLS * ROWS; // 36
+var ORE_ROWS = 4;
+var ORE_CELLS = COLS * ORE_ROWS; // 24
+var ORE_COUNT = 12;
+var squareOf = index => [index % COLS + 1, Math.floor(index / COLS) + 1];
+
+/** One status per cell of the whole wall (36); rows 5-6 never hold ore. */
+
+var DEFAULT_PARAMS = {
+  row4Weight: 0.2,
+  duds: [{
+    count: 8,
+    weight: 0.5
+  }, {
+    count: 7,
+    weight: 0.5
+  }],
+  beta: 0.5
+};
+function neighborsOf(index, cols, rows) {
+  var col = index % cols;
+  var row = Math.floor(index / cols);
+  var out = [];
+  if (col > 0) out.push(index - 1);
+  if (col < cols - 1) out.push(index + 1);
+  if (row > 0) out.push(index - cols);
+  if (row < rows - 1) out.push(index + cols);
+  return out;
+}
+function connected(cells) {
+  var set = new Set(cells);
+  var seen = new Set([cells[0]]);
+  var stack = [cells[0]];
+  while (stack.length > 0) {
+    var i = stack.pop();
+    var _iterator = _createForOfIteratorHelper(neighborsOf(i, COLS, ORE_ROWS)),
+      _step;
+    try {
+      for (_iterator.s(); !(_step = _iterator.n()).done;) {
+        var n = _step.value;
+        if (set.has(n) && !seen.has(n)) {
+          seen.add(n);
+          stack.push(n);
+        }
+      }
+    } catch (err) {
+      _iterator.e(err);
+    } finally {
+      _iterator.f();
+    }
+  }
+  return seen.size === cells.length;
+}
+var placementCache;
+
+/** Every 4-connected set of four cells in rows 1-4, as 24-bit masks. */
+function veinPlacements() {
+  if (placementCache) return placementCache;
+  var out = [];
+  for (var a = 0; a < ORE_CELLS; a++) {
+    for (var b = a + 1; b < ORE_CELLS; b++) {
+      for (var c = b + 1; c < ORE_CELLS; c++) {
+        for (var d = c + 1; d < ORE_CELLS; d++) {
+          if (connected([a, b, c, d])) out.push(1 << a | 1 << b | 1 << c | 1 << d);
+        }
+      }
+    }
+  }
+  placementCache = out;
+  return out;
+}
+function popcount(mask) {
+  var n = 0;
+  var m = mask;
+  while (m !== 0) {
+    m &= m - 1;
+    n++;
+  }
+  return n;
+}
+var ROW4_MASK = (() => {
+  var mask = 0;
+  for (var i = 3 * COLS; i < ORE_CELLS; i++) mask |= 1 << i;
+  return mask;
+})();
+
+/** C(n, k), 0 outside the triangle. */
+function choose(n, k) {
+  if (k < 0 || n < 0 || k > n) return 0;
+  var r = 1;
+  for (var i = 1; i <= k; i++) r = r * (n - k + i) / i;
+  return Math.round(r);
+}
+
+/** mafia's mineLayout image names -> what a dug square held. */
+function contentStatus(image) {
+  if (image.includes("teflon")) return "teflon";
+  if (image.includes("velcro")) return "velcro";
+  if (image.includes("vinyl")) return "vinyl";
+  return "dud";
+}
+
+/**
+ * The wall as the solver sees it: `state` is mafia's mineState3, `layout` its mineLayout3
+ * (what each dug square held), `detection` whether every twinkle is visible.
+ */
+function observe(state, layout, detection) {
+  var dug = new Map();
+  var re = /#(\d+)<img src="[^"]*\/([a-z0-9]+)\.gif"/g;
+  var m;
+  while ((m = re.exec(layout)) !== null) {
+    var which = parseInt(m[1], 10);
+    var _col = which % 8;
+    var _row = Math.floor(which / 8);
+    if (_row >= 1 && _row <= ROWS && _col >= 1 && _col <= COLS) {
+      dug.set((_row - 1) * COLS + (_col - 1), contentStatus(m[2]));
+    }
+  }
+  var obs = [];
+  for (var i = 0; i < CELLS; i++) {
+    var ch = state.charAt(i);
+    if (ch === "o") {
+      obs.push(dug.get(i) ?? "rock");
+    } else if (ch === "*") {
+      obs.push("twinkle");
+    } else {
+      var _row2 = Math.floor(i / COLS);
+      var exposed = detection || _row2 === ROWS - 1 || neighborsOf(i, COLS, ROWS).some(n => state.charAt(n) === "o");
+      obs.push(exposed ? "rock" : "unknown");
+    }
+  }
+  return obs;
+}
+function masksOf(obs) {
+  var masks = {
+    twinkle: 0,
+    blocked: 0,
+    ore: {
+      teflon: 0,
+      velcro: 0,
+      vinyl: 0
+    },
+    unknown: 0,
+    knownDudOrTwinkle: 0,
+    knownPlain: 0
+  };
+  obs.forEach((status, i) => {
+    var inOreRows = i < ORE_CELLS;
+    var bit = inOreRows ? 1 << i : 0;
+    switch (status) {
+      case "twinkle":
+        masks.twinkle |= bit;
+        masks.knownDudOrTwinkle++;
+        break;
+      case "dud":
+        masks.blocked |= bit;
+        masks.knownDudOrTwinkle++;
+        break;
+      case "rock":
+        masks.blocked |= bit;
+        masks.knownPlain++;
+        break;
+      case "unknown":
+        masks.unknown |= bit;
+        break;
+      default:
+        if (inOreRows) masks.ore[status] |= bit;
+    }
+  });
+  return masks;
+}
+/** Placements of one ore consistent with the wall, with their row prior and how many of the
+ *  visible rows-1-4 twinkles they account for. */
+function consistentPlacements(ore, masks, params) {
+  var must = masks.ore[ore];
+  var forbidden = masks.blocked | (ore === "teflon" ? 0 : masks.ore.teflon) | (ore === "velcro" ? 0 : masks.ore.velcro) | (ore === "vinyl" ? 0 : masks.ore.vinyl);
+  // Without detection an ore cell may be unknown; with it (no unknown cells) it must twinkle
+  // or already be dug as this ore.
+  var allowed = masks.twinkle | masks.unknown | must;
+  var out = [];
+  var _iterator2 = _createForOfIteratorHelper(veinPlacements()),
+    _step2;
+  try {
+    for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+      var mask = _step2.value;
+      if ((mask & must) !== must) continue;
+      if ((mask & forbidden) !== 0) continue;
+      if ((mask & ~allowed) !== 0) continue;
+      out.push({
+        mask,
+        weight: Math.pow(params.row4Weight, popcount(mask & ROW4_MASK)),
+        covered: popcount(mask & masks.twinkle)
+      });
+    }
+  } catch (err) {
+    _iterator2.e(err);
+  } finally {
+    _iterator2.f();
+  }
+  return out;
+}
+
+/**
+ * Ways the duds can sit given a triple that covers `covered` of the visible twinkles: the
+ * other known twinkles (and dug duds) are duds, the known plain squares are not, and the rest
+ * of the duds go anywhere among the remaining non-ore squares.
+ */
+function dudWays(masks, covered, params) {
+  var knownDuds = masks.knownDudOrTwinkle - covered;
+  var free = CELLS - ORE_COUNT - knownDuds - masks.knownPlain;
+  var ways = 0;
+  var _iterator3 = _createForOfIteratorHelper(params.duds),
+    _step3;
+  try {
+    for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
+      var _step3$value = _step3.value,
+        count = _step3$value.count,
+        weight = _step3$value.weight;
+      ways += weight * choose(free, count - knownDuds);
+    }
+  } catch (err) {
+    _iterator3.e(err);
+  } finally {
+    _iterator3.f();
+  }
+  return ways;
+}
+var MAX_COVERED = 4;
+
+/** Exact marginals over the three disjoint veins. */
+function posterior(obs) {
+  var params = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : DEFAULT_PARAMS;
+  var masks = masksOf(obs);
+  var T = consistentPlacements("teflon", masks, params);
+  var V = consistentPlacements("velcro", masks, params);
+  var W = consistentPlacements("vinyl", masks, params);
+  var counts = {
+    teflon: T.length,
+    velcro: V.length,
+    vinyl: W.length
+  };
+  var perCell = Array(ORE_CELLS).fill(0);
+  var mass = 0;
+  // The dud factor depends only on how many visible twinkles the whole triple covers, so the
+  // vinyl inner sum is kept per cover count, memoised by the (teflon | velcro) union.
+  var vinylSums = new Map();
+  var vinylByCover = union => {
+    var cached = vinylSums.get(union);
+    if (cached !== undefined) return cached;
+    var sums = Array(MAX_COVERED + 1).fill(0);
+    var _iterator4 = _createForOfIteratorHelper(W),
+      _step4;
+    try {
+      for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
+        var w = _step4.value;
+        if ((w.mask & union) === 0) sums[w.covered] += w.weight;
+      }
+    } catch (err) {
+      _iterator4.e(err);
+    } finally {
+      _iterator4.f();
+    }
+    vinylSums.set(union, sums);
+    return sums;
+  };
+  var ways = [];
+  for (var c = 0; c <= 3 * MAX_COVERED; c++) ways.push(dudWays(masks, c, params));
+  var _iterator5 = _createForOfIteratorHelper(T),
+    _step5;
+  try {
+    for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
+      var t = _step5.value;
+      var rest = 0;
+      var _iterator6 = _createForOfIteratorHelper(V),
+        _step6;
+      try {
+        for (_iterator6.s(); !(_step6 = _iterator6.n()).done;) {
+          var v = _step6.value;
+          if ((v.mask & t.mask) !== 0) continue;
+          var sums = vinylByCover(t.mask | v.mask);
+          var inner = 0;
+          for (var cw = 0; cw <= MAX_COVERED; cw++) {
+            if (sums[cw] === 0) continue;
+            inner += sums[cw] * ways[t.covered + v.covered + cw];
+          }
+          rest += v.weight * inner;
+        }
+      } catch (err) {
+        _iterator6.e(err);
+      } finally {
+        _iterator6.f();
+      }
+      if (rest === 0) continue;
+      var weight = t.weight * rest;
+      mass += weight;
+      for (var i = 0; i < ORE_CELLS; i++) if ((t.mask & 1 << i) !== 0) perCell[i] += weight;
+    }
+  } catch (err) {
+    _iterator5.e(err);
+  } finally {
+    _iterator5.f();
+  }
+  var teflon = mass > 0 ? perCell.map(w => w / mass) : perCell;
+  return {
+    teflon,
+    mass,
+    counts
+  };
+}
+/**
+ * The exposed undug square to dig: greedy on P(teflon), with every other cell's teflon
+ * probability added at beta^(extra digs to reach it through this square). Returns undefined
+ * when no placement fits the wall (the model is wrong for it) so the caller can fall back.
+ */
+function solveDig(state, layout, detection) {
+  var params = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : DEFAULT_PARAMS;
+  if (state.length !== CELLS) return undefined;
+  var post = posterior(observe(state, layout, detection), params);
+  if (post.mass === 0) return undefined;
+  var open = i => state.charAt(i) === "o";
+  var best;
+  for (var d = 0; d < CELLS; d++) {
+    if (open(d)) continue;
+    var _row3 = Math.floor(d / COLS);
+    var exposed = _row3 === ROWS - 1 || neighborsOf(d, COLS, ROWS).some(open);
+    if (!exposed) continue;
+    // BFS through undug cells from d: digs needed to open each cell via d.
+    var digs = Array(CELLS).fill(Infinity);
+    digs[d] = 1;
+    var queue = [d];
+    while (queue.length > 0) {
+      var i = queue.shift();
+      var _iterator7 = _createForOfIteratorHelper(neighborsOf(i, COLS, ROWS)),
+        _step7;
+      try {
+        for (_iterator7.s(); !(_step7 = _iterator7.n()).done;) {
+          var n = _step7.value;
+          if (open(n) || digs[n] !== Infinity) continue;
+          digs[n] = digs[i] + 1;
+          queue.push(n);
+        }
+      } catch (err) {
+        _iterator7.e(err);
+      } finally {
+        _iterator7.f();
+      }
+    }
+    var score = 0;
+    for (var s = 0; s < ORE_CELLS; s++) {
+      if (digs[s] === Infinity) continue;
+      score += post.teflon[s] * Math.pow(params.beta, digs[s] - 1);
+    }
+    var p = d < ORE_CELLS ? post.teflon[d] : 0;
+    if (best === undefined || score > best.score || score === best.score && p > best.p) {
+      best = {
+        square: squareOf(d),
+        p,
+        score
+      };
+    }
+  }
+  return best;
+}
+
 var _templateObject$g, _templateObject2$g, _templateObject3$g, _templateObject4$g, _templateObject5$g, _templateObject6$g, _templateObject7$g, _templateObject8$g, _templateObject9$g, _templateObject0$g, _templateObject1$g, _templateObject10$g, _templateObject11$g, _templateObject12$f, _templateObject13$e, _templateObject14$e, _templateObject15$e, _templateObject16$e, _templateObject17$e, _templateObject18$e, _templateObject19$e, _templateObject20$d, _templateObject21$d, _templateObject22$d, _templateObject23$d, _templateObject24$d, _templateObject25$d;
 
 // What the run still needs. Ported from the "Account states" and Force budget
@@ -12087,13 +12474,29 @@ function towards(state, target) {
 }
 
 /**
- * The mine square (column, row) to dig for teflon ore. Teflon sits in the back
- * row, so the shaft goes straight up column 3 and then up to any sparkle it
- * shows there, before spreading out sideways.
+ * The mine square (column, row) to dig for teflon ore. The vein solver picks
+ * the square most likely to reach teflon given everything the wall shows; if
+ * no vein layout fits the wall, fall back to the shaft heuristic.
  */
 function mineNum() {
   visit(Mine.ANEMONE);
   var state = getState(Mine.ANEMONE);
+  var detection = hasObjectDetection(Mine.ANEMONE);
+  var solved = solveDig(state, get$1("mineLayout3"), detection);
+  if (solved) {
+    debug("Mine: dig (".concat(solved.square.join(","), "), P(teflon) ").concat((solved.p * 100).toFixed(0), "%, score ").concat(solved.score.toFixed(2)).concat(detection ? " (Object Detection)" : ""));
+    return at(solved.square);
+  }
+  debug("Mine: no vein layout fits this wall, digging by the shaft heuristic.");
+  return shaftDig(state);
+}
+
+/**
+ * The shaft heuristic: teflon sits in the back rows, so the shaft goes
+ * straight up column 3 and then up to any sparkle it shows there, before
+ * spreading out sideways.
+ */
+function shaftDig(state) {
   var open = square => mineSquare(state, square) === "o";
   var sparkles = [];
   for (var i = 0; i < 36; i++) {
