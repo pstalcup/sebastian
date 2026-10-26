@@ -1,4 +1,4 @@
-import { Item, toSlot, availableAmount } from "kolmafia";
+import { Item, toSlot, availableAmount, pullsRemaining } from "kolmafia";
 import { $item, $items, $slot, have, get } from "libram";
 
 import { haveItem } from "./state";
@@ -104,3 +104,25 @@ export function delevelers(): number {
 
 /** Healings Yog-Urt's fight needs, by prayerbeads worn (0 to 3). */
 export const YOG_HEALINGS_NEEDED = [21, 5, 3, 1];
+
+/** Healing items Yog-Urt's fight throws, in the order it throws them, and what each heals. */
+export const YOG_HEALING: [Item, number][] = [
+  [$item`sea gel`, 500],
+  [$item`Mer-kin healscroll`, 300],
+  [$item`waterlogged scroll of healing`, 250],
+  [$item`soggy used band-aid`, 1000],
+  [$item`New Age healing crystal`, 500],
+];
+
+function yogHealingsNeeded(): number {
+  return YOG_HEALINGS_NEEDED[availableAmount($item`Mer-kin prayerbeads`)] ?? 0;
+}
+
+function yogHealingsOwned(): number {
+  return YOG_HEALING.filter(([item]) => availableAmount(item) > 0).length;
+}
+
+/** Healings short of what the fight needs, more than pulls can cover. */
+export function yogHealingsShort(): boolean {
+  return yogHealingsNeeded() - yogHealingsOwned() > pullsRemaining();
+}

@@ -26,6 +26,22 @@ export function dreadCluesFound(): boolean {
   );
 }
 
+const CHECKED = "_sebDreadSeedChecked";
+
+/** Every clue seedfinder reads, so a change shows a new search is worth running. */
+function clueState(): string {
+  return [
+    ...BANG_POTIONS.map(bangPotionEffect),
+    get("dailyDungeonRooms"),
+    ...[1, 2, 3, 4, 5, 6, 7, 8].map((n) => get(`dreadScroll${n}`, 0)),
+  ].join("|");
+}
+
+/** Whether the seed has been searched for since the clues last changed. */
+export function dreadSeedChecked(): boolean {
+  return get(CHECKED, "") === clueState();
+}
+
 /**
  * Fill in each dreadscroll answer that every seed left agrees on: all eight
  * once the clues pin down a single seed, and any the candidates share before
@@ -45,6 +61,8 @@ export function dreadSeedCheck(): void {
           : ""
       }`,
   );
+  // Recorded after the fill, so answers the search just set don't re-run it.
+  set(CHECKED, clueState());
 }
 
 /**

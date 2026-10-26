@@ -65,11 +65,18 @@ import {
   divingHelmet,
   libraryReady,
   tailpiece,
+  YOG_HEALING,
   YOG_HEALINGS_NEEDED,
+  yogHealingsShort,
 } from "../lib/progress";
 import { pulledToday, pullSequence, reservedPulls } from "../lib/pulls";
 import { baseballPlayers, equipSwimTrunks } from "../lib/resources";
-import { dreadSeedCheck, isKBandSushiEnough } from "../lib/seedfinder";
+import {
+  dreadCluesFound,
+  dreadSeedCheck,
+  dreadSeedChecked,
+  isKBandSushiEnough,
+} from "../lib/seedfinder";
 import { debug, haveItem, highShiny, inAftercore, inSeaPath, lowShiny } from "../lib/state";
 
 import { aftercoreBoss, tamed } from "./seahorse";
@@ -104,28 +111,6 @@ const highPriest = () => get("isMerkinHighPriest");
 const beads = () => availableAmount($item`Mer-kin prayerbeads`);
 
 // ─── YOG-URT'S HP CHECK ───────────────────────────────────────────────────────
-
-/** Healing items Yog-Urt's fight throws, in the order it throws them, and what each heals. */
-const YOG_HEALING: [Item, number][] = [
-  [$item`sea gel`, 500],
-  [$item`Mer-kin healscroll`, 300],
-  [$item`waterlogged scroll of healing`, 250],
-  [$item`soggy used band-aid`, 1000],
-  [$item`New Age healing crystal`, 500],
-];
-
-function yogHealingsNeeded(): number {
-  return YOG_HEALINGS_NEEDED[beads()] ?? 0;
-}
-
-function yogHealingsOwned(): number {
-  return YOG_HEALING.filter(([item]) => availableAmount(item) > 0).length;
-}
-
-/** Healings short of what the fight needs, more than pulls can cover. */
-function yogHealingsShort(): boolean {
-  return yogHealingsNeeded() - yogHealingsOwned() > pullsRemaining();
-}
 
 /** Maximum HP per point of buffed Muscle, from what's worn. */
 function trueHPPercent(): number {
@@ -454,11 +439,7 @@ const dreadscrollTasks: SebTask[] = [
     name: "Library",
     ready: () => !highPriest() && schoolDone(),
     completed: libraryDone,
-    ...withHooks(merkinLib(), {
-      post: () => {
-        if (haveDreadscroll()) dreadSeedCheck();
-      },
-    }),
+    ...merkinLib(),
   },
   {
     name: "Knucklebone clue",
@@ -467,7 +448,6 @@ const dreadscrollTasks: SebTask[] = [
     ...action(() => {
       if (itemAmount($item`Mer-kin knucklebone`) === 0) pullSequence($item`Mer-kin knucklebone`);
       use($item`Mer-kin knucklebone`);
-      dreadSeedCheck();
     }),
     limit: { tries: 1 },
   },
@@ -475,10 +455,7 @@ const dreadscrollTasks: SebTask[] = [
     name: "Sushi clue",
     ready: () => !highPriest() && haveDreadscroll() && vocabulary() < 90,
     completed: () => scroll(7) !== 0,
-    ...action(() => {
-      sushiClue();
-      dreadSeedCheck();
-    }),
+    ...action(sushiClue),
     limit: { skip: 1 },
   },
   {
@@ -524,6 +501,24 @@ const dreadscrollTasks: SebTask[] = [
     limit: { tries: 1 },
   },
 ];
+
+/**
+ * Runs seedfinder whenever a clue has changed since its last search, ahead of
+ * every quest, so no turn goes to a hint the clues already answer.
+ */
+export const DreadSeedQuest: SebQuest = {
+  name: "Dreadscroll seed",
+  ready: () => !highPriest(),
+  tasks: [
+    {
+      name: "Seed check",
+      ready: dreadCluesFound,
+      completed: () => dreadSeedChecked() || [...HINTS, 7].every((n) => scroll(n) !== 0),
+      ...action(dreadSeedCheck),
+      postAdventure: false,
+    },
+  ],
+};
 
 // ─── BECOMING HIGH PRIEST ─────────────────────────────────────────────────────
 

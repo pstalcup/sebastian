@@ -66,9 +66,9 @@ import {
   trainset,
   useAutumnaton,
 } from "./iotm";
-import { diverHuntActive, seaCowNeeded, tailpiece } from "./progress";
-import { pulledToday, pullSequence } from "./pulls";
-import { dreadSeedCheck } from "./seedfinder";
+import { diverHuntActive, seaCowNeeded, tailpiece, yogHealingsShort } from "./progress";
+import { pulledToday, pullSequence, reservedPulls } from "./pulls";
+import { dreadSeedCheck, dreadSeedChecked } from "./seedfinder";
 import {
   haveItem,
   highShiny,
@@ -142,8 +142,25 @@ const WHISTLE_WORTHY = new Set(
   $items`Mer-kin prayerbeads, Mer-kin healscroll, Mer-kin lockkey, Mer-kin hallpass, Mer-kin cheatsheet, Mer-kin bunwig, rusty rivet, rusty porthole, rusty broken diving helmet, sea leather, sea cowbell, sea lasso`,
 );
 
+/**
+ * Why a stolen healscroll is still worth a turn, or "" if it isn't: the scroll
+ * 2 hint, or Yog-Urt's healing when no pull can stand in for it.
+ */
+function healscrollWanted(): string {
+  // A no-op without clues, and once the clues haven't changed since the last search.
+  if (get("dreadScroll2") === 0 && !dreadSeedChecked()) dreadSeedCheck();
+  if (get("dreadScroll2") === 0) return "scroll 2 is still unknown";
+  if (get("yogUrtDefeated") || availableAmount($item`Mer-kin healscroll`) > 0) return "";
+  // The Yog-Urt Healscroll task pulls one, and before the High Priest the
+  // prayerbeads aren't farmed yet, so only a pull shortfall says it's needed.
+  if (get("isMerkinHighPriest")) return yogHealingsShort() ? "Yog-Urt's healing is short" : "";
+  return pullsRemaining() <= reservedPulls() ? "no pull to spare for Yog-Urt" : "";
+}
+
 function stillWanted(item: Item): boolean {
   switch (item) {
+    case $item`Mer-kin healscroll`:
+      return healscrollWanted() !== "";
     case $item`rusty broken diving helmet`:
     case $item`rusty porthole`:
     case $item`rusty rivet`:
@@ -182,13 +199,26 @@ let dolphinSaid = "";
 function dolphinWhistle(): void {
   // The buffer holds one item and the next theft overwrites it.
   const stolen = get("dolphinItem") ?? $item.none;
-  if (
-    !WHISTLE_WORTHY.has(stolen) ||
-    !stillWanted(stolen) ||
-    highShiny() ||
-    myAdventures() === 0 ||
-    myInebriety() > inebrietyLimit()
-  ) {
+  if (!WHISTLE_WORTHY.has(stolen)) return;
+  // Read before a whistle hands the healscroll back and changes the answer.
+  const healscrollWhy = stolen === $item`Mer-kin healscroll` ? ` (${healscrollWanted()})` : "";
+  const skip = !stillWanted(stolen)
+    ? healscrollWhy
+      ? "no longer needed (scroll 2 known, Yog-Urt covered)"
+      : "no longer needed"
+    : highShiny()
+      ? "high shiny"
+      : myAdventures() === 0
+        ? "no adventures left"
+        : myInebriety() > inebrietyLimit()
+          ? "overdrunk"
+          : "";
+  if (skip) {
+    const said = `${stolen}: ${skip}`;
+    if (said !== dolphinSaid) {
+      debug(`a dolphin took ${stolen}; not whistling, ${skip}.`);
+      dolphinSaid = said;
+    }
     return;
   }
   let refused = false;
@@ -216,7 +246,7 @@ function dolphinWhistle(): void {
         : `no whistle, and ${availableAmount($item`sand dollar`)} sand dollars against ${sandDollarsOwed()} owed`;
   const said = `${stolen}: ${why}`;
   if (said !== dolphinSaid) {
-    debug(`a dolphin took ${stolen}; ${why}.`);
+    debug(`a dolphin took ${stolen}${healscrollWhy}; ${why}.`);
     dolphinSaid = said;
   }
   // A later theft of the same item is a new event.
@@ -392,9 +422,6 @@ export function postAdventure(): void {
   }
   if (get("NCtoC", false)) set("NCtoC", false);
 
-  if (!get("isMerkinHighPriest") && get("seahorseName") !== "") {
-    dreadSeedCheck();
-  }
   if (AutumnAton.available()) useAutumnaton();
   if (
     get("_universeCalculated") < Math.min(2, get("skillLevel144")) &&
